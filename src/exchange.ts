@@ -15,6 +15,8 @@ import { filter, map, merge, pipe, share, tap } from 'wonka';
 
 import { query, write, gc } from './operations';
 import { Store, SerializedStore } from './store';
+import { getSchema } from './helpers';
+import { DocumentNode } from 'graphql';
 
 type OperationResultWithMeta = OperationResult & {
   isComplete: boolean;
@@ -64,169 +66,182 @@ const toRequestPolicy = (
 });
 
 export interface CacheExchangeOpts {
+  schema?: DocumentNode;
+  schemaUrl?: string;
   initial?: SerializedStore;
 }
 
-export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
-  forward,
-  client,
-}) => {
-  let gcScheduled = false;
-
-  const store = new Store(opts.initial);
-  const ops: OperationMap = new Map();
-  const deps = Object.create(null) as DependentOperations;
-
-  // This triggers a garbage collection run on the store's data
-  const gcStore = () => {
-    if (gcScheduled) {
-      gcScheduled = false;
-      gc(store);
-    }
-  };
-
-  // This accepts an array of dependencies and reexecutes all known operations
-  // against the mapping of dependencies to operations
-  // The passed triggerOp is ignored however
-  const processDependencies = (
-    triggerOp: Operation,
-    dependencies: string[]
-  ) => {
-    const pendingOperations = new Set<number>();
-
-    // Collect operations that will be updated due to cache changes
-    dependencies.forEach(dep => {
-      const keys = deps[dep];
-      if (keys !== undefined) {
-        deps[dep] = [];
-        keys.forEach(key => pendingOperations.add(key));
-      }
+export const cacheExchange = (opts: CacheExchangeOpts): Exchange => {
+  // let schema = opts.schema;
+  // let isLoading = false;
+  if (opts.schemaUrl) {
+    // isLoading = true;
+    getSchema(opts.schemaUrl).then((/* result */) => {
+      // schema = result;
+      // isLoading = false;
     });
+  }
 
-    // Reexecute collected operations and delete them from the mapping
-    pendingOperations.forEach(key => {
-      if (key !== triggerOp.key) {
-        const op = ops.get(key) as Operation;
-        ops.delete(key);
-        client.reexecuteOperation(op);
+  // TODO: validate schema
+
+  return ({ forward, client }) => {
+    let gcScheduled = false;
+
+    const store = new Store(opts.initial);
+    const ops: OperationMap = new Map();
+    const deps = Object.create(null) as DependentOperations;
+
+    // This triggers a garbage collection run on the store's data
+    const gcStore = () => {
+      if (gcScheduled) {
+        gcScheduled = false;
+        gc(store);
       }
-    });
-  };
-
-  // This updates the known dependencies for the passed operation
-  const updateDependencies = (op: Operation, dependencies: string[]) => {
-    dependencies.forEach(dep => {
-      const keys = deps[dep] || (deps[dep] = []);
-      keys.push(op.key);
-
-      if (!ops.has(op.key)) {
-        const isNetworkOnly = op.context.requestPolicy === 'network-only';
-        ops.set(
-          op.key,
-          isNetworkOnly ? toRequestPolicy(op, 'cache-and-network') : op
-        );
-      }
-    });
-  };
-
-  // Retrieves a query result from cache and adds an `isComplete` hint
-  // This hint indicates whether the result is "complete" or not
-  const operationResultFromCache = (
-    operation: Operation
-  ): OperationResultWithMeta => {
-    const policy = getRequestPolicy(operation);
-    const res = query(store, operation);
-    const isComplete = policy === 'cache-only' || res.isComplete;
-    if (isComplete) {
-      updateDependencies(operation, res.dependencies);
-    }
-
-    return {
-      operation,
-      isComplete,
-      data: res.data,
     };
-  };
 
-  // Take any OperationResult and update the cache with it
-  const updateCacheWithResult = ({
-    error,
-    data,
-    operation,
-  }: OperationResult) => {
-    if (
-      (error === undefined || error.networkError === undefined) &&
-      data !== null &&
-      data !== undefined
-    ) {
-      const { dependencies } = write(store, operation, data);
+    // This accepts an array of dependencies and reexecutes all known operations
+    // against the mapping of dependencies to operations
+    // The passed triggerOp is ignored however
+    const processDependencies = (
+      triggerOp: Operation,
+      dependencies: string[]
+    ) => {
+      const pendingOperations = new Set<number>();
 
-      // Update operations that depend on the updated data (except the current one)
-      processDependencies(operation, dependencies);
-
-      // Update this operation's dependencies if it's a query
-      if (isQueryOperation(operation)) {
-        updateDependencies(operation, dependencies);
-      }
-
-      if (!gcScheduled) {
-        gcScheduled = true;
-        scheduleCallback(SchedulerLowPriority, gcStore);
-      }
-    }
-  };
-
-  return ops$ => {
-    const sharedOps$ = pipe(
-      ops$,
-      map(addTypeNames),
-      share
-    );
-
-    // Filter by operations that are cacheable and attempt to query them from the cache
-    const cache$ = pipe(
-      sharedOps$,
-      filter(op => isCacheableQuery(op)),
-      map(operationResultFromCache),
-      share
-    );
-
-    // Rebound operations that are incomplete, i.e. couldn't be queried just from the cache
-    const cacheOps$ = pipe(
-      cache$,
-      filter(res => !res.isComplete),
-      map(res => res.operation)
-    );
-
-    // Resolve OperationResults that the cache was able to assemble completely and trigger
-    // a network request if the current operation's policy is cache-and-network
-    const cacheResult$ = pipe(
-      cache$,
-      filter(res => res.isComplete),
-      tap(({ operation }) => {
-        const policy = getRequestPolicy(operation);
-        if (policy === 'cache-and-network') {
-          const networkOnly = toRequestPolicy(operation, 'network-only');
-          client.reexecuteOperation(networkOnly);
+      // Collect operations that will be updated due to cache changes
+      dependencies.forEach(dep => {
+        const keys = deps[dep];
+        if (keys !== undefined) {
+          deps[dep] = [];
+          keys.forEach(key => pendingOperations.add(key));
         }
-      })
-    );
+      });
 
-    // Forward operations that aren't cacheable and rebound operations
-    // Also update the cache with any network results
-    const result$ = pipe(
-      forward(
-        merge([
-          pipe(
-            sharedOps$,
-            filter(op => !isCacheableQuery(op))
-          ),
-          cacheOps$,
-        ])
-      ),
-      tap(updateCacheWithResult)
-    );
+      // Reexecute collected operations and delete them from the mapping
+      pendingOperations.forEach(key => {
+        if (key !== triggerOp.key) {
+          const op = ops.get(key) as Operation;
+          ops.delete(key);
+          client.reexecuteOperation(op);
+        }
+      });
+    };
 
-    return merge([result$, cacheResult$]);
+    // This updates the known dependencies for the passed operation
+    const updateDependencies = (op: Operation, dependencies: string[]) => {
+      dependencies.forEach(dep => {
+        const keys = deps[dep] || (deps[dep] = []);
+        keys.push(op.key);
+
+        if (!ops.has(op.key)) {
+          const isNetworkOnly = op.context.requestPolicy === 'network-only';
+          ops.set(
+            op.key,
+            isNetworkOnly ? toRequestPolicy(op, 'cache-and-network') : op
+          );
+        }
+      });
+    };
+
+    // Retrieves a query result from cache and adds an `isComplete` hint
+    // This hint indicates whether the result is "complete" or not
+    const operationResultFromCache = (
+      operation: Operation
+    ): OperationResultWithMeta => {
+      const policy = getRequestPolicy(operation);
+      const res = query(store, operation);
+      const isComplete = policy === 'cache-only' || res.isComplete;
+      if (isComplete) {
+        updateDependencies(operation, res.dependencies);
+      }
+
+      return {
+        operation,
+        isComplete,
+        data: res.data,
+      };
+    };
+
+    // Take any OperationResult and update the cache with it
+    const updateCacheWithResult = ({
+      error,
+      data,
+      operation,
+    }: OperationResult) => {
+      if (
+        (error === undefined || error.networkError === undefined) &&
+        data !== null &&
+        data !== undefined
+      ) {
+        const { dependencies } = write(store, operation, data);
+
+        // Update operations that depend on the updated data (except the current one)
+        processDependencies(operation, dependencies);
+
+        // Update this operation's dependencies if it's a query
+        if (isQueryOperation(operation)) {
+          updateDependencies(operation, dependencies);
+        }
+
+        if (!gcScheduled) {
+          gcScheduled = true;
+          scheduleCallback(SchedulerLowPriority, gcStore);
+        }
+      }
+    };
+
+    return ops$ => {
+      const sharedOps$ = pipe(
+        ops$,
+        map(addTypeNames),
+        share
+      );
+
+      // Filter by operations that are cacheable and attempt to query them from the cache
+      const cache$ = pipe(
+        sharedOps$,
+        filter(op => isCacheableQuery(op)),
+        map(operationResultFromCache),
+        share
+      );
+
+      // Rebound operations that are incomplete, i.e. couldn't be queried just from the cache
+      const cacheOps$ = pipe(
+        cache$,
+        filter(res => !res.isComplete),
+        map(res => res.operation)
+      );
+
+      // Resolve OperationResults that the cache was able to assemble completely and trigger
+      // a network request if the current operation's policy is cache-and-network
+      const cacheResult$ = pipe(
+        cache$,
+        filter(res => res.isComplete),
+        tap(({ operation }) => {
+          const policy = getRequestPolicy(operation);
+          if (policy === 'cache-and-network') {
+            const networkOnly = toRequestPolicy(operation, 'network-only');
+            client.reexecuteOperation(networkOnly);
+          }
+        })
+      );
+
+      // Forward operations that aren't cacheable and rebound operations
+      // Also update the cache with any network results
+      const result$ = pipe(
+        forward(
+          merge([
+            pipe(
+              sharedOps$,
+              filter(op => !isCacheableQuery(op))
+            ),
+            cacheOps$,
+          ])
+        ),
+        tap(updateCacheWithResult)
+      );
+
+      return merge([result$, cacheResult$]);
+    };
   };
 };
