@@ -1,5 +1,5 @@
 import {
-  introspectionQuery,
+  getIntrospectionQuery,
   buildClientSchema,
   printSchema,
   parse,
@@ -13,7 +13,9 @@ export const getSchema = async (schemaUrl: string): Promise<DocumentNode> => {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ query: introspectionQuery }),
+    body: JSON.stringify({
+      query: getIntrospectionQuery({ descriptions: false }),
+    }),
   });
 
   if (result.status < 200 || result.status >= 300) {
@@ -30,6 +32,8 @@ export const getSchema = async (schemaUrl: string): Promise<DocumentNode> => {
 
   // TODO: kitten said we are pulling in too much like this,
   // this has to be stripped down.
+  // Based on what "schema" in the main method is we might now
+  // want to parse here.
   const rawSchema = buildClientSchema(schema);
   const clientSchema = printSchema(rawSchema);
   return parse(clientSchema);
