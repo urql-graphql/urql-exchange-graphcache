@@ -30,11 +30,14 @@ export const getSchema = async (schemaUrl: string): Promise<DocumentNode> => {
     throw new Error(`Something went wrong while fetching your schema.`);
   }
 
-  // TODO: kitten said we are pulling in too much like this,
-  // this has to be stripped down.
-  // Based on what "schema" in the main method is we might now
-  // want to parse here.
-  const rawSchema = buildClientSchema(schema);
-  const clientSchema = printSchema(rawSchema);
-  return parse(clientSchema);
+  return schema;
 };
+
+// TODO: kitten said we are pulling in too much like this,
+// this has to be stripped down.
+// Based on what "schema" in the main method is we might now
+// want to parse here.
+// this effectively means pulling in the graphql-introspection
+// query and making one ourselves.
+export const parseSchema = schema =>
+  parse(printSchema(buildClientSchema(schema)));
