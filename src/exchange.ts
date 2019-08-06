@@ -15,7 +15,7 @@ import { filter, map, merge, pipe, share, tap } from 'wonka';
 
 import { query, write, gc } from './operations';
 import { Store, SerializedStore } from './store';
-import { getSchema } from './helpers';
+import { getSchema, parseSchema } from './helpers';
 import { DocumentNode } from 'graphql';
 
 type OperationResultWithMeta = OperationResult & {
@@ -72,17 +72,14 @@ export interface CacheExchangeOpts {
 }
 
 export const cacheExchange = (opts: CacheExchangeOpts): Exchange => {
-  // let schema = opts.schema;
-  // let isLoading = false;
+  let schema = opts.schema;
   if (opts.schemaUrl) {
-    // isLoading = true;
-    getSchema(opts.schemaUrl).then((/* result */) => {
-      // schema = result;
-      // isLoading = false;
+    getSchema(opts.schemaUrl).then(result => {
+      schema = result;
     });
   }
 
-  // TODO: validate schema
+  schema = parseSchema(schema);
 
   return ({ forward, client }) => {
     let gcScheduled = false;
