@@ -11,11 +11,25 @@ import {
   unstable_scheduleCallback as scheduleCallback,
 } from 'scheduler';
 
-import { filter, map, merge, pipe, share, tap } from 'wonka';
+import {
+  filter,
+  map,
+  merge,
+  pipe,
+  share,
+  tap,
+  fromPromise,
+  fromValue,
+  buffer,
+  take,
+  concat,
+  concatMap,
+  fromArray,
+} from 'wonka';
 
 import { query, write, gc } from './operations';
 import { Store, SerializedStore } from './store';
-import { getSchema, parseSchema } from './helpers';
+import { getSchema } from './helpers';
 import { DocumentNode } from 'graphql';
 
 type OperationResultWithMeta = OperationResult & {
@@ -72,14 +86,10 @@ export interface CacheExchangeOpts {
 }
 
 export const cacheExchange = (opts: CacheExchangeOpts): Exchange => {
-  let schema = opts.schema;
+  let schema$ = fromValue(opts.schema);
   if (opts.schemaUrl) {
-    getSchema(opts.schemaUrl).then(result => {
-      schema = result;
-    });
+    schema$ = fromPromise(getSchema(opts.schemaUrl));
   }
-
-  schema = parseSchema(schema);
 
   return ({ forward, client }) => {
     let gcScheduled = false;
@@ -194,9 +204,18 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => {
         share
       );
 
+      const pausedOps$ = pipe(
+        sharedOps$,
+        buffer(schema$),
+        take(1),
+        concatMap(ops => fromArray(ops))
+      );
+
+      const allOps$ = concat([pausedOps$, sharedOps$]);
+
       // Filter by operations that are cacheable and attempt to query them from the cache
       const cache$ = pipe(
-        sharedOps$,
+        allOps$,
         filter(op => isCacheableQuery(op)),
         map(operationResultFromCache),
         share
@@ -229,7 +248,7 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => {
         forward(
           merge([
             pipe(
-              sharedOps$,
+              allOps$,
               filter(op => !isCacheableQuery(op))
             ),
             cacheOps$,
