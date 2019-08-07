@@ -52,7 +52,7 @@ export interface Variables {
 // This is an input operation
 export interface OperationRequest {
   query: DocumentNode;
-  variables?: Variables;
+  variables?: object;
 }
 
 // This can be any field read from the cache

@@ -45,7 +45,7 @@ export const getFieldArguments = (
 /** Returns a normalized form of variables with defaulted values */
 export const normalizeVariables = (
   node: OperationDefinitionNode,
-  input: void | Variables
+  input: void | object
 ): Variables => {
   if (node.variableDefinitions === undefined) {
     return {};
