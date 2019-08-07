@@ -1,14 +1,13 @@
 import {
   NamedTypeNode,
   NameNode,
-  OperationDefinitionNode,
   SelectionSetNode,
   SelectionNode,
   InlineFragmentNode,
   FieldNode,
 } from 'graphql';
 
-import { OperationType, SelectionSet } from '../types';
+import { SelectionSet } from '../types';
 
 /** Returns the name of a given node */
 export const getName = (node: { name: NameNode }): string => node.name.value;
@@ -38,7 +37,3 @@ export const isFieldNode = (node: SelectionNode): node is FieldNode =>
 export const isInlineFragment = (
   node: SelectionNode
 ): node is InlineFragmentNode => node.kind === 'InlineFragment';
-
-export const getOperationType = (
-  node: OperationDefinitionNode
-): OperationType => node.operation;

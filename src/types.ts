@@ -5,7 +5,6 @@ export type NullPrototype = { [K in keyof ObjectConstructor]: never };
 export type NullArray<T> = Array<null | T>;
 
 // GraphQL helper types
-export type OperationType = 'subscription' | 'mutation' | 'query';
 export type SelectionSet = ReadonlyArray<SelectionNode>;
 export interface Fragments {
   [fragmentName: string]: void | FragmentDefinitionNode;
