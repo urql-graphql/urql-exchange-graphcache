@@ -3,13 +3,14 @@ import {
   getFieldArguments,
   getName,
   getSelectionSet,
+  forEachFieldNode,
 } from '../ast';
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
 import { Entity, Link, Scalar, SelectionSet } from '../types';
 
-import { forEachFieldNode, makeContext } from './shared';
+import { makeContext } from './shared';
 import { Context, Data, Request, Result } from './types';
 
 export interface WriteResult {
@@ -64,9 +65,8 @@ const writeSelection = (
 ) => {
   entity.__typename = data.__typename;
 
-  forEachFieldNode(ctx, select, node => {
-    const { store, vars } = ctx;
-
+  const { store, fragments, vars } = ctx;
+  forEachFieldNode(select, fragments, vars, node => {
     const fieldName = getName(node);
     const fieldValue = data[getFieldAlias(node)];
     // The field's key can include arguments if it has any
@@ -125,7 +125,8 @@ const writeField = (
 
 // This is like writeSelection but assumes no parent entity exists
 const writeRoot = (ctx: Context, data: Data, select: SelectionSet) => {
-  forEachFieldNode(ctx, select, node => {
+  const { fragments, vars } = ctx;
+  forEachFieldNode(select, fragments, vars, node => {
     const fieldValue = data[getFieldAlias(node)];
 
     if (

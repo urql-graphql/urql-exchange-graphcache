@@ -1,20 +1,28 @@
 import {
+  FieldNode,
   SelectionNode,
-  DocumentNode,
   DefinitionNode,
+  DocumentNode,
+  InlineFragmentNode,
   FragmentDefinitionNode,
   OperationDefinitionNode,
 } from 'graphql';
 
-import { getName } from './node';
+import { getName, getSelectionSet } from './node';
 import { evaluateValueNode } from './variables';
-import { Fragments, Variables } from '../types';
+import { Fragments, Variables, SelectionSet } from '../types';
 
 const isFragmentNode = (
   node: DefinitionNode
 ): node is FragmentDefinitionNode => {
   return node.kind === 'FragmentDefinition';
 };
+
+const isFieldNode = (node: SelectionNode): node is FieldNode =>
+  node.kind === 'Field';
+
+const isInlineFragment = (node: SelectionNode): node is InlineFragmentNode =>
+  node.kind === 'InlineFragment';
 
 /** Returns the main operation's definition */
 export const getMainOperation = (
@@ -32,16 +40,13 @@ export const getFragments = (doc: DocumentNode): Fragments =>
     return map;
   }, {});
 
-export const shouldInclude = (
-  node: SelectionNode,
-  vars: Variables
-): boolean => {
+const shouldInclude = (node: SelectionNode, vars: Variables): boolean => {
   if (node.directives === undefined) {
     return true;
   }
 
   // Finds any @include or @skip directive that forces the node to be skipped
-  return !node.directives.some(directive => {
+  const isSkipped = node.directives.some(directive => {
     const name = getName(directive);
     // Ignore other directives
     const isInclude = name === 'include';
@@ -50,15 +55,12 @@ export const shouldInclude = (
     }
 
     // Get the first argument and expect it to be named "if"
-    const firstArg =
-      directive.arguments !== undefined ? directive.arguments[0] : null;
-    if (firstArg === null) {
-      return false;
-    } else if (getName(firstArg) !== 'if') {
+    const arg = directive.arguments ? directive.arguments[0] : null;
+    if (!arg || getName(arg) !== 'if') {
       return false;
     }
 
-    const value = evaluateValueNode(firstArg.value, vars);
+    const value = evaluateValueNode(arg.value, vars);
     if (typeof value !== 'boolean' && value !== null) {
       return false;
     }
@@ -66,5 +68,33 @@ export const shouldInclude = (
     // Return whether this directive forces us to skip
     // `@include(if: false)` or `@skip(if: true)`
     return isInclude ? !value : !!value;
+  });
+
+  return !isSkipped;
+};
+
+export const forEachFieldNode = (
+  select: SelectionSet,
+  fragments: Fragments,
+  vars: Variables,
+  cb: (node: FieldNode) => void
+) => {
+  select.forEach(node => {
+    if (!shouldInclude(node, vars)) {
+      // Directives instruct this node to be skipped
+      return;
+    } else if (!isFieldNode(node)) {
+      // A fragment is either referred to by FragmentSpread or inline
+      const def = isInlineFragment(node) ? node : fragments[getName(node)];
+
+      if (def !== undefined) {
+        const fragmentSelect = getSelectionSet(def);
+        // TODO: Check for getTypeCondition(def) to match
+        // Recursively process the fragments' selection sets
+        forEachFieldNode(fragmentSelect, fragments, vars, cb);
+      }
+    } else if (getName(node) !== '__typename') {
+      cb(node);
+    }
   });
 };

@@ -3,14 +3,14 @@ import {
   getFieldArguments,
   getName,
   getSelectionSet,
-  SelectionSet,
+  forEachFieldNode,
 } from '../ast';
 
 import { joinKeys, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { Entity, Link } from '../types';
+import { Entity, Link, SelectionSet } from '../types';
 
-import { forEachFieldNode, makeContext } from './shared';
+import { makeContext } from './shared';
 import { Context, Data, Request, Result } from './types';
 
 /** Reads a request entirely from the store */
@@ -58,9 +58,8 @@ const readSelection = (
 ): Data => {
   data.__typename = entity.__typename as string;
 
-  forEachFieldNode(ctx, select, node => {
-    const { store, vars } = ctx;
-
+  const { store, fragments, vars } = ctx;
+  forEachFieldNode(select, fragments, vars, node => {
     const fieldName = getName(node);
     // The field's key can include arguments if it has any
     const fieldKey = keyOfField(fieldName, getFieldArguments(node, vars));
