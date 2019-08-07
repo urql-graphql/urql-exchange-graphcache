@@ -2,14 +2,12 @@ import {
   getFieldAlias,
   getFieldArguments,
   getName,
-  getOperationType,
   getSelectionSet,
-  SelectionSet,
 } from '../ast';
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { Entity, Link, Scalar } from '../types';
+import { Entity, Link, Scalar, SelectionSet } from '../types';
 
 import { forEachFieldNode, makeContext } from './shared';
 import { Context, Data, Request, Result } from './types';
@@ -27,14 +25,14 @@ export const write = (store: Store, request: Request, data: Data): Result => {
 
   const { operation } = ctx;
   const select = getSelectionSet(operation);
-  const operationType = getOperationType(operation);
+  const operationType = operation.operation;
 
   if (typeof data.__typename !== 'string') {
     data.__typename = operationType;
   }
 
-  if (operationType === 'Query') {
-    writeEntity(ctx, operationType, data, select);
+  if (operationType === 'query') {
+    writeEntity(ctx, 'Query', data, select);
   } else {
     writeRoot(ctx, data, select);
   }
