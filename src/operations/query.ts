@@ -3,21 +3,34 @@ import {
   getFieldArguments,
   getName,
   getSelectionSet,
-  SelectionSet,
 } from '../ast';
 
 import { joinKeys, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { Entity, Link } from '../types';
+import {
+  Data,
+  Entity,
+  Link,
+  SelectionSet,
+  OperationRequest,
+  QueryResult,
+} from '../types';
 
 import { forEachFieldNode, makeContext } from './shared';
-import { Context, Data, Request, Result } from './types';
+
+// TODO: temp remove this
+interface Context {
+  dependencies: any;
+  completeness: any;
+  store: any;
+  vars: any;
+}
 
 /** Reads a request entirely from the store */
-export const query = (store: Store, request: Request): Result => {
+export const query = (store: Store, request: OperationRequest): QueryResult => {
   const ctx = makeContext(store, request);
   if (ctx === undefined) {
-    return { isComplete: false, dependencies: [] };
+    return { completeness: 'EMPTY', dependencies: new Set(), data: null };
   }
 
   const select = getSelectionSet(ctx.operation);
@@ -25,7 +38,7 @@ export const query = (store: Store, request: Request): Result => {
 
   return {
     data,
-    isComplete: ctx.isComplete,
+    completeness: ctx.completeness,
     dependencies: ctx.dependencies,
   };
 };
@@ -40,7 +53,7 @@ const readEntity = (
   const entity = store.find(key);
   if (entity === null) {
     // Cache Incomplete: A missing entity for a key means it wasn't cached
-    ctx.isComplete = false;
+    ctx.completeness = 'EMPTY';
     return null;
   } else if (key !== 'Query') {
     ctx.dependencies.push(key);
@@ -73,7 +86,7 @@ const readSelection = (
 
     if (fieldValue === undefined) {
       // Cache Incomplete: A missing field means it wasn't cached
-      ctx.isComplete = false;
+      ctx.completeness = 'EMPTY';
       data[fieldAlias] = null;
     } else if (node.selectionSet === undefined || fieldValue !== null) {
       data[fieldAlias] = fieldValue;
@@ -84,7 +97,7 @@ const readSelection = (
 
       // Cache Incomplete: A missing link for a field means it's not cached
       if (link === undefined) {
-        ctx.isComplete = false;
+        ctx.completeness = 'EMPTY';
         data[fieldAlias] = null;
       } else {
         const prevData = data[fieldAlias] as Data;

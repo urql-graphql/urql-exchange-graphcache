@@ -4,15 +4,15 @@ import {
   getFragments,
   getMainOperation,
   getName,
-  getNormalizedVars,
+  normalizeVariables,
   getSelectionSet,
   isFieldNode,
   isInlineFragment,
-  SelectionSet,
   shouldInclude,
 } from '../ast';
 
 import { Store } from '../store';
+import { SelectionSet } from '../types';
 import { Context, Request } from './types';
 
 export const makeContext = (store: Store, request: Request): void | Context => {
@@ -24,7 +24,7 @@ export const makeContext = (store: Store, request: Request): void | Context => {
 
   const dependencies = [];
   const fragments = getFragments(query);
-  const vars = getNormalizedVars(operation, variables);
+  const vars = normalizeVariables(operation, variables);
   const isComplete = true;
 
   return { dependencies, isComplete, operation, fragments, vars, store };
