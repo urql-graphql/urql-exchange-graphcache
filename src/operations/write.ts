@@ -7,20 +7,31 @@ import {
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { Entity, Link, Scalar, SelectionSet } from '../types';
+import {
+  Entity,
+  Link,
+  Scalar,
+  SelectionSet,
+  Data,
+  WriteResult,
+  OperationRequest,
+} from '../types';
 
-import { forEachFieldNode, makeContext } from './shared';
-import { Context, Data, Request, Result } from './types';
+import { forEachFieldNode, makeContext, Context } from './shared';
 
-export interface WriteResult {
+export interface WriteResultTemp {
   touched: string[];
 }
 
 /** Writes a request given its response to the store */
-export const write = (store: Store, request: Request, data: Data): Result => {
+export const write = (
+  store: Store,
+  request: OperationRequest,
+  data: Data
+): WriteResult => {
   const ctx = makeContext(store, request);
   if (ctx === undefined) {
-    return { isComplete: false, dependencies: [] };
+    return { dependencies: new Set<string>() };
   }
 
   const { operation } = ctx;
@@ -37,7 +48,7 @@ export const write = (store: Store, request: Request, data: Data): Result => {
     writeRoot(ctx, data, select);
   }
 
-  return { isComplete: true, dependencies: ctx.dependencies };
+  return { dependencies: ctx.dependencies };
 };
 
 const writeEntity = (
@@ -49,7 +60,7 @@ const writeEntity = (
   const { store } = ctx;
   const entity = store.findOrCreate(key);
   if (key !== 'Query') {
-    ctx.dependencies.push(key);
+    ctx.dependencies.add(key);
   }
 
   writeSelection(ctx, entity, key, data, select);
@@ -73,7 +84,7 @@ const writeSelection = (
     const fieldKey = keyOfField(fieldName, getFieldArguments(node, vars));
     const childFieldKey = joinKeys(key, fieldKey);
     if (key === 'Query' && fieldName !== '__typename') {
-      ctx.dependencies.push(childFieldKey);
+      ctx.dependencies.add(childFieldKey);
     }
 
     if (
@@ -91,6 +102,7 @@ const writeSelection = (
 
       // Process the field and write links for the child entities that have been written
       const { selections: fieldSelect } = node.selectionSet;
+      // TODO: apparently this can be null meaning no intersection with SystemFields.
       const link = writeField(ctx, childFieldKey, fieldValue, fieldSelect);
       store.setLink(childFieldKey, link);
     }
@@ -134,6 +146,7 @@ const writeRoot = (ctx: Context, data: Data, select: SelectionSet) => {
       !isScalar(fieldValue)
     ) {
       const { selections: fieldSelect } = node.selectionSet;
+      // TODO: apparently this can be null meaning no intersection with SystemFields.
       writeRootField(ctx, fieldValue, fieldSelect);
     }
   });

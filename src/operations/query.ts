@@ -16,21 +16,17 @@ import {
   QueryResult,
 } from '../types';
 
-import { forEachFieldNode, makeContext } from './shared';
-
-// TODO: temp remove this
-interface Context {
-  dependencies: any;
-  completeness: any;
-  store: any;
-  vars: any;
-}
+import { forEachFieldNode, makeContext, Context } from './shared';
 
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
   const ctx = makeContext(store, request);
   if (ctx === undefined) {
-    return { completeness: 'EMPTY', dependencies: new Set(), data: null };
+    return {
+      completeness: 'EMPTY',
+      dependencies: new Set<string>(),
+      data: null,
+    };
   }
 
   const select = getSelectionSet(ctx.operation);
@@ -56,7 +52,7 @@ const readEntity = (
     ctx.completeness = 'EMPTY';
     return null;
   } else if (key !== 'Query') {
-    ctx.dependencies.push(key);
+    ctx.dependencies.add(key);
   }
 
   return readSelection(ctx, entity, key, select, data);
@@ -81,7 +77,7 @@ const readSelection = (
     const fieldAlias = getFieldAlias(node);
     const childFieldKey = joinKeys(key, fieldKey);
     if (key === 'Query') {
-      ctx.dependencies.push(childFieldKey);
+      ctx.dependencies.add(childFieldKey);
     }
 
     if (fieldValue === undefined) {

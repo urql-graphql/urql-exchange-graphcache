@@ -12,22 +12,47 @@ import {
 } from '../ast';
 
 import { Store } from '../store';
-import { SelectionSet } from '../types';
-import { Context, Request } from './types';
+import {
+  SelectionSet,
+  Variables,
+  OperationRequest,
+  Fragments,
+  Completeness,
+} from '../types';
 
-export const makeContext = (store: Store, request: Request): void | Context => {
+export interface Context {
+  dependencies: Set<string>;
+  completeness: Completeness;
+  vars: Variables;
+  fragments: Fragments;
+  store: Store;
+  // TODO: type this
+  operation: any;
+}
+
+export const makeContext = (
+  store: Store,
+  request: OperationRequest
+): void | Context => {
   const { query, variables } = request;
   const operation = getMainOperation(query);
   if (operation === undefined) {
     return;
   }
 
-  const dependencies = [];
+  const dependencies = new Set<string>();
   const fragments = getFragments(query);
   const vars = normalizeVariables(operation, variables);
-  const isComplete = true;
+  const completeness = 'FULL';
 
-  return { dependencies, isComplete, operation, fragments, vars, store };
+  return {
+    dependencies,
+    completeness,
+    operation,
+    fragments,
+    vars,
+    store,
+  };
 };
 
 export const forEachFieldNode = (
