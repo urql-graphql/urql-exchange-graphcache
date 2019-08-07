@@ -27,10 +27,18 @@ const isInlineFragment = (node: SelectionNode): node is InlineFragmentNode =>
 /** Returns the main operation's definition */
 export const getMainOperation = (
   doc: DocumentNode
-): OperationDefinitionNode | void => {
-  return doc.definitions.find(
+): OperationDefinitionNode => {
+  const operation = doc.definitions.find(
     node => node.kind === 'OperationDefinition'
   ) as OperationDefinitionNode;
+
+  if (!operation) {
+    throw new TypeError(
+      'OperationDefinition is missing from GraphQL DocumentNode'
+    );
+  }
+
+  return operation;
 };
 
 /** Returns a mapping from fragment names to their selections */
