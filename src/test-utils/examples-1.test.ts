@@ -39,12 +39,8 @@ it('passes the "getting-started" example', () => {
 
   const writeRes = write(store, { query: Todos }, todosData);
 
-  expect(writeRes.dependencies).toEqual([
-    'Query.todos',
-    'Todo:0',
-    'Todo:1',
-    'Todo:2',
-  ]);
+  const expectedSet = new Set([['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']]);
+  expect(writeRes.dependencies).toEqual(expectedSet);
 
   expect(store.serialize()).toMatchSnapshot();
 
