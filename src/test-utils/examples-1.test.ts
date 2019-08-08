@@ -52,7 +52,7 @@ it('passes the "getting-started" example', () => {
 
   expect(queryRes.data).toEqual(todosData);
   expect(queryRes.dependencies).toEqual(writeRes.dependencies);
-  expect(queryRes.isComplete).toBe(true);
+  expect(queryRes.completeness).toBe('FULL');
 
   const mutatedTodo = {
     ...todosData.todos[2],
@@ -73,7 +73,7 @@ it('passes the "getting-started" example', () => {
 
   queryRes = query(store, { query: Todos });
 
-  expect(queryRes.isComplete).toBe(true);
+  expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.data).toEqual({
     ...todosData,
     todos: [...todosData.todos.slice(0, 2), mutatedTodo],
