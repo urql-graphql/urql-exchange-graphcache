@@ -91,7 +91,7 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
   // The passed triggerOp is ignored however
   const processDependencies = (
     triggerOp: Operation,
-    dependencies: string[]
+    dependencies: Set<string>
   ) => {
     const pendingOperations = new Set<number>();
 
@@ -144,7 +144,7 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
 
     return {
       operation,
-      isComplete,
+      completeness: isComplete ? 'FULL' : 'EMPTY',
       data: res.data,
     };
   };
