@@ -103,7 +103,13 @@ const writeSelection = (
       // Process the field and write links for the child entities that have been written
       const { selections: fieldSelect } = node.selectionSet;
       // TODO: apparently this can be null meaning no intersection with SystemFields.
-      const link = writeField(ctx, childFieldKey, fieldValue, fieldSelect);
+      // TODO: type
+      const link = writeField(
+        ctx,
+        childFieldKey,
+        fieldValue as Data,
+        fieldSelect
+      );
       store.setLink(childFieldKey, link);
     }
   });
@@ -112,7 +118,7 @@ const writeSelection = (
 const writeField = (
   ctx: Context,
   parentFieldKey: string,
-  data: Data | Data[] | null,
+  data: Data,
   select: SelectionSet
 ): Link => {
   if (Array.isArray(data)) {
@@ -147,17 +153,14 @@ const writeRoot = (ctx: Context, data: Data, select: SelectionSet) => {
     ) {
       const { selections: fieldSelect } = node.selectionSet;
       // TODO: apparently this can be null meaning no intersection with SystemFields.
-      writeRootField(ctx, fieldValue, fieldSelect);
+      // TODO: type
+      writeRootField(ctx, fieldValue as Data, fieldSelect);
     }
   });
 };
 
 // This is like writeField but doesn't fall back to a generated key
-const writeRootField = (
-  ctx: Context,
-  data: Data | Data[] | null,
-  select: SelectionSet
-) => {
+const writeRootField = (ctx: Context, data: Data, select: SelectionSet) => {
   if (Array.isArray(data)) {
     return data.map(item => writeRootField(ctx, item, select));
   } else if (data === null) {
