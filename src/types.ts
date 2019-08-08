@@ -74,13 +74,3 @@ export interface ResolverConfig {
 
 // Completeness of the query result
 export type Completeness = 'EMPTY' | 'PARTIAL' | 'FULL';
-
-export interface QueryResult {
-  completeness: Completeness;
-  data: Data | null;
-  dependencies: Set<string>;
-}
-
-export interface WriteResult {
-  dependencies: Set<string>;
-}
