@@ -142,8 +142,6 @@ exports[`entity list on query and inline fragment 2`] = `
 Set {
   "Query.items",
   "Item:1",
-  "Query.items",
-  "Item:1",
 }
 `;
 
@@ -171,8 +169,6 @@ Object {
 
 exports[`entity list on query and spread fragment 2`] = `
 Set {
-  "Query.items",
-  "Item:1",
   "Query.items",
   "Item:1",
 }
@@ -419,7 +415,6 @@ Object {
 exports[`non-IDable entity on query 2`] = `
 Set {
   "Query.item",
-  "Query.item",
 }
 `;
 
@@ -443,7 +438,6 @@ Object {
 
 exports[`non-keyable entity on query 2`] = `
 Set {
-  "Query.item",
   "Query.item",
 }
 `;

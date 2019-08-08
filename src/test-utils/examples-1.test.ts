@@ -37,9 +37,10 @@ it('passes the "getting-started" example', () => {
     ],
   };
 
-  const writeRes = write(store, { query: Todos }, todosData);
+  // TODO: type
+  const writeRes = write(store, { query: Todos }, todosData as any);
 
-  const expectedSet = new Set([['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']]);
+  const expectedSet = new Set(['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']);
   expect(writeRes.dependencies).toEqual(expectedSet);
 
   expect(store.serialize()).toMatchSnapshot();
@@ -61,10 +62,11 @@ it('passes the "getting-started" example', () => {
     {
       __typename: 'Mutation',
       toggleTodo: mutatedTodo,
-    }
+      // TODO: type
+    } as any
   );
 
-  expect(mutationRes.dependencies).toEqual(['Todo:2']);
+  expect(mutationRes.dependencies).toEqual(new Set(['Todo:2']));
   expect(store.serialize()).toMatchSnapshot();
 
   queryRes = query(store, { query: Todos });
