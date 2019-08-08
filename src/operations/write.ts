@@ -1,26 +1,38 @@
 import {
+  forEachFieldNode,
   getFieldAlias,
   getFieldArguments,
+  getFragments,
+  getMainOperation,
   getName,
   getSelectionSet,
+  normalizeVariables,
 } from '../ast';
 
-import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
-import { Store } from '../store';
 import {
+  NullArray,
+  Fragments,
+  Variables,
+  Data,
   Entity,
   Link,
   Scalar,
   SelectionSet,
-  Data,
-  WriteResult,
   OperationRequest,
 } from '../types';
 
-import { forEachFieldNode, makeContext, Context } from './shared';
+import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
+import { Store } from '../store';
 
-export interface WriteResultTemp {
-  touched: string[];
+export interface WriteResult {
+  dependencies: Set<string>;
+}
+
+interface Context {
+  result: WriteResult;
+  store: Store;
+  variables: Variables;
+  fragments: Fragments;
 }
 
 /** Writes a request given its response to the store */
@@ -29,26 +41,24 @@ export const write = (
   request: OperationRequest,
   data: Data
 ): WriteResult => {
-  const ctx = makeContext(store, request);
-  if (ctx === undefined) {
-    return { dependencies: new Set<string>() };
-  }
+  const operation = getMainOperation(request.query);
+  const result: WriteResult = { dependencies: new Set() };
 
-  const { operation } = ctx;
+  const ctx: Context = {
+    variables: normalizeVariables(operation, request.variables),
+    fragments: getFragments(request.query),
+    result,
+    store,
+  };
+
   const select = getSelectionSet(operation);
-  const operationType = operation.operation;
-
-  if (typeof data.__typename !== 'string') {
-    data.__typename = operationType;
-  }
-
-  if (operationType === 'query') {
+  if (operation.operation === 'query') {
     writeEntity(ctx, 'Query', data, select);
   } else {
     writeRoot(ctx, data, select);
   }
 
-  return { dependencies: ctx.dependencies };
+  return result;
 };
 
 const writeEntity = (
@@ -60,7 +70,7 @@ const writeEntity = (
   const { store } = ctx;
   const entity = store.findOrCreate(key);
   if (key !== 'Query') {
-    ctx.dependencies.add(key);
+    ctx.result.dependencies.add(key);
   }
 
   writeSelection(ctx, entity, key, data, select);
@@ -73,18 +83,17 @@ const writeSelection = (
   data: Data,
   select: SelectionSet
 ) => {
-  entity.__typename = data.__typename;
+  entity.__typename = data.__typename as string;
 
-  forEachFieldNode(ctx, select, node => {
-    const { store, vars } = ctx;
-
+  const { store, fragments, variables } = ctx;
+  forEachFieldNode(select, fragments, variables, node => {
     const fieldName = getName(node);
     const fieldValue = data[getFieldAlias(node)];
-    // The field's key can include arguments if it has any
-    const fieldKey = keyOfField(fieldName, getFieldArguments(node, vars));
+    const fieldArgs = getFieldArguments(node, variables);
+    const fieldKey = keyOfField(fieldName, fieldArgs);
     const childFieldKey = joinKeys(key, fieldKey);
     if (key === 'Query' && fieldName !== '__typename') {
-      ctx.dependencies.add(childFieldKey);
+      ctx.result.dependencies.add(childFieldKey);
     }
 
     if (
@@ -102,14 +111,7 @@ const writeSelection = (
 
       // Process the field and write links for the child entities that have been written
       const { selections: fieldSelect } = node.selectionSet;
-      // TODO: apparently this can be null meaning no intersection with SystemFields.
-      // TODO: type
-      const link = writeField(
-        ctx,
-        childFieldKey,
-        fieldValue as Data,
-        fieldSelect
-      );
+      const link = writeField(ctx, childFieldKey, fieldValue, fieldSelect);
       store.setLink(childFieldKey, link);
     }
   });
@@ -118,7 +120,7 @@ const writeSelection = (
 const writeField = (
   ctx: Context,
   parentFieldKey: string,
-  data: Data,
+  data: null | Data | NullArray<Data>,
   select: SelectionSet
 ): Link => {
   if (Array.isArray(data)) {
@@ -134,7 +136,6 @@ const writeField = (
     return null;
   }
 
-  // Write entity to key that falls back to the given parentFieldKey
   const entityKey = keyOfEntity(data);
   const key = entityKey !== null ? entityKey : parentFieldKey;
   writeEntity(ctx, key, data, select);
@@ -143,7 +144,8 @@ const writeField = (
 
 // This is like writeSelection but assumes no parent entity exists
 const writeRoot = (ctx: Context, data: Data, select: SelectionSet) => {
-  forEachFieldNode(ctx, select, node => {
+  const { fragments, variables } = ctx;
+  forEachFieldNode(select, fragments, variables, node => {
     const fieldValue = data[getFieldAlias(node)];
 
     if (
@@ -152,15 +154,17 @@ const writeRoot = (ctx: Context, data: Data, select: SelectionSet) => {
       !isScalar(fieldValue)
     ) {
       const { selections: fieldSelect } = node.selectionSet;
-      // TODO: apparently this can be null meaning no intersection with SystemFields.
-      // TODO: type
-      writeRootField(ctx, fieldValue as Data, fieldSelect);
+      writeRootField(ctx, fieldValue, fieldSelect);
     }
   });
 };
 
 // This is like writeField but doesn't fall back to a generated key
-const writeRootField = (ctx: Context, data: Data, select: SelectionSet) => {
+const writeRootField = (
+  ctx: Context,
+  data: null | Data | NullArray<Data>,
+  select: SelectionSet
+) => {
   if (Array.isArray(data)) {
     return data.map(item => writeRootField(ctx, item, select));
   } else if (data === null) {
@@ -177,7 +181,7 @@ const writeRootField = (ctx: Context, data: Data, select: SelectionSet) => {
 // Without a typename field on Data or Data[] the result must be a scalar
 // This effectively prevents us from writing Data into the store that
 // doesn't have a __typename field
-const isScalar = (x: Scalar | Data | Array<Scalar | Data>): x is Scalar => {
+const isScalar = (x: any): x is Scalar | Scalar[] => {
   if (Array.isArray(x)) {
     return x.some(isScalar);
   }

@@ -35,7 +35,7 @@ export interface DataFields {
   [fieldName: string]: Scalar | Scalar[] | Data | NullArray<Data>;
 }
 
-export type Data = SystemFields & DataFields;
+export type Data = NullPrototype & SystemFields & DataFields;
 
 // Links are relations between entities
 export type Link<Key = string> = null | Key | NullArray<Key>;
@@ -52,7 +52,7 @@ export interface Variables {
 // This is an input operation
 export interface OperationRequest {
   query: DocumentNode;
-  variables?: Variables;
+  variables?: object;
 }
 
 // This can be any field read from the cache

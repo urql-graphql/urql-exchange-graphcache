@@ -1,11 +1,4 @@
-import {
-  NamedTypeNode,
-  NameNode,
-  SelectionSetNode,
-  SelectionNode,
-  InlineFragmentNode,
-  FieldNode,
-} from 'graphql';
+import { NamedTypeNode, NameNode, SelectionSetNode, FieldNode } from 'graphql';
 
 import { SelectionSet } from '../types';
 
@@ -28,12 +21,3 @@ export const getTypeCondition = ({
   typeCondition?: NamedTypeNode;
 }): string | null =>
   typeCondition !== undefined ? getName(typeCondition) : null;
-
-/** Checks whether a SelectionNode is a FieldNode */
-export const isFieldNode = (node: SelectionNode): node is FieldNode =>
-  node.kind === 'Field';
-
-/** Checks whether a SelectionNode is an InlineFragmentNode */
-export const isInlineFragment = (
-  node: SelectionNode
-): node is InlineFragmentNode => node.kind === 'InlineFragment';

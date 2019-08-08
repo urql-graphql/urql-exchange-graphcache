@@ -1,42 +1,65 @@
 import {
+  forEachFieldNode,
   getFieldAlias,
   getFieldArguments,
+  getFragments,
+  getMainOperation,
   getName,
   getSelectionSet,
+  normalizeVariables,
 } from '../ast';
 
-import { joinKeys, keyOfField } from '../helpers';
-import { Store } from '../store';
 import {
+  Fragments,
+  Variables,
   Data,
   Entity,
   Link,
   SelectionSet,
+  Completeness,
   OperationRequest,
-  QueryResult,
 } from '../types';
 
-import { forEachFieldNode, makeContext, Context } from './shared';
+import { joinKeys, keyOfField } from '../helpers';
+import { Store } from '../store';
+
+export interface QueryResult {
+  completeness: Completeness;
+  dependencies: Set<string>;
+  data: null | Data;
+}
+
+interface Context {
+  result: QueryResult;
+  store: Store;
+  variables: Variables;
+  fragments: Fragments;
+}
 
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
-  const ctx = makeContext(store, request);
-  if (ctx === undefined) {
-    return {
-      completeness: 'EMPTY',
-      dependencies: new Set<string>(),
-      data: null,
-    };
+  const operation = getMainOperation(request.query);
+  const root: Data = Object.create(null);
+
+  const result: QueryResult = {
+    completeness: 'FULL',
+    dependencies: new Set(),
+    data: root,
+  };
+
+  const ctx: Context = {
+    variables: normalizeVariables(operation, request.variables),
+    fragments: getFragments(request.query),
+    result,
+    store,
+  };
+
+  result.data = readEntity(ctx, 'Query', getSelectionSet(operation), root);
+  if (result.completeness === 'EMPTY') {
+    result.data = null;
   }
 
-  const select = getSelectionSet(ctx.operation);
-  const data = readEntity(ctx, 'Query', select, Object.create(null));
-
-  return {
-    data,
-    completeness: ctx.completeness,
-    dependencies: ctx.dependencies,
-  };
+  return result;
 };
 
 const readEntity = (
@@ -49,10 +72,10 @@ const readEntity = (
   const entity = store.find(key);
   if (entity === null) {
     // Cache Incomplete: A missing entity for a key means it wasn't cached
-    ctx.completeness = 'EMPTY';
+    ctx.result.completeness = 'EMPTY';
     return null;
   } else if (key !== 'Query') {
-    ctx.dependencies.add(key);
+    ctx.result.dependencies.add(key);
   }
 
   return readSelection(ctx, entity, key, select, data);
@@ -65,24 +88,22 @@ const readSelection = (
   select: SelectionSet,
   data: Data
 ): Data => {
-  data.__typename = entity.__typename as string;
-
-  forEachFieldNode(ctx, select, node => {
-    const { store, vars } = ctx;
-
+  data.__typename = entity.__typename;
+  const { store, fragments, variables } = ctx;
+  forEachFieldNode(select, fragments, variables, node => {
     const fieldName = getName(node);
-    // The field's key can include arguments if it has any
-    const fieldKey = keyOfField(fieldName, getFieldArguments(node, vars));
+    const fieldArgs = getFieldArguments(node, variables);
+    const fieldKey = keyOfField(fieldName, fieldArgs);
     const fieldValue = entity[fieldKey];
     const fieldAlias = getFieldAlias(node);
     const childFieldKey = joinKeys(key, fieldKey);
     if (key === 'Query') {
-      ctx.dependencies.add(childFieldKey);
+      ctx.result.dependencies.add(childFieldKey);
     }
 
     if (fieldValue === undefined) {
       // Cache Incomplete: A missing field means it wasn't cached
-      ctx.completeness = 'EMPTY';
+      ctx.result.completeness = 'EMPTY';
       data[fieldAlias] = null;
     } else if (node.selectionSet === undefined || fieldValue !== null) {
       data[fieldAlias] = fieldValue;
@@ -93,7 +114,7 @@ const readSelection = (
 
       // Cache Incomplete: A missing link for a field means it's not cached
       if (link === undefined) {
-        ctx.completeness = 'EMPTY';
+        ctx.result.completeness = 'EMPTY';
         data[fieldAlias] = null;
       } else {
         const prevData = data[fieldAlias] as Data;
