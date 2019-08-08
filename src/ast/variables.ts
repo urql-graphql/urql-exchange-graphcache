@@ -18,7 +18,7 @@ export const evaluateValueNode = (node: ValueNode, vars: Variables) => {
       return node.fields.reduce((obj, field) => {
         obj[getName(field)] = evaluateValueNode(field.value, vars);
         return obj;
-      }, {});
+      }, Object.create(null));
     case 'Variable':
       const varValue = vars[getName(node)];
       return varValue !== undefined ? varValue : null;
@@ -39,7 +39,7 @@ export const getFieldArguments = (
   return node.arguments.reduce((args, arg) => {
     args[getName(arg)] = evaluateValueNode(arg.value, vars);
     return args;
-  }, {});
+  }, Object.create(null));
 };
 
 /** Returns a normalized form of variables with defaulted values */
@@ -66,5 +66,5 @@ export const normalizeVariables = (
 
     vars[name] = value;
     return vars;
-  }, {});
+  }, Object.create(null));
 };
