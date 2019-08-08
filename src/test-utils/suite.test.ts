@@ -310,6 +310,7 @@ it('nested entity list on query', () => {
     `,
     data: {
       // This is the same as above, but with a nested array and added null values
+      __typename: 'Query',
       items: [
         { __typename: 'Item', id: 1 },
         [{ __typename: 'Item', id: 2 }, null],

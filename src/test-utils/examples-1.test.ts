@@ -37,8 +37,7 @@ it('passes the "getting-started" example', () => {
     ],
   };
 
-  // TODO: type
-  const writeRes = write(store, { query: Todos }, todosData as any);
+  const writeRes = write(store, { query: Todos }, todosData);
 
   const expectedSet = new Set(['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']);
   expect(writeRes.dependencies).toEqual(expectedSet);
@@ -62,8 +61,7 @@ it('passes the "getting-started" example', () => {
     {
       __typename: 'Mutation',
       toggleTodo: mutatedTodo,
-      // TODO: type
-    } as any
+    }
   );
 
   expect(mutationRes.dependencies).toEqual(new Set(['Todo:2']));
