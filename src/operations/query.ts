@@ -18,6 +18,7 @@ import {
   SelectionSet,
   Completeness,
   OperationRequest,
+  Resolver,
 } from '../types';
 
 import { joinKeys, keyOfField } from '../helpers';
@@ -35,6 +36,9 @@ interface Context {
   variables: Variables;
   fragments: Fragments;
 }
+
+const isFunction = (possibleFunction: any) =>
+  typeof possibleFunction === 'function';
 
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
@@ -78,7 +82,14 @@ const readEntity = (
     ctx.result.dependencies.add(key);
   }
 
-  return readSelection(ctx, entity, key, select, data);
+  return readSelection(
+    ctx,
+    entity,
+    key,
+    select,
+    data,
+    store.resolvers[entity.__typename]
+  );
 };
 
 const readSelection = (
@@ -86,7 +97,8 @@ const readSelection = (
   entity: Entity,
   key: string,
   select: SelectionSet,
-  data: Data
+  data: Data,
+  resolvers: { [fieldName: string]: Resolver }
 ): Data => {
   data.__typename = entity.__typename;
   const { store, fragments, variables } = ctx;
@@ -94,7 +106,13 @@ const readSelection = (
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
     const fieldKey = keyOfField(fieldName, fieldArgs);
-    const fieldValue = entity[fieldKey];
+
+    const fieldValue =
+      resolvers && isFunction(resolvers[fieldKey])
+        ? // @ts-ignore
+          resolvers[fieldKey](entity, fieldArgs, {}, {} as any)
+        : entity[fieldKey];
+
     const fieldAlias = getFieldAlias(node);
     const childFieldKey = joinKeys(key, fieldKey);
     if (key === 'Query') {
@@ -118,7 +136,13 @@ const readSelection = (
         data[fieldAlias] = null;
       } else {
         const prevData = data[fieldAlias] as Data;
-        data[fieldAlias] = readField(ctx, link, fieldSelect, prevData);
+        data[fieldAlias] = readField(
+          ctx,
+          link,
+          fieldSelect,
+          prevData,
+          resolvers
+        );
       }
     }
   });
@@ -130,13 +154,14 @@ const readField = (
   ctx: Context,
   link: Link,
   select: SelectionSet,
-  prevData: void | Data | Data[]
+  prevData: void | Data | Data[],
+  resolvers
 ): null | Data | Data[] => {
   if (Array.isArray(link)) {
     // @ts-ignore: Link cannot be expressed as a recursive type
     return link.map((childLink, index) => {
       const data = prevData !== undefined ? prevData[index] : undefined;
-      return readField(ctx, childLink, select, data);
+      return readField(ctx, childLink, select, data, resolvers);
     });
   } else if (link === null) {
     return null;
