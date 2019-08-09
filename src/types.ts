@@ -58,12 +58,21 @@ export interface OperationRequest {
 // This can be any field read from the cache
 export type ResolverResult = Scalar | Scalar[] | Entity | NullArray<Entity>;
 
+export interface GraphQLResolveInfo {
+  fieldName: string;
+  path: Array<string | number>;
+  fragments: Fragments;
+  rootValue: any;
+  operation: {};
+  variables: Variables;
+}
+
 // Cache resolvers are user-defined to overwrite an entity field result
 export type Resolver = (
   parent: Entity,
   args: Variables,
   cache: {},
-  info: {}
+  info: GraphQLResolveInfo
 ) => ResolverResult;
 
 export interface ResolverConfig {
