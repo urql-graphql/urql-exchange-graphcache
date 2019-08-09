@@ -109,8 +109,19 @@ const readSelection = (
 
     const fieldValue =
       resolvers && isFunction(resolvers[fieldKey])
-        ? // @ts-ignore
-          resolvers[fieldKey](entity, fieldArgs, {}, {} as any)
+        ? resolvers[fieldKey](
+            entity,
+            fieldArgs as Variables,
+            {},
+            {
+              fieldName,
+              path: [],
+              fragments: ctx.fragments,
+              rootValue: null,
+              operation: {},
+              variables: fieldArgs as Variables,
+            }
+          )
         : entity[fieldKey];
 
     const fieldAlias = getFieldAlias(node);
