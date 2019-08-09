@@ -1,4 +1,4 @@
-import { Entity, Link, LinksMap, EntitiesMap } from '../types';
+import { Entity, Link, LinksMap, EntitiesMap, ResolverConfig } from '../types';
 import { assignObjectToMap, objectOfMap } from './utils';
 
 export interface SerializedStore {
@@ -10,9 +10,12 @@ export class Store {
   records: EntitiesMap;
   links: LinksMap;
 
-  constructor(initial?: SerializedStore) {
+  resolvers: ResolverConfig;
+
+  constructor(initial?: SerializedStore, resolvers?: ResolverConfig) {
     this.records = new Map();
     this.links = new Map();
+    this.resolvers = resolvers || {};
 
     if (initial !== undefined) {
       assignObjectToMap(this.records, initial.records);
