@@ -83,14 +83,16 @@ export class Store {
     parent: Entity,
     key: string
   ): Entity[] | Entity | Primitive | Scalar {
-    let result = parent[key];
+    const result = parent[key];
     if (result === null) {
       const link = this.readLink(`${parent.__typename}:${parent.id}.${key}`);
       if (!link) return null;
-      return Array.isArray(link)
-        ? // @ts-ignore: Link cannot be expressed as a recursive type
-          link.map((key: string) => this.find(key))
-        : this.find(link);
+      else if (Array.isArray(link)) {
+        // @ts-ignore: Link cannot be expressed as a recursive type
+        return link.map((key: string) => this.find(key));
+      } else {
+        return this.find(link);
+      }
     }
     return result;
   }
