@@ -88,7 +88,6 @@ const readEntity = (
       store.resolvers[key] &&
       isFunction(store.resolvers[key][entity.__typename])
     ) {
-      // @ts-ignore
       entity = store.resolvers[key][entity.__typename](
         // TODO: arguments...
         {} as any,
@@ -102,7 +101,7 @@ const readEntity = (
           operation: {},
           variables,
         }
-      );
+      ) as Entity | null;
     }
   } else {
     const parentFieldName = key.split(':')[0];
@@ -111,7 +110,6 @@ const readEntity = (
       store.resolvers[parentFieldName] &&
       isFunction(store.resolvers[parentFieldName][entity.__typename])
     ) {
-      // @ts-ignore
       entity = store.resolvers[parentFieldName][entity.__typename](
         // TODO: arguments...
         {} as any,
@@ -125,13 +123,13 @@ const readEntity = (
           operation: {},
           variables,
         }
-      );
+      ) as Entity | null;
     }
   }
 
   return readSelection(
     ctx,
-    // TODO: entity is possibly null
+    // TODO: entity is possibly null and null prototype issue
     // @ts-ignore
     entity,
     key,

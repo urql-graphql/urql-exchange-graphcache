@@ -57,7 +57,12 @@ export interface OperationRequest {
 }
 
 // This can be any field read from the cache
-export type ResolverResult = Scalar | Scalar[] | Entity | NullArray<Entity>;
+export type ResolverResult =
+  | Scalar
+  | Scalar[]
+  | Entity
+  | NullArray<Entity>
+  | null;
 
 export interface GraphQLResolveInfo {
   fieldName: string;

@@ -74,7 +74,7 @@ export class Store {
     id,
   }: {
     __typename: string;
-    id?: string;
+    id: string;
   }): Entity | null {
     return this.find(`${__typename}:${id}`);
   }
@@ -99,6 +99,10 @@ export class Store {
 
   resolveEntities(__typename: string): Entity[] | null {
     const result: Entity[] = [];
+    // TODO: this should have an easier way...
+    // We have 'Query.todos' => [ 'Todo:0', 'Todo:1', 'Todo:2' ] } in links
+    // This however does not work until we know that we need "todos" and that
+    // the parent is Query.
     this.records.forEach((entity, key) => {
       if (key.startsWith(__typename)) result.push(entity);
     });
