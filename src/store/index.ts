@@ -1,4 +1,12 @@
-import { Entity, Link, LinksMap, EntitiesMap, ResolverConfig } from '../types';
+import {
+  Entity,
+  Link,
+  LinksMap,
+  EntitiesMap,
+  ResolverConfig,
+  Primitive,
+  Scalar,
+} from '../types';
 import { assignObjectToMap, objectOfMap } from './utils';
 
 export interface SerializedStore {
@@ -59,5 +67,30 @@ export class Store {
 
   removeLink(key: string): void {
     this.links.delete(key);
+  }
+
+  resolveEntity({
+    __typename,
+    id,
+  }: {
+    __typename: string;
+    id?: string;
+  }): Entity | null {
+    return this.find(`${__typename}:${id}`);
+  }
+
+  resolveProperty(parent: Entity, key: string): Link | Primitive | Scalar {
+    const result = parent[key];
+    // TODO: arguments to achieve correct key
+    if (result === null) return this.links[key];
+    return result;
+  }
+
+  resolveEntities(__typename: string): Entity[] | null {
+    const result: Entity[] = [];
+    this.records.forEach((entity, key) => {
+      if (key.startsWith(__typename)) result.push(entity);
+    });
+    return result;
   }
 }
