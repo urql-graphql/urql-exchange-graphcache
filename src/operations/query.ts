@@ -72,8 +72,8 @@ const readEntity = (
   select: SelectionSet,
   data: Data
 ): Data | null => {
-  const { store } = ctx;
-  const entity = store.find(key);
+  const { store, variables } = ctx;
+  let entity = store.find(key);
   if (entity === null) {
     // Cache Incomplete: A missing entity for a key means it wasn't cached
     ctx.result.completeness = 'EMPTY';
@@ -82,12 +82,38 @@ const readEntity = (
     ctx.result.dependencies.add(key);
   }
 
+  if (key === 'Query') {
+    if (isFunction(store.resolvers[key][entity.__typename])) {
+      // @ts-ignore
+      entity = store.resolvers[key][entity.__typename](
+        // TODO: arguments...
+        {} as any,
+        variables,
+        store,
+        {
+          fieldName: '',
+          path: [],
+          fragments: ctx.fragments,
+          rootValue: null,
+          operation: {},
+          variables,
+        }
+      );
+    }
+  } else {
+    // TODO: how do we get the parent type? Since at this
+    // point we are dealing with __typename:id as key.
+  }
+
   return readSelection(
     ctx,
+    // TODO: entity is possibly null
+    // @ts-ignore
     entity,
     key,
     select,
     data,
+    // @ts-ignore
     store.resolvers[entity.__typename]
   );
 };
