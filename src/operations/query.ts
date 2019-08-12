@@ -208,7 +208,7 @@ const readSelection = (
 
 const readField = (
   ctx: Context,
-  link: Link,
+  link: Link | Link[],
   select: SelectionSet,
   prevData: void | Data | Data[],
   resolvers

@@ -53,7 +53,7 @@ export class Store {
     return record;
   }
 
-  readLink(key: string): void | Link {
+  readLink(key: string): void | Link | Link[] {
     return this.links.get(key);
   }
 
@@ -79,10 +79,19 @@ export class Store {
     return this.find(`${__typename}:${id}`);
   }
 
-  resolveProperty(parent: Entity, key: string): Link | Primitive | Scalar {
-    const result = parent[key];
-    // TODO: arguments to achieve correct key
-    if (result === null) return this.links[key];
+  resolveProperty(
+    parent: Entity,
+    key: string
+  ): Entity[] | Entity | Primitive | Scalar {
+    let result = parent[key];
+    if (result === null) {
+      const link = this.readLink(`${parent.__typename}:${parent.id}.${key}`);
+      if (!link) return null;
+      // @ts-ignore: Link cannot be expressed as a recursive type
+      return Array.isArray(link)
+        ? link.map((key: string) => this.find(key))
+        : this.find(link);
+    }
     return result;
   }
 
