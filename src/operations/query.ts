@@ -105,8 +105,28 @@ const readEntity = (
       );
     }
   } else {
-    // TODO: how do we get the parent type? Since at this
-    // point we are dealing with __typename:id as key.
+    const parentFieldName = key.split(':')[0];
+    if (
+      store.resolvers &&
+      store.resolvers[parentFieldName] &&
+      isFunction(store.resolvers[parentFieldName][entity.__typename])
+    ) {
+      // @ts-ignore
+      entity = store.resolvers[parentFieldName][entity.__typename](
+        // TODO: arguments...
+        {} as any,
+        variables,
+        store,
+        {
+          fieldName: '',
+          path: [],
+          fragments: ctx.fragments,
+          rootValue: null,
+          operation: {},
+          variables,
+        }
+      );
+    }
   }
 
   return readSelection(

@@ -175,9 +175,9 @@ it('Respects entity-level resolvers when given', () => {
   });
 });
 
-it('Respectsd neste entity-level resolvers when given', () => {
+it('Respects nested entity-level resolvers when given', () => {
   const store = new Store(undefined, {
-    Todo: { author: () => ({ name: 'Someone' }) },
+    Todo: { author: () => ({ name: 'Someone else' }) },
   });
   const todosData = {
     __typename: 'Query',
@@ -204,7 +204,7 @@ it('Respectsd neste entity-level resolvers when given', () => {
         text: 'Go to the shops',
         complete: false,
         __typename: 'Todo',
-        author: { id: 0, name: 'Someone', __typename: 'Author' },
+        author: { name: 'Someone else' },
       },
     ],
   });
