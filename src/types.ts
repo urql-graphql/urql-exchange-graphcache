@@ -64,7 +64,7 @@ export type ResolverResult =
   | NullArray<Entity>
   | null;
 
-export interface GraphQLResolveInfo {
+export interface ResolveInfo {
   fragments: Fragments;
   variables: Variables;
 }
@@ -74,7 +74,7 @@ export type Resolver = (
   parent: Entity,
   args: Variables,
   cache: Store,
-  info: GraphQLResolveInfo
+  info: ResolveInfo
 ) => ResolverResult;
 
 export interface ResolverConfig {
