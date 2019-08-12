@@ -87,9 +87,9 @@ export class Store {
     if (result === null) {
       const link = this.readLink(`${parent.__typename}:${parent.id}.${key}`);
       if (!link) return null;
-      // @ts-ignore: Link cannot be expressed as a recursive type
       return Array.isArray(link)
-        ? link.map((key: string) => this.find(key))
+        ? // @ts-ignore: Link cannot be expressed as a recursive type
+          link.map((key: string) => this.find(key))
         : this.find(link);
     }
     return result;

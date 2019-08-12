@@ -74,6 +74,6 @@ describe('store', () => {
   it('Should resolve a link property', () => {
     const parent = { id: '0', text: 'test', author: null, __typename: 'Todo' };
     const result = store.resolveProperty(parent, 'author');
-    expect(result).toEqual('Author:0');
+    expect(result).toEqual({ __typename: 'Author', id: '0', name: 'Jovi' });
   });
 });
