@@ -4,12 +4,12 @@ import {
   LinksMap,
   EntitiesMap,
   ResolverConfig,
-  Primitive,
+  ResolverResult,
   SystemFields,
-  Scalar,
+  Variables,
 } from '../types';
 
-import { keyOfEntity } from '../helpers';
+import { keyOfEntity, joinKeys, keyOfField } from '../helpers';
 import { assignObjectToMap, objectOfMap } from './utils';
 
 export interface SerializedStore {
@@ -79,31 +79,30 @@ export class Store {
 
   resolveProperty(
     parent: Entity,
-    key: string
-  ): Entity[] | Entity | Primitive | Scalar {
-    const result = parent[key];
-    if (result === null) {
-      const link = this.readLink(`${parent.__typename}:${parent.id}.${key}`);
-      if (!link) return null;
-      else if (Array.isArray(link)) {
-        // @ts-ignore: Link cannot be expressed as a recursive type
-        return link.map((key: string) => this.find(key));
-      } else {
-        return this.find(link);
-      }
+    field: string,
+    args?: null | Variables
+  ): ResolverResult {
+    const fieldKey = keyOfField(field, args || null);
+    const fieldValue = parent[fieldKey];
+    if (fieldValue === undefined) {
+      return null;
+    } else if (fieldValue !== null) {
+      return fieldValue;
     }
-    return result;
-  }
 
-  resolveEntities(__typename: string): Entity[] | null {
-    const result: Entity[] = [];
-    // TODO: this should have an easier way...
-    // We have 'Query.todos' => [ 'Todo:0', 'Todo:1', 'Todo:2' ] } in links
-    // This however does not work until we know that we need "todos" and that
-    // the parent is Query.
-    this.records.forEach((entity, key) => {
-      if (key.startsWith(__typename)) result.push(entity);
-    });
-    return result;
+    const entityKey = keyOfEntity(parent);
+    if (entityKey === null) {
+      return null;
+    }
+
+    const link = this.readLink(joinKeys(entityKey, fieldKey));
+    if (!link) {
+      return null;
+    } else if (Array.isArray(link)) {
+      // @ts-ignore: Link cannot be expressed as a recursive type
+      return link.map(key => this.find(key));
+    } else {
+      return this.find(link);
+    }
   }
 }

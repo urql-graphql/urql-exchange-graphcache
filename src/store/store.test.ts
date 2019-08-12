@@ -60,11 +60,6 @@ describe('store', () => {
     expect(authorResult.name).toBe('Jovi');
   });
 
-  it('Should resolve multiple entities', () => {
-    const result = store.resolveEntities('Todo');
-    expect(result.length).toEqual(3);
-  });
-
   it('Should resolve a property', () => {
     const parent = { text: 'test' };
     const result = store.resolveProperty(parent, 'text');
