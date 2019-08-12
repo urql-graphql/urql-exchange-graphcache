@@ -83,7 +83,11 @@ const readEntity = (
   }
 
   if (key === 'Query') {
-    if (isFunction(store.resolvers[key][entity.__typename])) {
+    if (
+      store.resolvers &&
+      store.resolvers[key] &&
+      isFunction(store.resolvers[key][entity.__typename])
+    ) {
       // @ts-ignore
       entity = store.resolvers[key][entity.__typename](
         // TODO: arguments...

@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`Respects resolvers when given 1`] = `
+exports[`Respects property-level resolvers when given 1`] = `
 Object {
   "links": Object {
     "Query.todos": Array [
@@ -36,7 +36,7 @@ Object {
 }
 `;
 
-exports[`Respects resolvers when given 2`] = `
+exports[`Respects property-level resolvers when given 2`] = `
 Object {
   "links": Object {
     "Query.todos": Array [
