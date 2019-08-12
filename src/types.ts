@@ -1,4 +1,5 @@
 import { DocumentNode, FragmentDefinitionNode, SelectionNode } from 'graphql';
+import { Store } from './store';
 
 // Helper types
 export type NullPrototype = { [K in keyof ObjectConstructor]: never };
@@ -71,7 +72,7 @@ export interface GraphQLResolveInfo {
 export type Resolver = (
   parent: Entity,
   args: Variables,
-  cache: {},
+  cache: Store,
   info: GraphQLResolveInfo
 ) => ResolverResult;
 
