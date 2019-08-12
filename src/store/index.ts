@@ -5,8 +5,11 @@ import {
   EntitiesMap,
   ResolverConfig,
   Primitive,
+  SystemFields,
   Scalar,
 } from '../types';
+
+import { keyOfEntity } from '../helpers';
 import { assignObjectToMap, objectOfMap } from './utils';
 
 export interface SerializedStore {
@@ -53,7 +56,7 @@ export class Store {
     return record;
   }
 
-  readLink(key: string): void | Link | Link[] {
+  readLink(key: string): void | Link {
     return this.links.get(key);
   }
 
@@ -69,14 +72,9 @@ export class Store {
     this.links.delete(key);
   }
 
-  resolveEntity({
-    __typename,
-    id,
-  }: {
-    __typename: string;
-    id: string;
-  }): Entity | null {
-    return this.find(`${__typename}:${id}`);
+  resolveEntity(entity: SystemFields): Entity | null {
+    const key = keyOfEntity(entity);
+    return key !== null ? this.find(key) : null;
   }
 
   resolveProperty(

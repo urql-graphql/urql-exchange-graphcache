@@ -18,10 +18,10 @@ import {
   SelectionSet,
   Completeness,
   OperationRequest,
-  Resolver,
+  NullArray,
 } from '../types';
 
-import { joinKeys, keyOfField } from '../helpers';
+import { joinKeys, keyOfField, keyOfEntity } from '../helpers';
 import { Store } from '../store';
 
 export interface QueryResult {
@@ -36,9 +36,6 @@ interface Context {
   variables: Variables;
   fragments: Fragments;
 }
-
-const isFunction = (possibleFunction: any) =>
-  typeof possibleFunction === 'function';
 
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
@@ -72,72 +69,38 @@ const readEntity = (
   select: SelectionSet,
   data: Data
 ): Data | null => {
-  const { store, variables } = ctx;
-  let entity = store.find(key);
+  let entity = ctx.store.find(key);
   if (entity === null) {
     // Cache Incomplete: A missing entity for a key means it wasn't cached
     ctx.result.completeness = 'EMPTY';
     return null;
-  } else if (key !== 'Query') {
-    ctx.result.dependencies.add(key);
   }
 
-  if (key === 'Query') {
-    if (
-      store.resolvers &&
-      store.resolvers[key] &&
-      isFunction(store.resolvers[key][entity.__typename])
-    ) {
-      entity = store.resolvers[key][entity.__typename](
-        // TODO: arguments...
-        {} as any,
-        variables,
-        store,
-        {
-          fieldName: '',
-          path: [],
-          fragments: ctx.fragments,
-          rootValue: null,
-          operation: {},
-          variables,
-        }
-      ) as Entity | null;
-    }
+  return readSelection(ctx, entity, key, select, data);
+};
+
+const readResolverSelection = (
+  ctx: Context,
+  entity: null | Entity | NullArray<Entity>,
+  key: string,
+  select: SelectionSet,
+  prevData: void | Data | Data[]
+) => {
+  if (Array.isArray(entity)) {
+    // @ts-ignore: Link cannot be expressed as a recursive type
+    return entity.map((childEntity, index) => {
+      const data = prevData !== undefined ? prevData[index] : undefined;
+      const indexKey = joinKeys(key, `${index}`);
+      return readResolverSelection(ctx, childEntity, indexKey, select, data);
+    });
+  } else if (entity === null) {
+    return null;
   } else {
-    const parentFieldName = key.split(':')[0];
-    if (
-      store.resolvers &&
-      store.resolvers[parentFieldName] &&
-      isFunction(store.resolvers[parentFieldName][entity.__typename])
-    ) {
-      entity = store.resolvers[parentFieldName][entity.__typename](
-        // TODO: arguments...
-        {} as any,
-        variables,
-        store,
-        {
-          fieldName: '',
-          path: [],
-          fragments: ctx.fragments,
-          rootValue: null,
-          operation: {},
-          variables,
-        }
-      ) as Entity | null;
-    }
+    const data = prevData === undefined ? Object.create(null) : prevData;
+    const entityKey = keyOfEntity(entity);
+    const childKey = entityKey !== null ? entityKey : key;
+    return readSelection(ctx, entity, childKey, select, data);
   }
-
-  return readSelection(
-    ctx,
-    // TODO: entity is possibly null and null prototype issue
-    // @ts-ignore
-    entity,
-    key,
-    select,
-    data,
-    // @ts-ignore
-    store.resolvers[entity.__typename]
-  );
 };
 
 const readSelection = (
@@ -145,35 +108,57 @@ const readSelection = (
   entity: Entity,
   key: string,
   select: SelectionSet,
-  data: Data,
-  resolvers: { [fieldName: string]: Resolver }
+  data: Data
 ): Data => {
-  data.__typename = entity.__typename;
+  if (key !== 'Query') {
+    ctx.result.dependencies.add(key);
+  }
+
+  const typename = (data.__typename = entity.__typename);
   const { store, fragments, variables } = ctx;
   forEachFieldNode(select, fragments, variables, node => {
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
     const fieldKey = keyOfField(fieldName, fieldArgs);
-
-    const fieldValue =
-      resolvers && isFunction(resolvers[fieldKey])
-        ? resolvers[fieldKey](entity, fieldArgs as Variables, store, {
-            fieldName,
-            path: [],
-            fragments: ctx.fragments,
-            rootValue: null,
-            operation: {},
-            variables: fieldArgs as Variables,
-          })
-        : entity[fieldKey];
-
+    const fieldValue = entity[fieldKey];
     const fieldAlias = getFieldAlias(node);
     const childFieldKey = joinKeys(key, fieldKey);
     if (key === 'Query') {
       ctx.result.dependencies.add(childFieldKey);
     }
 
-    if (fieldValue === undefined) {
+    const resolvers = store.resolvers[typename];
+    if (resolvers !== undefined && resolvers[fieldName] !== undefined) {
+      const resolverValue = resolvers[fieldName](
+        entity,
+        fieldArgs || {},
+        store,
+        {
+          fieldName,
+          path: [],
+          fragments: ctx.fragments,
+          rootValue: null,
+          operation: {},
+          variables: fieldArgs as Variables,
+        }
+      );
+
+      if (node.selectionSet === undefined) {
+        data[fieldAlias] = resolverValue !== undefined ? resolverValue : null;
+      } else {
+        const childEntity = resolverValue as Entity;
+        const fieldSelect = getSelectionSet(node);
+        const prevData = data[fieldAlias] as Data;
+
+        data[fieldAlias] = readResolverSelection(
+          ctx,
+          childEntity,
+          childFieldKey,
+          fieldSelect,
+          prevData
+        );
+      }
+    } else if (fieldValue === undefined) {
       // Cache Incomplete: A missing field means it wasn't cached
       ctx.result.completeness = 'EMPTY';
       data[fieldAlias] = null;
@@ -190,13 +175,7 @@ const readSelection = (
         data[fieldAlias] = null;
       } else {
         const prevData = data[fieldAlias] as Data;
-        data[fieldAlias] = readField(
-          ctx,
-          link,
-          fieldSelect,
-          prevData,
-          resolvers
-        );
+        data[fieldAlias] = readField(ctx, link, fieldSelect, prevData);
       }
     }
   });
@@ -208,14 +187,13 @@ const readField = (
   ctx: Context,
   link: Link | Link[],
   select: SelectionSet,
-  prevData: void | Data | Data[],
-  resolvers
+  prevData: void | Data | Data[]
 ): null | Data | Data[] => {
   if (Array.isArray(link)) {
     // @ts-ignore: Link cannot be expressed as a recursive type
     return link.map((childLink, index) => {
       const data = prevData !== undefined ? prevData[index] : undefined;
-      return readField(ctx, childLink, select, data, resolvers);
+      return readField(ctx, childLink, select, data);
     });
   } else if (link === null) {
     return null;

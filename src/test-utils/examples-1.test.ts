@@ -14,23 +14,6 @@ const Todos = gql`
   }
 `;
 
-const TodosWithAuthor = gql`
-  query {
-    __typename
-    todos {
-      __typename
-      id
-      text
-      complete
-      author {
-        id
-        name
-        __typename
-      }
-    }
-  }
-`;
-
 const ToggleTodo = gql`
   mutation($id: ID!) {
     __typename
@@ -155,7 +138,15 @@ it('Respects property-level resolvers when given', () => {
 });
 
 it('Respects entity-level resolvers when given', () => {
-  const store = new Store(undefined, { Query: { todos: () => ['test'] } });
+  const store = new Store(undefined, {
+    Query: {
+      todos: () => [
+        // NOTE: In user-land, entities should never be created manually
+        { id: '3', text: 'Test', complete: false, __typename: 'Todo' },
+      ],
+    },
+  });
+
   const todosData = {
     __typename: 'Query',
     todos: [
@@ -171,41 +162,6 @@ it('Respects entity-level resolvers when given', () => {
 
   expect(queryRes.data).toEqual({
     __typename: 'Query',
-    todos: ['test'],
-  });
-});
-
-it('Respects nested entity-level resolvers when given', () => {
-  const store = new Store(undefined, {
-    Todo: { author: () => ({ name: 'Someone else' }) },
-  });
-  const todosData = {
-    __typename: 'Query',
-    todos: [
-      {
-        id: '0',
-        text: 'Go to the shops',
-        complete: false,
-        __typename: 'Todo',
-        author: { id: 0, __typename: 'Author' },
-      },
-    ],
-  };
-
-  write(store, { query: TodosWithAuthor }, todosData);
-
-  const queryRes = query(store, { query: TodosWithAuthor });
-
-  expect(queryRes.data).toEqual({
-    __typename: 'Query',
-    todos: [
-      {
-        id: '0',
-        text: 'Go to the shops',
-        complete: false,
-        __typename: 'Todo',
-        author: { name: 'Someone else' },
-      },
-    ],
+    todos: [{ id: '3', text: 'Test', complete: false, __typename: 'Todo' }],
   });
 });
