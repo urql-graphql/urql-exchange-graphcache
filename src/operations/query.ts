@@ -128,19 +128,12 @@ const readSelection = (
     }
 
     const resolvers = store.resolvers[typename];
-    if (resolvers !== undefined && resolvers[fieldName] !== undefined) {
+    if (resolvers !== undefined && resolvers.hasOwnProperty(fieldName)) {
       const resolverValue = resolvers[fieldName](
         entity,
         fieldArgs || {},
         store,
-        {
-          fieldName,
-          path: [],
-          fragments: ctx.fragments,
-          rootValue: null,
-          operation: {},
-          variables: fieldArgs as Variables,
-        }
+        ctx
       );
 
       if (node.selectionSet === undefined) {

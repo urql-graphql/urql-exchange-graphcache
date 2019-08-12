@@ -65,11 +65,7 @@ export type ResolverResult =
   | null;
 
 export interface GraphQLResolveInfo {
-  fieldName: string;
-  path: Array<string | number>;
   fragments: Fragments;
-  rootValue: any;
-  operation: {};
   variables: Variables;
 }
 
