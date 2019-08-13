@@ -69,38 +69,17 @@ const readEntity = (
   select: SelectionSet,
   data: Data
 ): Data | null => {
+  // Get the entity from the store for given key.
+  // This will start out as Query and evolve to <__typeName>:<id>
   let entity = ctx.store.find(key);
+
   if (entity === null) {
     // Cache Incomplete: A missing entity for a key means it wasn't cached
     ctx.result.completeness = 'EMPTY';
     return null;
   }
-
+  // When we have an entity we want to resolve all properties selected.
   return readSelection(ctx, entity, key, select, data);
-};
-
-const readResolverSelection = (
-  ctx: Context,
-  entity: null | Entity | NullArray<Entity>,
-  key: string,
-  select: SelectionSet,
-  prevData: void | Data | Data[]
-) => {
-  if (Array.isArray(entity)) {
-    // @ts-ignore: Link cannot be expressed as a recursive type
-    return entity.map((childEntity, index) => {
-      const data = prevData !== undefined ? prevData[index] : undefined;
-      const indexKey = joinKeys(key, `${index}`);
-      return readResolverSelection(ctx, childEntity, indexKey, select, data);
-    });
-  } else if (entity === null) {
-    return null;
-  } else {
-    const data = prevData === undefined ? Object.create(null) : prevData;
-    const entityKey = keyOfEntity(entity);
-    const childKey = entityKey !== null ? entityKey : key;
-    return readSelection(ctx, entity, childKey, select, data);
-  }
 };
 
 const readSelection = (
@@ -111,25 +90,34 @@ const readSelection = (
   data: Data
 ): Data => {
   if (key !== 'Query') {
+    // When we aren't dealing with a Query, example: Todo:1
+    // We want to ensure the key is added to the dependencies,
+    // in case a mutation alters this entity we need to refetch.
     ctx.result.dependencies.add(key);
   }
 
   const typename = (data.__typename = entity.__typename);
   const { store, fragments, variables } = ctx;
   forEachFieldNode(select, fragments, variables, node => {
+    // Derive the needed data from our node.
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
+    const fieldAlias = getFieldAlias(node);
     const fieldKey = keyOfField(fieldName, fieldArgs);
     const fieldValue = entity[fieldKey];
-    const fieldAlias = getFieldAlias(node);
     const childFieldKey = joinKeys(key, fieldKey);
 
     if (key === 'Query') {
+      // When we are dealing with a Query we know the children
+      // are actual entities so we should add these to our
+      // dependencies.
       ctx.result.dependencies.add(childFieldKey);
     }
 
     const resolvers = store.resolvers[typename];
+
     if (resolvers !== undefined && resolvers.hasOwnProperty(fieldName)) {
+      // We have a resolver for this field.
       const resolverValue = resolvers[fieldName](
         entity,
         fieldArgs || {},
@@ -138,8 +126,11 @@ const readSelection = (
       );
 
       if (node.selectionSet === undefined) {
+        // If it doesn't have a selection set we have resolved a property.
         data[fieldAlias] = resolverValue !== undefined ? resolverValue : null;
       } else {
+        // When it has a selection set we are resolving an entity with a
+        // subselection. This can either be a list or an object.
         const childEntity = resolverValue as Entity;
         const fieldSelect = getSelectionSet(node);
         const prevData = data[fieldAlias] as Data;
@@ -159,6 +150,7 @@ const readSelection = (
         ctx.result.completeness = 'EMPTY';
         data[fieldAlias] = null;
       } else {
+        // Not dealing with null means it's a regular property.
         data[fieldAlias] = fieldValue;
       }
     } else {
@@ -183,6 +175,33 @@ const readSelection = (
   });
 
   return data;
+};
+
+const readResolverSelection = (
+  ctx: Context,
+  entity: null | Entity | NullArray<Entity>,
+  key: string,
+  select: SelectionSet,
+  prevData: void | Data | Data[]
+) => {
+  // When we are dealing with a list we have to call this method again.
+  if (Array.isArray(entity)) {
+    // @ts-ignore: Link cannot be expressed as a recursive type
+    return entity.map((childEntity, index) => {
+      const data = prevData !== undefined ? prevData[index] : undefined;
+      const indexKey = joinKeys(key, `${index}`);
+      return readResolverSelection(ctx, childEntity, indexKey, select, data);
+    });
+  } else if (entity === null) {
+    return null;
+  } else {
+    const data = prevData === undefined ? Object.create(null) : prevData;
+    const entityKey = keyOfEntity(entity);
+    const childKey = entityKey !== null ? entityKey : key;
+    // We don't need to read the entity after exiting a resolver
+    // we can just go on and read the selection further.
+    return readSelection(ctx, entity, childKey, select, data);
+  }
 };
 
 const readField = (

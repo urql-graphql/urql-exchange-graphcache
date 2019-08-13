@@ -85,9 +85,9 @@ const writeSelection = (
   const { store, fragments, variables } = ctx;
   forEachFieldNode(select, fragments, variables, node => {
     const fieldName = getName(node);
-    const fieldValue = data[getFieldAlias(node)];
     const fieldArgs = getFieldArguments(node, variables);
     const fieldKey = keyOfField(fieldName, fieldArgs);
+    const fieldValue = data[getFieldAlias(node)];
     const childFieldKey = joinKeys(key, fieldKey);
 
     if (key === 'Query' && fieldName !== '__typename') {
