@@ -4,6 +4,9 @@ import {
   getMainOperation,
   getSelectionSet,
   normalizeVariables,
+  getName,
+  getFieldArguments,
+  getFieldAlias,
 } from '../ast';
 
 import {
@@ -18,9 +21,8 @@ import {
   NullArray,
 } from '../types';
 
-import { joinKeys, keyOfEntity } from '../helpers';
+import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { getFieldData } from './utils';
 
 export interface QueryResult {
   completeness: Completeness;
@@ -115,14 +117,12 @@ const readSelection = (
   const typename = (data.__typename = entity.__typename);
   const { store, fragments, variables } = ctx;
   forEachFieldNode(select, fragments, variables, node => {
-    const {
-      fieldName,
-      fieldKey,
-      fieldArgs,
-      fieldAlias,
-      childFieldKey,
-    } = getFieldData({ key, node, variables });
+    const fieldName = getName(node);
+    const fieldArgs = getFieldArguments(node, variables);
+    const fieldKey = keyOfField(fieldName, fieldArgs);
     const fieldValue = entity[fieldKey];
+    const fieldAlias = getFieldAlias(node);
+    const childFieldKey = joinKeys(key, fieldKey);
 
     if (key === 'Query') {
       ctx.result.dependencies.add(childFieldKey);

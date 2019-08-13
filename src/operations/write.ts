@@ -5,6 +5,8 @@ import {
   getMainOperation,
   getSelectionSet,
   normalizeVariables,
+  getName,
+  getFieldArguments,
 } from '../ast';
 
 import {
@@ -19,9 +21,8 @@ import {
   OperationRequest,
 } from '../types';
 
-import { joinKeys, keyOfEntity } from '../helpers';
+import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { getFieldData } from './utils';
 
 export interface WriteResult {
   dependencies: Set<string>;
@@ -83,12 +84,11 @@ const writeSelection = (
   entity.__typename = data.__typename as string;
   const { store, fragments, variables } = ctx;
   forEachFieldNode(select, fragments, variables, node => {
-    const { fieldKey, fieldName, fieldAlias, childFieldKey } = getFieldData({
-      key,
-      node,
-      variables,
-    });
-    const fieldValue = data[fieldAlias];
+    const fieldName = getName(node);
+    const fieldValue = data[getFieldAlias(node)];
+    const fieldArgs = getFieldArguments(node, variables);
+    const fieldKey = keyOfField(fieldName, fieldArgs);
+    const childFieldKey = joinKeys(key, fieldKey);
 
     if (key === 'Query' && fieldName !== '__typename') {
       ctx.result.dependencies.add(childFieldKey);
