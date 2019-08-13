@@ -13,6 +13,7 @@ export interface Fragments {
 
 // Scalar types are not entities as part of response data
 export type Primitive = null | number | boolean | string;
+
 export interface ScalarObject {
   __typename?: never;
   [key: string]: any;
@@ -57,12 +58,7 @@ export interface OperationRequest {
 }
 
 // This can be any field read from the cache
-export type ResolverResult =
-  | Scalar
-  | Scalar[]
-  | Entity
-  | NullArray<Entity>
-  | null;
+export type ResolverResult = Scalar | Scalar[] | Entity | NullArray<Entity>;
 
 export interface ResolveInfo {
   fragments: Fragments;
