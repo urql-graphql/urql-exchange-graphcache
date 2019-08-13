@@ -117,11 +117,12 @@ const readSelection = (
   forEachFieldNode(select, fragments, variables, node => {
     const {
       fieldName,
+      fieldKey,
       fieldArgs,
-      fieldValue,
       fieldAlias,
       childFieldKey,
-    } = getFieldData({ entity, key, node, variables });
+    } = getFieldData({ key, node, variables });
+    const fieldValue = entity[fieldKey];
 
     if (key === 'Query') {
       ctx.result.dependencies.add(childFieldKey);

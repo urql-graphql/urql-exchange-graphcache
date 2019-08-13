@@ -1,10 +1,9 @@
-import { keyOfField, joinKeys } from 'src/helpers';
-import { getFieldArguments, getName, getFieldAlias } from 'src/ast';
-import { Entity, Variables, Scalar } from 'src/types';
 import { FieldNode } from 'graphql';
+import { keyOfField, joinKeys } from '../helpers';
+import { getFieldArguments, getName, getFieldAlias } from '../ast';
+import { Variables } from '../types';
 
 interface GetFieldDataArguments {
-  entity: Entity;
   key: string;
   node: FieldNode;
   variables: Variables;
@@ -15,12 +14,10 @@ interface GetFieldDataResult {
   fieldName: string;
   fieldArgs: Variables | null;
   fieldKey: string;
-  fieldValue: Scalar | Scalar[];
   fieldAlias: string;
 }
 
 export const getFieldData = ({
-  entity,
   key,
   node,
   variables,
@@ -32,7 +29,6 @@ export const getFieldData = ({
     fieldName,
     fieldArgs,
     fieldKey,
-    fieldValue: entity[fieldKey],
     fieldAlias: getFieldAlias(node),
     childFieldKey: joinKeys(key, fieldKey),
   };
