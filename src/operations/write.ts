@@ -142,8 +142,18 @@ const writeField = (
 const writeRoot = (ctx: Context, data: Data, select: SelectionSet) => {
   const { fragments, variables } = ctx;
   forEachFieldNode(select, fragments, variables, node => {
-    const fieldValue = data[getFieldAlias(node)];
+    const fieldAlias = getFieldAlias(node);
+    const fieldArgs = getFieldArguments(node, variables);
+    const fieldValue = data[fieldAlias];
 
+    if (ctx.store.mutationUpdates[fieldAlias]) {
+      return ctx.store.mutationUpdates[fieldAlias](
+        data,
+        fieldArgs || {},
+        ctx.store,
+        ctx
+      );
+    }
     if (
       node.selectionSet !== undefined &&
       fieldValue !== null &&
