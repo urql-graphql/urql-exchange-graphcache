@@ -71,6 +71,7 @@ export const writeFragment = (
     const select = getSelectionSet(fragment);
     const __typename = fragment.typeCondition.name.value;
     const id = data.id || data._id;
+    // When id is not present in the fragment we throw (?)
     const key = `${__typename}:${id as string}`;
     const entity = store.findOrCreate(key);
     writeSelection(
@@ -86,8 +87,6 @@ export const writeFragment = (
       select
     );
   });
-
-  return { store, data };
 };
 
 const writeEntity = (
