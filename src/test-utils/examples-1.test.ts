@@ -142,11 +142,12 @@ it('Respects property-level resolvers when given', () => {
   const store = new Store(undefined, undefined, {
     toggleTodo: (result, _, cache) => {
       cache.updateQuery(Todos, data => {
-        // @ts-ignore: We need another way of typing result...
         if (
           data &&
           data.todos &&
+          // @ts-ignore: We need another way of typing result...
           result.toggleTodo &&
+          // @ts-ignore: We need another way of typing result...
           result.toggleTodo.id === '1'
         ) {
           data.todos[1] = {
