@@ -140,29 +140,24 @@ it('Respects property-level resolvers when given', () => {
 
 it('Respects property-level resolvers when given', () => {
   const store = new Store(undefined, undefined, {
-    toggleTodo: (result, _, cache) => {
+    toggleTodo: function toggleTodo(result, _, cache) {
       cache.updateQuery(Todos, data => {
         if (
           data &&
           data.todos &&
-          // @ts-ignore: We need another way of typing result...
+          result &&
           result.toggleTodo &&
-          // @ts-ignore: We need another way of typing result...
           result.toggleTodo.id === '1'
         ) {
           data.todos[1] = {
             id: '1',
             text: `${data.todos[1].text} (Updated)`,
-            // @ts-ignore: I think there's something off with our typings here...
             complete: result.toggleTodo.complete,
             __typename: 'Todo',
           };
-        } else {
-          // @ts-ignore
+        } else if (data && data.todos) {
           data.todos[Number(result.toggleTodo.id)] = {
-            // @ts-ignore
             ...data.todos[Number(result.toggleTodo.id)],
-            // @ts-ignore
             complete: result.toggleTodo.complete,
           };
         }

@@ -79,8 +79,8 @@ export interface ResolverConfig {
   };
 }
 
-export type MutationUpdateResolver = (
-  result: null | Data | NullArray<Data>,
+export type MutationUpdateResolver<T = any> = (
+  result: T,
   args: Variables,
   cache: Store,
   info: ResolveInfo
