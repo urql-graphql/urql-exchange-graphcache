@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 import { Store } from '.';
-import { write } from '../operations';
+import { write, query } from '../operations';
 
 const Todos = gql`
   query {
@@ -19,11 +19,11 @@ const Todos = gql`
 `;
 
 describe('store', () => {
-  let store;
+  let store, todosData;
 
   beforeAll(() => {
     store = new Store(undefined);
-    const todosData = {
+    todosData = {
       __typename: 'Query',
       todos: [
         {
@@ -67,8 +67,50 @@ describe('store', () => {
   });
 
   it('Should resolve a link property', () => {
-    const parent = { id: '0', text: 'test', author: null, __typename: 'Todo' };
+    const parent = {
+      id: '0',
+      text: 'test',
+      author: undefined,
+      __typename: 'Todo',
+    };
     const result = store.resolveProperty(parent, 'author');
     expect(result).toEqual({ __typename: 'Author', id: '0', name: 'Jovi' });
+  });
+
+  it('should be able to update a query', () => {
+    store.updateQuery(Todos, data => ({
+      ...data,
+      todos: [
+        ...data.todos,
+        {
+          __typename: 'Todo',
+          id: '4',
+          text: 'Test updateQuery',
+          complete: false,
+          author: {
+            id: '3',
+            name: 'Andy',
+          },
+        },
+      ],
+    }));
+
+    const { data: result } = query(store, { query: Todos });
+    expect(result).toEqual({
+      __typename: 'Query',
+      todos: [
+        ...todosData.todos,
+        {
+          __typename: 'Todo',
+          id: '4',
+          text: 'Test updateQuery',
+          complete: false,
+          author: {
+            id: '3',
+            name: 'Andy',
+          },
+        },
+      ],
+    });
   });
 });
