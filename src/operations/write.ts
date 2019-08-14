@@ -24,7 +24,7 @@ import {
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { DocumentNode, FragmentDefinitionNode } from 'graphql';
+import { DocumentNode, FragmentDefinitionNode, Kind } from 'graphql';
 
 export interface WriteResult {
   dependencies: Set<string>;
@@ -68,12 +68,34 @@ export const writeFragment = (
   query: DocumentNode,
   data: Data
 ) => {
+  if (process.env.NODE_ENV !== 'production' && query.definitions.length > 1) {
+    throw new Error(
+      'You can only pass one fragment when writing to a fragment.'
+    );
+  }
+
   (query.definitions as FragmentDefinitionNode[]).forEach(
     (fragment: FragmentDefinitionNode) => {
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        fragment.kind !== Kind.FRAGMENT_DEFINITION
+      ) {
+        throw new Error(
+          `You passed a ${fragment.kind} instead of a ${Kind.FRAGMENT_DEFINITION} to writeFragment.`
+        );
+      }
+
       const select = getSelectionSet(fragment);
       const fieldName = getFragmentTypeName(fragment);
       const writeData = { ...data, __typename: fieldName } as Data;
       const fieldKey = keyOfEntity(writeData) as string;
+
+      if (process.env.NODE_ENV !== 'production' && !fieldKey) {
+        throw new Error(
+          `You have to pass an "id" or "_id" with your writeFragment data.`
+        );
+      }
+
       const entity = store.findOrCreate(fieldKey);
       writeSelection(
         {
