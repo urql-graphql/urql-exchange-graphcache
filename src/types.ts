@@ -1,5 +1,6 @@
 import { DocumentNode, FragmentDefinitionNode, SelectionNode } from 'graphql';
 import { Store } from './store';
+import { WriteResult } from './operations/write';
 
 // Helper types
 export type NullPrototype = { [K in keyof ObjectConstructor]: never };
@@ -77,6 +78,17 @@ export interface ResolverConfig {
   [typeName: string]: {
     [fieldName: string]: Resolver;
   };
+}
+
+export type MutationUpdateResolver = (
+  result: Data,
+  args: Variables,
+  cache: Store,
+  info: ResolveInfo
+) => WriteResult;
+
+export interface MutationUpdatesConfig {
+  [fieldName: string]: MutationUpdateResolver;
 }
 
 // Completeness of the query result
