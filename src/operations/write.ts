@@ -7,6 +7,7 @@ import {
   getName,
   getSelectionSet,
   normalizeVariables,
+  getFragmentTypeName,
 } from '../ast';
 
 import {
@@ -23,7 +24,7 @@ import {
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
-import { DocumentNode } from 'graphql';
+import { DocumentNode, FragmentDefinitionNode } from 'graphql';
 
 export interface WriteResult {
   dependencies: Set<string>;
@@ -67,26 +68,27 @@ export const writeFragment = (
   query: DocumentNode,
   data: Data
 ) => {
-  query.definitions.forEach((fragment: any) => {
-    const select = getSelectionSet(fragment);
-    const __typename = fragment.typeCondition.name.value;
-    const id = data.id || data._id;
-    // When id is not present in the fragment we throw (?)
-    const key = `${__typename}:${id as string}`;
-    const entity = store.findOrCreate(key);
-    writeSelection(
-      {
-        store,
-        variables: {},
-        fragments: {},
-        result: { dependencies: new Set() },
-      },
-      entity,
-      key,
-      { ...data, __typename } as Data,
-      select
-    );
-  });
+  (query.definitions as FragmentDefinitionNode[]).forEach(
+    (fragment: FragmentDefinitionNode) => {
+      const select = getSelectionSet(fragment);
+      const fieldName = getFragmentTypeName(fragment);
+      const writeData = { ...data, __typename: fieldName } as Data;
+      const fieldKey = keyOfEntity(writeData) as string;
+      const entity = store.findOrCreate(fieldKey);
+      writeSelection(
+        {
+          store,
+          variables: {},
+          fragments: {},
+          result: { dependencies: new Set() },
+        },
+        entity,
+        fieldKey,
+        writeData,
+        select
+      );
+    }
+  );
 };
 
 const writeEntity = (
