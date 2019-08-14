@@ -12,7 +12,7 @@ import {
   UpdatesConfig,
 } from '../types';
 import { keyOfEntity, joinKeys, keyOfField } from '../helpers';
-import { query, write } from '../operations';
+import { query, write, writeFragment } from '../operations';
 import { assignObjectToMap, objectOfMap } from './utils';
 
 export interface SerializedStore {
@@ -120,5 +120,9 @@ export class Store {
   ): void {
     const { data } = query(this, { query: dataQuery });
     write(this, { query: dataQuery }, updater(data));
+  }
+
+  writeFragment(dataFragment: DocumentNode, data: Data): void {
+    writeFragment(this, dataFragment, data);
   }
 }

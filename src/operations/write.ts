@@ -23,6 +23,7 @@ import {
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
 import { Store } from '../store';
+import { DocumentNode } from 'graphql';
 
 export interface WriteResult {
   dependencies: Set<string>;
@@ -59,6 +60,34 @@ export const write = (
   }
 
   return result;
+};
+
+export const writeFragment = (
+  store: Store,
+  query: DocumentNode,
+  data: Data
+) => {
+  query.definitions.forEach((fragment: any) => {
+    const select = getSelectionSet(fragment);
+    const __typename = fragment.typeCondition.name.value;
+    const id = data.id || data._id;
+    const key = `${__typename}:${id as string}`;
+    const entity = store.findOrCreate(key);
+    writeSelection(
+      {
+        store,
+        variables: {},
+        fragments: {},
+        result: { dependencies: new Set() },
+      },
+      entity,
+      key,
+      { ...data, __typename } as Data,
+      select
+    );
+  });
+
+  return { store, data };
 };
 
 const writeEntity = (
