@@ -9,7 +9,7 @@ import {
   SystemFields,
   Variables,
   Data,
-  MutationUpdatesConfig,
+  UpdatesConfig,
 } from '../types';
 import { keyOfEntity, joinKeys, keyOfField } from '../helpers';
 import { query, write } from '../operations';
@@ -25,17 +25,17 @@ export class Store {
   links: LinksMap;
 
   resolvers: ResolverConfig;
-  mutationUpdates: MutationUpdatesConfig;
+  updates: UpdatesConfig;
 
   constructor(
     initial?: SerializedStore,
     resolvers?: ResolverConfig,
-    mutationUpdates?: MutationUpdatesConfig
+    updates?: UpdatesConfig
   ) {
     this.records = new Map();
     this.links = new Map();
     this.resolvers = resolvers || {};
-    this.mutationUpdates = mutationUpdates || {};
+    this.updates = updates || {};
 
     if (initial !== undefined) {
       assignObjectToMap(this.records, initial.records);
@@ -116,9 +116,9 @@ export class Store {
 
   updateQuery(
     dataQuery: DocumentNode,
-    updaterFunc: (data: Data | null) => Data
+    updater: (data: Data | null) => Data
   ): void {
     const { data } = query(this, { query: dataQuery });
-    write(this, { query: dataQuery }, updaterFunc(data));
+    write(this, { query: dataQuery }, updater(data));
   }
 }

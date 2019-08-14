@@ -79,15 +79,15 @@ export interface ResolverConfig {
   };
 }
 
-export type MutationUpdateResolver<T = any> = (
+export type UpdateResolver<T = any> = (
   result: T,
   args: Variables,
   cache: Store,
   info: ResolveInfo
 ) => void;
 
-export interface MutationUpdatesConfig {
-  [fieldName: string]: MutationUpdateResolver;
+export interface UpdatesConfig {
+  [fieldName: string]: UpdateResolver;
 }
 
 // Completeness of the query result
