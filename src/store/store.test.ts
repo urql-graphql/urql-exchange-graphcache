@@ -21,7 +21,7 @@ const Todos = gql`
 describe('store', () => {
   let store, todosData;
 
-  beforeAll(() => {
+  beforeEach(() => {
     store = new Store(undefined);
     todosData = {
       __typename: 'Query',
@@ -75,6 +75,37 @@ describe('store', () => {
     };
     const result = store.resolveProperty(parent, 'author');
     expect(result).toEqual({ __typename: 'Author', id: '0', name: 'Jovi' });
+  });
+
+  it('should be able to update a fragment', () => {
+    store.writeFragment(
+      gql`
+        fragment _ on Todo {
+          id
+          text
+          complete
+        }
+      `,
+      {
+        id: '0',
+        text: 'update',
+        complete: true,
+      }
+    );
+
+    const { data } = query(store, { query: Todos });
+    expect(data).toEqual({
+      __typename: 'Query',
+      todos: [
+        {
+          ...todosData.todos[0],
+          text: 'update',
+          complete: true,
+        },
+        todosData.todos[1],
+        todosData.todos[2],
+      ],
+    });
   });
 
   it('should be able to update a query', () => {
