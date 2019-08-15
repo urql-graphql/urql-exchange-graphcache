@@ -68,48 +68,40 @@ export const writeFragment = (
   query: DocumentNode,
   data: Data
 ) => {
-  if (process.env.NODE_ENV !== 'production' && query.definitions.length > 1) {
+  const fragment = query.definitions[0] as FragmentDefinitionNode;
+
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    (query.definitions.length > 1 || fragment.kind !== Kind.FRAGMENT_DEFINITION)
+  ) {
     throw new Error(
       'You can only pass one fragment when writing to a fragment.'
     );
   }
 
-  (query.definitions as FragmentDefinitionNode[]).forEach(
-    (fragment: FragmentDefinitionNode) => {
-      if (
-        process.env.NODE_ENV !== 'production' &&
-        fragment.kind !== Kind.FRAGMENT_DEFINITION
-      ) {
-        throw new Error(
-          `You passed a ${fragment.kind} instead of a ${Kind.FRAGMENT_DEFINITION} to writeFragment.`
-        );
-      }
+  const select = getSelectionSet(fragment);
+  const fieldName = getFragmentTypeName(fragment);
+  const writeData = { ...data, __typename: fieldName } as Data;
+  const key = keyOfEntity(writeData) as string;
 
-      const select = getSelectionSet(fragment);
-      const fieldName = getFragmentTypeName(fragment);
-      const writeData = { ...data, __typename: fieldName } as Data;
-      const fieldKey = keyOfEntity(writeData) as string;
+  if (process.env.NODE_ENV !== 'production' && !key) {
+    throw new Error(
+      `You have to pass an "id" or "_id" with your writeFragment data.`
+    );
+  }
 
-      if (process.env.NODE_ENV !== 'production' && !fieldKey) {
-        throw new Error(
-          `You have to pass an "id" or "_id" with your writeFragment data.`
-        );
-      }
-
-      const entity = store.findOrCreate(fieldKey);
-      writeSelection(
-        {
-          store,
-          variables: {},
-          fragments: {},
-          result: { dependencies: new Set() },
-        },
-        entity,
-        fieldKey,
-        writeData,
-        select
-      );
-    }
+  const entity = store.findOrCreate(key);
+  writeSelection(
+    {
+      store,
+      variables: {},
+      fragments: {},
+      result: { dependencies: new Set() },
+    },
+    entity,
+    key,
+    writeData,
+    select
   );
 };
 
