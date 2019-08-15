@@ -66,7 +66,7 @@ export const writeFragment = (
   store: Store,
   query: DocumentNode,
   data: Data
-) => {
+): WriteResult => {
   const fragment = query.definitions[0] as FragmentDefinitionNode;
 
   if (
@@ -89,18 +89,21 @@ export const writeFragment = (
     );
   }
 
+  const dependencies = new Set<string>();
   writeSelection(
     // TODO: Create real context here
     {
       store,
       variables: {},
       fragments: {},
-      result: { dependencies: new Set() },
+      result: { dependencies },
     },
     entityKey,
     select,
     writeData
   );
+
+  return { dependencies };
 };
 
 const writeSelection = (

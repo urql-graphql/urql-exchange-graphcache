@@ -105,10 +105,16 @@ export class Store {
     updater: (data: Data | null) => Data
   ): void {
     const { data } = query(this, { query: dataQuery });
-    write(this, { query: dataQuery }, updater(data));
+    /* const { dependencies } = */ write(
+      this,
+      { query: dataQuery },
+      updater(data)
+    );
+    // TODO: global set of dependencies
   }
 
   writeFragment(dataFragment: DocumentNode, data: Data): void {
-    writeFragment(this, dataFragment, data);
+    /* const { dependencies } = */ writeFragment(this, dataFragment, data);
+    // TODO: global set of dependencies
   }
 }
