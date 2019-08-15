@@ -1,9 +1,10 @@
 import { DocumentNode } from 'graphql';
+import { Map, make, get, set, remove } from 'pessimism';
+
 import {
+  EntityField,
   Entity,
   Link,
-  LinksMap,
-  EntitiesMap,
   ResolverConfig,
   ResolverResult,
   SystemFields,
@@ -16,54 +17,64 @@ import { keyOfEntity, joinKeys, keyOfField } from '../helpers';
 import { query, write, writeFragment } from '../operations';
 
 export class Store {
-  records: EntitiesMap;
-  links: LinksMap;
+  records: Map<EntityField>;
+  links: Map<Link>;
 
   resolvers: ResolverConfig;
   updates: UpdatesConfig;
 
   constructor(resolvers?: ResolverConfig, updates?: UpdatesConfig) {
-    this.records = new Map();
-    this.links = new Map();
+    this.records = make();
+    this.links = make();
     this.resolvers = resolvers || {};
     this.updates = updates || {};
   }
 
-  find(key: string): Entity | null {
-    const entity = this.records.get(key);
-    return entity !== undefined ? entity : null;
+  getRecord(fieldKey: string): EntityField {
+    return get(this.records, fieldKey);
   }
 
-  findOrCreate(key: string): Entity {
-    const entity = this.find(key);
-    if (entity !== null) {
-      return entity;
-    }
-
-    const record: Entity = Object.create(null);
-    this.records.set(key, record);
-    return record;
+  removeRecord(fieldKey: string) {
+    return (this.records = remove(this.records, fieldKey));
   }
 
-  readLink(key: string): void | Link {
-    return this.links.get(key);
+  writeRecord(field: EntityField, fieldKey: string) {
+    return (this.records = set(this.records, fieldKey, field));
   }
 
-  remove(key: string): void {
-    this.records.delete(key);
+  getField(
+    entityKey: string,
+    fieldName: string,
+    args?: Variables
+  ): EntityField {
+    const fieldKey = joinKeys(entityKey, keyOfField(fieldName, args));
+    return this.getRecord(fieldKey);
   }
 
-  setLink(key: string, link: Link): void {
-    this.links.set(key, link);
+  writeField(
+    field: EntityField,
+    entityKey: string,
+    fieldName: string,
+    args?: Variables
+  ) {
+    const fieldKey = joinKeys(entityKey, keyOfField(fieldName, args));
+    return (this.records = set(this.records, fieldKey, field));
   }
 
-  removeLink(key: string): void {
-    this.links.delete(key);
+  getLink(key: string): undefined | Link {
+    return get(this.links, key);
+  }
+
+  removeLink(key: string) {
+    return (this.links = remove(this.links, key));
+  }
+
+  writeLink(link: Link, key: string) {
+    return (this.links = set(this.links, key, link));
   }
 
   resolveEntity(entity: SystemFields): Entity | null {
-    const key = keyOfEntity(entity);
-    return key !== null ? this.find(key) : null;
+    return keyOfEntity(entity) ? (entity as any) : null; // TODO: Create stand-in entities
   }
 
   resolveProperty(
@@ -71,27 +82,23 @@ export class Store {
     field: string,
     args?: null | Variables
   ): ResolverResult {
-    const fieldKey = keyOfField(field, args || null);
-    const fieldValue = parent[fieldKey];
+    const entityKey = keyOfEntity(parent);
+    if (entityKey === null) return null;
 
-    if (fieldValue === undefined && fieldKey in parent) {
-      // The field is present but set to undefined, which indicates a link
-      const entityKey = keyOfEntity(parent);
-      if (entityKey === null) {
-        return null;
-      }
+    const fieldKey = joinKeys(entityKey, keyOfField(field, args));
+    const fieldValue = this.getRecord(fieldKey);
+    if (fieldValue !== undefined) return fieldValue;
 
-      const link = this.readLink(joinKeys(entityKey, fieldKey));
-      if (Array.isArray(link)) {
-        return link.map(key => (key !== null ? this.find(key) : null));
-      } else {
-        return link ? this.find(link) : null;
-      }
-    } else if (fieldValue === undefined) {
-      return null;
+    return null; // TODO: Figure out how to do this; Stand-in entities?
+
+    /*
+    const link = this.getLink(fieldKey);
+    if (Array.isArray(link)) {
+      return link.map(key => (key !== null ? this.find(key) : null));
     } else {
-      return fieldValue;
+      return link ? this.find(link) : null;
     }
+    */
   }
 
   updateQuery(
