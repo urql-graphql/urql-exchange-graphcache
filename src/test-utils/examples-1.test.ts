@@ -43,8 +43,6 @@ it('passes the "getting-started" example', () => {
   const expectedSet = new Set(['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']);
   expect(writeRes.dependencies).toEqual(expectedSet);
 
-  expect(store.serialize()).toMatchSnapshot();
-
   let queryRes = query(store, { query: Todos });
 
   expect(queryRes.data).toEqual(todosData);
@@ -66,7 +64,6 @@ it('passes the "getting-started" example', () => {
   );
 
   expect(mutationRes.dependencies).toEqual(new Set(['Todo:2']));
-  expect(store.serialize()).toMatchSnapshot();
 
   queryRes = query(store, { query: Todos });
 
@@ -92,8 +89,6 @@ it('Respects property-level resolvers when given', () => {
 
   const expectedSet = new Set(['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']);
   expect(writeRes.dependencies).toEqual(expectedSet);
-
-  expect(store.serialize()).toMatchSnapshot();
 
   let queryRes = query(store, { query: Todos });
 
@@ -123,7 +118,6 @@ it('Respects property-level resolvers when given', () => {
   );
 
   expect(mutationRes.dependencies).toEqual(new Set(['Todo:2']));
-  expect(store.serialize()).toMatchSnapshot();
 
   queryRes = query(store, { query: Todos });
 

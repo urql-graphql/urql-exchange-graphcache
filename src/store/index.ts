@@ -11,14 +11,9 @@ import {
   Data,
   UpdatesConfig,
 } from '../types';
+
 import { keyOfEntity, joinKeys, keyOfField } from '../helpers';
 import { query, write, writeFragment } from '../operations';
-import { objectOfMap } from './utils';
-
-export interface SerializedStore {
-  records: { [link: string]: Entity };
-  links: { [link: string]: Link };
-}
 
 export class Store {
   records: EntitiesMap;
@@ -32,12 +27,6 @@ export class Store {
     this.links = new Map();
     this.resolvers = resolvers || {};
     this.updates = updates || {};
-  }
-
-  serialize(): SerializedStore {
-    const records = objectOfMap(this.records);
-    const links = objectOfMap(this.links);
-    return { records, links };
   }
 
   find(key: string): Entity | null {
