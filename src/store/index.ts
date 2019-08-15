@@ -18,6 +18,7 @@ import { query, write, writeFragment } from '../operations';
 export class Store {
   records: Map<EntityField>;
   links: Map<Link>;
+  pendingDependencies: Set<string>;
 
   resolvers: ResolverConfig;
   updates: UpdatesConfig;
@@ -25,6 +26,7 @@ export class Store {
   constructor(resolvers?: ResolverConfig, updates?: UpdatesConfig) {
     this.records = make();
     this.links = make();
+    this.pendingDependencies = new Set();
     this.resolvers = resolvers || {};
     this.updates = updates || {};
   }
@@ -105,16 +107,18 @@ export class Store {
     updater: (data: Data | null) => Data
   ): void {
     const { data } = query(this, { query: dataQuery });
-    /* const { dependencies } = */ write(
-      this,
-      { query: dataQuery },
-      updater(data)
-    );
-    // TODO: global set of dependencies
+    const { dependencies } = write(this, { query: dataQuery }, updater(data));
+    this.pendingDependencies = new Set([
+      ...this.pendingDependencies,
+      ...dependencies,
+    ]);
   }
 
   writeFragment(dataFragment: DocumentNode, data: Data): void {
-    /* const { dependencies } = */ writeFragment(this, dataFragment, data);
-    // TODO: global set of dependencies
+    const { dependencies } = writeFragment(this, dataFragment, data);
+    this.pendingDependencies = new Set([
+      ...this.pendingDependencies,
+      ...dependencies,
+    ]);
   }
 }
