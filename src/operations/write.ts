@@ -100,8 +100,8 @@ export const writeFragment = (
     },
     entity,
     key,
-    writeData,
-    select
+    select,
+    writeData
   );
 };
 
