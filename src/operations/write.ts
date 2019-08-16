@@ -62,6 +62,46 @@ export const write = (
   return result;
 };
 
+export const writeOptimistic = (
+  store: Store,
+  request: OperationRequest
+  // optimisticKey: number
+): WriteResult => {
+  const operation = getMainOperation(request.query);
+  const result: WriteResult = { dependencies: new Set() };
+
+  const ctx: Context = {
+    variables: normalizeVariables(operation, request.variables),
+    fragments: getFragments(request.query),
+    result,
+    store,
+  };
+
+  if (operation.operation === 'mutation') {
+    const select = getSelectionSet(operation);
+
+    // TODO: This is very similar to writeRoot & writeRootField
+    forEachFieldNode(select, ctx.fragments, ctx.variables, node => {
+      if (node.selectionSet !== undefined) {
+        const fieldName = getName(node);
+        const resolver = ctx.store.optimisticMutations[fieldName];
+        if (resolver !== undefined) {
+          const fieldArgs = getFieldArguments(node, ctx.variables);
+          const fieldSelect = getSelectionSet(operation);
+          const resolverValue = resolver(fieldArgs || {}, ctx.store, ctx);
+          if (!isScalar(resolverValue)) {
+            // TODO: This needs to write optimistically
+            // Should we have global store state for this and dependencies?
+            writeRootField(ctx, resolverValue, fieldSelect);
+          }
+        }
+      }
+    });
+  }
+
+  return result;
+};
+
 export const writeFragment = (
   store: Store,
   query: DocumentNode,
@@ -178,6 +218,9 @@ const writeRoot = (ctx: Context, select: SelectionSet, data: Data) => {
     const fieldValue = data[fieldAlias];
 
     if (ctx.store.updates[fieldName]) {
+      // TODO: Should this really always replace the default logic?
+      // If it does, there's no way for the user to write everything else to the store
+      // It should probably run after the default writeRootField
       return ctx.store.updates[fieldName](
         data,
         fieldArgs || {},
