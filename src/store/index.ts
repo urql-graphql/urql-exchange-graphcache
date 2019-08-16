@@ -85,17 +85,36 @@ export class Store {
     return link ? link : null;
   }
 
+  addDeps(dependencies: string | Set<string>) {
+    if (typeof dependencies === 'string')
+      this.pendingDependencies.add(dependencies);
+    else {
+      this.pendingDependencies = new Set([
+        ...this.pendingDependencies,
+        ...dependencies,
+      ]);
+    }
+  }
+
+  releaseDeps(): Set<string> {
+    const temp = this.pendingDependencies;
+    this.pendingDependencies = new Set<string>();
+    return temp;
+  }
+
   resolve(
     entity: SystemFields,
     field: string,
     args?: Variables
   ): ResolverResult {
     if (typeof entity === 'string') {
+      this.addDeps(entity);
       return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
     } else {
       // This gives us __typename:key
       const entityKey = keyOfEntity(entity);
       if (entityKey === null) return null;
+      this.addDeps(entityKey);
       return this.resolveValueOrLink(
         joinKeys(entityKey, keyOfField(field, args))
       );
@@ -106,19 +125,17 @@ export class Store {
     dataQuery: DocumentNode,
     updater: (data: Data | null) => Data
   ): void {
+    // The pendingDependencies will also include passes of our dataQuery.
+    // in resolvers... Don't know if this is a problem...
+    // Personally I don't think so since the data is probably related to the
+    // query anyway.
     const { data } = query(this, { query: dataQuery });
     const { dependencies } = write(this, { query: dataQuery }, updater(data));
-    this.pendingDependencies = new Set([
-      ...this.pendingDependencies,
-      ...dependencies,
-    ]);
+    this.addDeps(dependencies);
   }
 
   writeFragment(dataFragment: DocumentNode, data: Data): void {
     const { dependencies } = writeFragment(this, dataFragment, data);
-    this.pendingDependencies = new Set([
-      ...this.pendingDependencies,
-      ...dependencies,
-    ]);
+    this.addDeps(dependencies);
   }
 }

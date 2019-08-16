@@ -124,10 +124,11 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
     const policy = getRequestPolicy(operation);
     const res = query(store, operation);
     const isComplete = policy === 'cache-only' || res.completeness === 'FULL';
-    res.dependencies = { ...res.dependencies, ...store.pendingDependencies };
-    store.pendingDependencies = new Set();
+    store.addDeps(res.dependencies);
+    const dependencies = store.releaseDeps();
+
     if (isComplete) {
-      updateDependencies(operation, res.dependencies);
+      updateDependencies(operation, dependencies);
     }
 
     return {
@@ -149,8 +150,8 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
       data !== undefined
     ) {
       let { dependencies } = write(store, operation, data);
-      dependencies = { ...dependencies, ...store.pendingDependencies };
-      store.pendingDependencies = new Set();
+      store.addDeps(dependencies);
+      dependencies = store.releaseDeps();
 
       // Update operations that depend on the updated data (except the current one)
       processDependencies(operation, dependencies);
