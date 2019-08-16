@@ -72,16 +72,7 @@ export class Store {
     return (this.links = set(this.links, key, link));
   }
 
-  resolve(
-    entity: SystemFields,
-    field: string,
-    args?: Variables
-  ): ResolverResult {
-    // This gives us __typename:key
-    const entityKey = keyOfEntity(entity);
-    if (entityKey === null) return null;
-
-    const fieldKey = joinKeys(entityKey, keyOfField(field, args));
+  resolveValueOrLink(fieldKey: string): ResolverResult {
     const fieldValue = this.getRecord(fieldKey);
     // Undefined implies a link OR incomplete data.
     // A value will imply that we are just fetching a field like date.
@@ -90,6 +81,24 @@ export class Store {
     // This can be an array OR a string OR undefined again
     const link = this.getLink(fieldKey);
     return link ? link : null;
+  }
+
+  resolve(
+    entity: SystemFields,
+    field: string,
+    args?: Variables
+  ): ResolverResult {
+    if (typeof entity === 'string') {
+      const fieldKey = joinKeys(entity, keyOfField(field, args));
+      return this.resolveValueOrLink(fieldKey);
+    } else {
+      // This gives us __typename:key
+      const entityKey = keyOfEntity(entity);
+      if (entityKey === null) return null;
+
+      const fieldKey = joinKeys(entityKey, keyOfField(field, args));
+      return this.resolveValueOrLink(fieldKey);
+    }
   }
 
   updateQuery(
