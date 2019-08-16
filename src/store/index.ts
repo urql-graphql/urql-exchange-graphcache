@@ -89,15 +89,14 @@ export class Store {
     args?: Variables
   ): ResolverResult {
     if (typeof entity === 'string') {
-      const fieldKey = joinKeys(entity, keyOfField(field, args));
-      return this.resolveValueOrLink(fieldKey);
+      return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
     } else {
       // This gives us __typename:key
       const entityKey = keyOfEntity(entity);
       if (entityKey === null) return null;
-
-      const fieldKey = joinKeys(entityKey, keyOfField(field, args));
-      return this.resolveValueOrLink(fieldKey);
+      return this.resolveValueOrLink(
+        joinKeys(entityKey, keyOfField(field, args))
+      );
     }
   }
 

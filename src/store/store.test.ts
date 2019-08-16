@@ -65,6 +65,11 @@ describe('store', () => {
     expect(result).toEqual('Go to the shops');
   });
 
+  it('should resolve witha key as first argument', () => {
+    const authorResult = store.resolve('Author:0', 'name');
+    expect(authorResult).toBe('Jovi');
+  });
+
   it('Should resolve a link property', () => {
     const parent = {
       id: '0',
