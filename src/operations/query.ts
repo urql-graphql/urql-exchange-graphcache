@@ -13,7 +13,6 @@ import {
   Fragments,
   Variables,
   Data,
-  Entity,
   Link,
   SelectionSet,
   Completeness,
@@ -114,16 +113,14 @@ const readSelection = (
       } else {
         // When it has a selection set we are resolving an entity with a
         // subselection. This can either be a list or an object.
-        const childEntity = resolverValue as Entity;
         const fieldSelect = getSelectionSet(node);
-        const prevData = data[fieldAlias] as Data;
 
         data[fieldAlias] = resolveResolverResult(
           ctx,
-          childEntity,
+          resolverValue,
           fieldKey,
           fieldSelect,
-          prevData
+          data[fieldAlias] as Data | Data[]
         );
       }
     } else if (node.selectionSet === undefined) {
