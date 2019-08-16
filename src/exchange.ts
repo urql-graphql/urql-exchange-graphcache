@@ -37,19 +37,23 @@ const addTypeNames = (op: Operation): Operation => ({
 const getRequestPolicy = (op: Operation) => op.context.requestPolicy;
 
 // Returns whether an operation is a query
-const isQueryOperation = (op: Operation): boolean => {
-  return op.operationName === 'query';
-};
+const isQueryOperation = (op: Operation): boolean =>
+  op.operationName === 'query';
 
-// Returns whether an operation is handled by this exchange
+// Returns whether an operation is a mutation
+const isMutationOperation = (op: Operation): boolean =>
+  op.operationName === 'query';
+
+// Returns whether an operation can potentially be read from cache
 const isCacheableQuery = (op: Operation): boolean => {
   const policy = getRequestPolicy(op);
-  return (
-    isQueryOperation(op) &&
-    (policy === 'cache-and-network' ||
-      policy === 'cache-first' ||
-      policy === 'cache-only')
-  );
+  return isQueryOperation(op) && policy !== 'network-only';
+};
+
+// Returns whether an operation potentially triggers an optimistic update
+const isOptimisticMutation = (op: Operation): boolean => {
+  const policy = getRequestPolicy(op);
+  return isMutationOperation(op) && policy !== 'network-only';
 };
 
 // Copy an operation and change the requestPolicy to skip the cache
