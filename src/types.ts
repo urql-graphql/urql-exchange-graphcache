@@ -56,7 +56,7 @@ export interface OperationRequest {
 }
 
 // This can be any field read from the cache
-export type ResolverResult = Scalar | Scalar[] | Entity | NullArray<Entity>;
+export type ResolverResult = Scalar | Data | NullArray<Scalar | Data>;
 
 export interface ResolveInfo {
   fragments: Fragments;
@@ -65,7 +65,7 @@ export interface ResolveInfo {
 
 // Cache resolvers are user-defined to overwrite an entity field result
 export type Resolver = (
-  parent: Entity,
+  parent: Data,
   args: Variables,
   cache: Store,
   info: ResolveInfo

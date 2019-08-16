@@ -18,7 +18,7 @@ import {
   SelectionSet,
   Completeness,
   OperationRequest,
-  NullArray,
+  ResolverResult,
 } from '../types';
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
@@ -101,7 +101,7 @@ const readSelection = (
     if (resolvers !== undefined && resolvers.hasOwnProperty(fieldName)) {
       // We have a resolver for this field.
       const resolverValue = resolvers[fieldName](
-        {} as any, // TODO: Implement stand-in entities
+        data,
         fieldArgs || {},
         store,
         ctx
@@ -118,7 +118,7 @@ const readSelection = (
         const fieldSelect = getSelectionSet(node);
         const prevData = data[fieldAlias] as Data;
 
-        data[fieldAlias] = readResolverSelection(
+        data[fieldAlias] = resolveResolverResult(
           ctx,
           childEntity,
           fieldKey,
@@ -152,7 +152,7 @@ const readSelection = (
         }
       } else {
         const prevData = data[fieldAlias] as Data;
-        data[fieldAlias] = readField(ctx, link, fieldSelect, prevData);
+        data[fieldAlias] = resolveLink(ctx, link, fieldSelect, prevData);
       }
     }
   });
@@ -160,34 +160,43 @@ const readSelection = (
   return data;
 };
 
-const readResolverSelection = (
+const resolveResolverResult = (
   ctx: Context,
-  entity: null | Entity | NullArray<Entity>,
+  result: ResolverResult,
   key: string,
   select: SelectionSet,
   prevData: void | Data | Data[]
 ) => {
   // When we are dealing with a list we have to call this method again.
-  if (Array.isArray(entity)) {
+  if (Array.isArray(result)) {
     // @ts-ignore: Link cannot be expressed as a recursive type
-    return entity.map((childEntity, index) => {
+    return result.map((childResult, index) => {
       const data = prevData !== undefined ? prevData[index] : undefined;
       const indexKey = joinKeys(key, `${index}`);
-      return readResolverSelection(ctx, childEntity, indexKey, select, data);
+      return resolveResolverResult(ctx, childResult, indexKey, select, data);
     });
-  } else if (entity === null) {
+  } else if (result === null) {
     return null;
-  } else {
-    const data = prevData === undefined ? Object.create(null) : prevData;
-    const entityKey = keyOfEntity(entity);
-    const childKey = entityKey !== null ? entityKey : key;
+  } else if (isDataOrKey(result)) {
     // We don't need to read the entity after exiting a resolver
     // we can just go on and read the selection further.
+    const data = prevData === undefined ? Object.create(null) : prevData;
+    const childKey =
+      (typeof result === 'string' ? result : keyOfEntity(result)) || key;
     return readSelection(ctx, childKey, select, data);
+  } else {
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn(
+        'Expected to receive a Link or an Entity from a Resolver but got a Scalar.'
+      );
+    }
+
+    ctx.result.completeness = 'EMPTY';
+    return null;
   }
 };
 
-const readField = (
+const resolveLink = (
   ctx: Context,
   link: Link | Link[],
   select: SelectionSet,
@@ -197,7 +206,7 @@ const readField = (
     // @ts-ignore: Link cannot be expressed as a recursive type
     return link.map((childLink, index) => {
       const data = prevData !== undefined ? prevData[index] : undefined;
-      return readField(ctx, childLink, select, data);
+      return resolveLink(ctx, childLink, select, data);
     });
   } else if (link === null) {
     return null;
@@ -206,3 +215,9 @@ const readField = (
     return readSelection(ctx, link, select, data);
   }
 };
+
+const isDataOrKey = (x: any): x is string | Data =>
+  typeof x === 'string' ||
+  (typeof x === 'object' &&
+    x !== null &&
+    typeof (x as any).__typename === 'string');
