@@ -183,17 +183,27 @@ const resolveResolverResult = (
     const data = prevData === undefined ? Object.create(null) : prevData;
     const childKey =
       (typeof result === 'string' ? result : keyOfEntity(result)) || key;
-    return readSelection(ctx, childKey, select, data);
-  } else {
-    if (process.env.NODE_ENV !== 'production') {
-      console.warn(
-        'Expected to receive a Link or an Entity from a Resolver but got a Scalar.'
-      );
+    const selectionResult = readSelection(ctx, childKey, select, data);
+
+    if (selectionResult !== null && typeof result === 'object') {
+      for (key in result) {
+        if (key !== '__typename' && result.hasOwnProperty(key)) {
+          selectionResult[key] = result[key];
+        }
+      }
     }
 
-    ctx.result.completeness = 'EMPTY';
-    return null;
+    return selectionResult;
   }
+
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn(
+      'Expected to receive a Link or an Entity from a Resolver but got a Scalar.'
+    );
+  }
+
+  ctx.result.completeness = 'EMPTY';
+  return null;
 };
 
 const resolveLink = (
