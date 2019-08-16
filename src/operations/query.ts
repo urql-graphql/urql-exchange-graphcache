@@ -13,11 +13,11 @@ import {
   Fragments,
   Variables,
   Data,
+  DataField,
   Link,
   SelectionSet,
   Completeness,
   OperationRequest,
-  ResolverResult,
 } from '../types';
 
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
@@ -159,7 +159,7 @@ const readSelection = (
 
 const resolveResolverResult = (
   ctx: Context,
-  result: ResolverResult,
+  result: DataField,
   key: string,
   select: SelectionSet,
   prevData: void | Data | Data[]

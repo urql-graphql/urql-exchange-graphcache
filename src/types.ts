@@ -2,7 +2,6 @@ import { DocumentNode, FragmentDefinitionNode, SelectionNode } from 'graphql';
 import { Store } from './store';
 
 // Helper types
-export type NullPrototype = { [K in keyof ObjectConstructor]: never };
 export type NullArray<T> = Array<null | T>;
 
 // GraphQL helper types
@@ -18,6 +17,7 @@ export interface ScalarObject {
   __typename?: never;
   [key: string]: any;
 }
+
 export type Scalar = Primitive | ScalarObject;
 
 export interface SystemFields {
@@ -27,23 +27,15 @@ export interface SystemFields {
 }
 
 export type EntityField = undefined | Scalar | Scalar[];
-
-export interface EntityFields {
-  [fieldName: string]: EntityField;
-}
-
-// Entities are objects from the response data which are full GraphQL types
-export type Entity = NullPrototype & SystemFields & EntityFields;
+export type DataField = Scalar | Scalar[] | Data | NullArray<Data>;
 
 export interface DataFields {
-  [fieldName: string]: Scalar | Scalar[] | Data | NullArray<Data>;
+  [fieldName: string]: DataField;
 }
 
 export type Data = SystemFields & DataFields;
-
-// Links are relations between entities
 export type Link<Key = string> = null | Key | NullArray<Key>;
-export type ResolvedLink = Link<Entity>;
+export type ResolvedLink = Link<Data>;
 
 export interface Variables {
   [name: string]: Scalar | Scalar[] | Variables | NullArray<Variables>;
@@ -54,9 +46,6 @@ export interface OperationRequest {
   query: DocumentNode;
   variables?: object;
 }
-
-// This can be any field read from the cache
-export type ResolverResult = Scalar | Data | NullArray<Scalar | Data>;
 
 export interface ResolveInfo {
   fragments: Fragments;
@@ -69,7 +58,7 @@ export type Resolver = (
   args: Variables,
   cache: Store,
   info: ResolveInfo
-) => ResolverResult;
+) => DataField;
 
 export interface ResolverConfig {
   [typeName: string]: {
