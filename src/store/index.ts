@@ -3,7 +3,6 @@ import { Map, make, get, set, remove } from 'pessimism';
 
 import {
   EntityField,
-  Entity,
   Link,
   ResolverConfig,
   ResolverResult,
@@ -73,32 +72,24 @@ export class Store {
     return (this.links = set(this.links, key, link));
   }
 
-  resolveEntity(entity: SystemFields): Entity | null {
-    return keyOfEntity(entity) ? (entity as any) : null; // TODO: Create stand-in entities
-  }
-
-  resolveProperty(
-    parent: Entity,
+  resolve(
+    entity: SystemFields,
     field: string,
-    args?: null | Variables
+    args?: Variables
   ): ResolverResult {
-    const entityKey = keyOfEntity(parent);
+    // This gives us __typename:key
+    const entityKey = keyOfEntity(entity);
     if (entityKey === null) return null;
 
     const fieldKey = joinKeys(entityKey, keyOfField(field, args));
     const fieldValue = this.getRecord(fieldKey);
+    // Undefined implies a link OR incomplete data.
+    // A value will imply that we are just fetching a field like date.
     if (fieldValue !== undefined) return fieldValue;
 
-    return null; // TODO: Figure out how to do this; Stand-in entities?
-
-    /*
+    // This can be an array OR a string OR undefined again
     const link = this.getLink(fieldKey);
-    if (Array.isArray(link)) {
-      return link.map(key => (key !== null ? this.find(key) : null));
-    } else {
-      return link ? this.find(link) : null;
-    }
-    */
+    return link ? link : null;
   }
 
   updateQuery(
