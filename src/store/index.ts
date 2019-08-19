@@ -5,11 +5,12 @@ import {
   EntityField,
   Link,
   ResolverConfig,
-  ResolverResult,
+  DataField,
   SystemFields,
   Variables,
   Data,
   UpdatesConfig,
+  OptimisticMutationConfig,
 } from '../types';
 
 import { keyOfEntity, joinKeys, keyOfField } from '../helpers';
@@ -22,13 +23,19 @@ export class Store {
 
   resolvers: ResolverConfig;
   updates: UpdatesConfig;
+  optimisticMutations: OptimisticMutationConfig;
 
-  constructor(resolvers?: ResolverConfig, updates?: UpdatesConfig) {
+  constructor(
+    resolvers?: ResolverConfig,
+    updates?: UpdatesConfig,
+    optimisticMutations?: OptimisticMutationConfig
+  ) {
     this.records = make();
     this.links = make();
     this.pendingDependencies = new Set();
     this.resolvers = resolvers || {};
     this.updates = updates || {};
+    this.optimisticMutations = optimisticMutations || {};
   }
 
   getRecord(fieldKey: string): EntityField {
@@ -74,7 +81,7 @@ export class Store {
     return (this.links = set(this.links, key, link));
   }
 
-  resolveValueOrLink(fieldKey: string): ResolverResult {
+  resolveValueOrLink(fieldKey: string): DataField {
     const fieldValue = this.getRecord(fieldKey);
     // Undefined implies a link OR incomplete data.
     // A value will imply that we are just fetching a field like date.
@@ -102,11 +109,7 @@ export class Store {
     return temp;
   }
 
-  resolve(
-    entity: SystemFields,
-    field: string,
-    args?: Variables
-  ): ResolverResult {
+  resolve(entity: SystemFields, field: string, args?: Variables): DataField {
     if (typeof entity === 'string') {
       this.addDeps(entity);
       return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
