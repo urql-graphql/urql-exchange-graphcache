@@ -100,6 +100,10 @@ export const forEachFieldNode = (
         const fragmentSelect = getSelectionSet(def);
         // TODO: Check for getTypeCondition(def) to match
         // Recursively process the fragments' selection sets
+        // TODO: add fragmentMatcher here, that would imply this
+        // being expanded with store as an argument.
+        // This could entail potential issues... Do we just return
+        // when we don't match or do we error out?
         forEachFieldNode(fragmentSelect, fragments, vars, cb);
       }
     } else if (getName(node) !== '__typename') {
