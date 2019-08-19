@@ -83,17 +83,6 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
   const ops: OperationMap = new Map();
   const deps = Object.create(null) as DependentOperations;
 
-  // This executes an optimistic update for mutations and registers it if necessary
-  const optimisticUpdate = (operation: Operation) => {
-    if (isOptimisticMutation(operation)) {
-      const { key } = operation;
-      const { dependencies } = writeOptimistic(store, operation, key);
-      if (dependencies.size !== 0) {
-        optimisticKeys.add(key);
-      }
-    }
-  };
-
   // This accepts an array of dependencies and reexecutes all known operations
   // against the mapping of dependencies to operations
   // The passed triggerOp is ignored however
@@ -120,6 +109,18 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
         client.reexecuteOperation(op);
       }
     });
+  };
+
+  // This executes an optimistic update for mutations and registers it if necessary
+  const optimisticUpdate = (operation: Operation) => {
+    if (isOptimisticMutation(operation)) {
+      const { key } = operation;
+      const { dependencies } = writeOptimistic(store, operation, key);
+      if (dependencies.size !== 0) {
+        optimisticKeys.add(key);
+        processDependencies(operation, dependencies);
+      }
+    }
   };
 
   // This updates the known dependencies for the passed operation
