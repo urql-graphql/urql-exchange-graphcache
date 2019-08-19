@@ -63,10 +63,6 @@ export const query = (store: Store, request: OperationRequest): QueryResult => {
   };
 
   result.data = readSelection(ctx, 'Query', getSelectionSet(operation), root);
-  if (result.completeness === 'EMPTY') {
-    result.data = null;
-  }
-
   clearStoreState();
   return result;
 };
