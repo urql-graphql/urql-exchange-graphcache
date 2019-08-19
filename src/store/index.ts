@@ -86,6 +86,11 @@ export class Store {
     this.optimisticMutations = optimisticMutations || {};
   }
 
+  clearOptimistic(optimisticKey: number) {
+    this.records = Pessimism.clearOptimistic(this.records, optimisticKey);
+    this.links = Pessimism.clearOptimistic(this.links, optimisticKey);
+  }
+
   getRecord(fieldKey: string): EntityField {
     return Pessimism.get(this.records, fieldKey);
   }

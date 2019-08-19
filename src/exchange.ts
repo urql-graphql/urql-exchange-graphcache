@@ -7,9 +7,9 @@ import {
 } from 'urql';
 
 import { filter, map, merge, pipe, share, tap } from 'wonka';
-
-import { query, write } from './operations';
+import { query, write, writeOptimistic } from './operations';
 import { Store } from './store';
+
 import {
   Completeness,
   UpdatesConfig,
@@ -42,7 +42,7 @@ const isQueryOperation = (op: Operation): boolean =>
 
 // Returns whether an operation is a mutation
 const isMutationOperation = (op: Operation): boolean =>
-  op.operationName === 'query';
+  op.operationName === 'mutation';
 
 // Returns whether an operation can potentially be read from cache
 const isCacheableQuery = (op: Operation): boolean => {
@@ -79,8 +79,20 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
   client,
 }) => {
   const store = new Store(opts.resolvers, opts.updates, opts.optimistic);
+  const optimisticKeys = new Set();
   const ops: OperationMap = new Map();
   const deps = Object.create(null) as DependentOperations;
+
+  // This executes an optimistic update for mutations and registers it if necessary
+  const optimisticUpdate = (operation: Operation) => {
+    if (isOptimisticMutation(operation)) {
+      const { key } = operation;
+      const { dependencies } = writeOptimistic(store, operation, key);
+      if (dependencies.size !== 0) {
+        optimisticKeys.add(key);
+      }
+    }
+  };
 
   // This accepts an array of dependencies and reexecutes all known operations
   // against the mapping of dependencies to operations
@@ -146,18 +158,20 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
   };
 
   // Take any OperationResult and update the cache with it
-  const updateCacheWithResult = ({
-    error,
-    data,
-    operation,
-  }: OperationResult) => {
-    if (
-      (error === undefined || error.networkError === undefined) &&
-      data !== null &&
-      data !== undefined
-    ) {
-      const { dependencies } = write(store, operation, data);
+  const updateCacheWithResult = ({ data, operation }: OperationResult) => {
+    let dependencies;
+    if (data !== null && data !== undefined) {
+      dependencies = write(store, operation, data).dependencies;
+    }
 
+    // Clear old optimistic values from the store
+    const { key } = operation;
+    if (optimisticKeys.has(key)) {
+      optimisticKeys.delete(key);
+      store.clearOptimistic(key);
+    }
+
+    if (dependencies !== undefined) {
       // Update operations that depend on the updated data (except the current one)
       processDependencies(operation, dependencies);
 
@@ -172,6 +186,7 @@ export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
     const sharedOps$ = pipe(
       ops$,
       map(addTypeNames),
+      tap(optimisticUpdate),
       share
     );
 
