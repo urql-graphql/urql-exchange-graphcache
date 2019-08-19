@@ -21,8 +21,15 @@ import {
   OperationRequest,
 } from '../types';
 
+import {
+  Store,
+  addDependency,
+  getCurrentDependencies,
+  initStoreState,
+  clearStoreState,
+} from '../store';
+
 import { joinKeys, keyOfEntity, keyOfField } from '../helpers';
-import { Store } from '../store';
 import { DocumentNode, FragmentDefinitionNode, Kind } from 'graphql';
 
 export interface WriteResult {
@@ -42,8 +49,10 @@ export const write = (
   request: OperationRequest,
   data: Data
 ): WriteResult => {
+  initStoreState(0);
+
   const operation = getMainOperation(request.query);
-  const result: WriteResult = { dependencies: new Set() };
+  const result: WriteResult = { dependencies: getCurrentDependencies() };
 
   const ctx: Context = {
     variables: normalizeVariables(operation, request.variables),
@@ -59,14 +68,17 @@ export const write = (
     writeRoot(ctx, select, data);
   }
 
+  clearStoreState();
   return result;
 };
 
 export const writeOptimistic = (
   store: Store,
-  request: OperationRequest
-  // optimisticKey: number
+  request: OperationRequest,
+  optimisticKey: number
 ): WriteResult => {
+  initStoreState(optimisticKey);
+
   const operation = getMainOperation(request.query);
   const result: WriteResult = { dependencies: new Set() };
 
@@ -90,8 +102,6 @@ export const writeOptimistic = (
           const fieldSelect = getSelectionSet(operation);
           const resolverValue = resolver(fieldArgs || {}, ctx.store, ctx);
           if (!isScalar(resolverValue)) {
-            // TODO: This needs to write optimistically
-            // Should we have global store state for this and dependencies?
             writeRootField(ctx, resolverValue, fieldSelect);
           }
         }
@@ -99,6 +109,7 @@ export const writeOptimistic = (
     });
   }
 
+  clearStoreState();
   return result;
 };
 
@@ -135,7 +146,7 @@ export const writeFragment = (
       store,
       variables: {},
       fragments: {},
-      result: { dependencies: new Set() },
+      result: { dependencies: getCurrentDependencies() },
     },
     entityKey,
     select,
@@ -150,9 +161,7 @@ const writeSelection = (
   data: Data
 ) => {
   const isQuery = entityKey === 'Query';
-  if (!isQuery) {
-    ctx.result.dependencies.add(entityKey);
-  }
+  if (!isQuery) addDependency(entityKey);
 
   const { store, fragments, variables } = ctx;
   store.writeField(data.__typename, entityKey, '__typename');
@@ -163,9 +172,7 @@ const writeSelection = (
     const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
     const fieldValue = data[getFieldAlias(node)];
 
-    if (isQuery) {
-      ctx.result.dependencies.add(fieldKey);
-    }
+    if (isQuery) addDependency(fieldKey);
 
     if (node.selectionSet === undefined) {
       // This is a leaf node, so we're setting the field's value directly

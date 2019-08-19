@@ -43,11 +43,11 @@ export const initStoreState = (optimisticKey: null | number) => {
 
 // Finalise a store run by clearing its internal state
 export const clearStoreState = () => {
-  const dependencies = refValue(currentDependencies);
   currentDependencies.current = null;
   currentOptimisticKey.current = null;
-  return dependencies;
 };
+
+export const getCurrentDependencies = () => refValue(currentDependencies);
 
 // Add a dependency to the internal store state
 export const addDependency = (dependency: string) =>

@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import { Store } from '.';
+import { Store, initStoreState, clearStoreState } from '.';
 import { write, query } from '../operations';
 
 const Todos = gql`
@@ -82,6 +82,7 @@ describe('store', () => {
   });
 
   it('should be able to update a fragment', () => {
+    initStoreState(0);
     store.writeFragment(
       gql`
         fragment _ on Todo {
@@ -98,6 +99,8 @@ describe('store', () => {
     );
 
     const { data } = query(store, { query: Todos });
+    clearStoreState();
+
     expect(data).toEqual({
       __typename: 'Query',
       todos: [
