@@ -51,6 +51,7 @@ describe('store', () => {
     };
 
     write(store, { query: Todos }, todosData);
+    store.releaseDeps();
   });
 
   it('Should resolve a property', () => {
@@ -68,6 +69,7 @@ describe('store', () => {
   it('should resolve witha key as first argument', () => {
     const authorResult = store.resolve('Author:0', 'name');
     expect(authorResult).toBe('Jovi');
+    expect(store.pendingDependencies).toEqual(new Set(['Author:0']));
   });
 
   it('Should resolve a link property', () => {
@@ -79,6 +81,7 @@ describe('store', () => {
     };
     const result = store.resolve(parent, 'author');
     expect(result).toEqual('Author:0');
+    expect(store.pendingDependencies).toEqual(new Set(['Todo:0']));
   });
 
   it('should be able to update a fragment', () => {
@@ -110,6 +113,7 @@ describe('store', () => {
         todosData.todos[2],
       ],
     });
+    expect(store.pendingDependencies).toEqual(new Set(['Todo:0']));
   });
 
   it('should be able to update a query', () => {
@@ -147,5 +151,17 @@ describe('store', () => {
         },
       ],
     });
+    // TODO: verify... This feels odd
+    expect(store.pendingDependencies).toEqual(
+      new Set([
+        'Author:0',
+        'Author:1',
+        'Query.todos',
+        'Todo:0',
+        'Todo:1',
+        'Todo:2',
+        'Todo:4',
+      ])
+    );
   });
 });
