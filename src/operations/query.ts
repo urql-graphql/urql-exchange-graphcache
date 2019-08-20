@@ -84,7 +84,7 @@ const readSelection = (
 
   data.__typename = typename;
 
-  forEachFieldNode(select, fragments, variables, node => {
+  forEachFieldNode(entityKey, ctx.store, select, fragments, variables, node => {
     // Derive the needed data from our node.
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);

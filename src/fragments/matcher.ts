@@ -1,11 +1,11 @@
-import { FragmentDefinitionNode, FieldNode } from 'graphql';
+import { FragmentDefinitionNode, FieldNode, InlineFragmentNode } from 'graphql';
 import { getTypeCondition, getName, getSelectionSet } from '../ast';
 import { Store } from '../store';
 
 export const matchFragment = (
   store: Store,
   key: string,
-  fragment: FragmentDefinitionNode
+  fragment: FragmentDefinitionNode | InlineFragmentNode
 ): boolean | 'heuristic' => {
   const typeCondition = getTypeCondition(fragment);
   const typename = store.getRecord(`${key}.__typename`);
@@ -20,12 +20,13 @@ export const matchFragment = (
 export const matchFragmentHeuristically = (
   store: Store,
   key: string,
-  fragment: FragmentDefinitionNode
+  fragment: FragmentDefinitionNode | InlineFragmentNode
 ) => {
   const missing: string[] = [];
   getSelectionSet(fragment).forEach(selection => {
     const fieldName = getName(selection as FieldNode);
-    if (!store.getRecord(`${key}.${fieldName}`)) {
+
+    if (store.getRecord(`${key}.${fieldName}`) === undefined) {
       missing.push(fieldName);
     }
   });

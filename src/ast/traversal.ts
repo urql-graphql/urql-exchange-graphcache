@@ -12,6 +12,11 @@ import {
 import { getName, getSelectionSet } from './node';
 import { evaluateValueNode } from './variables';
 import { Fragments, Variables, SelectionSet } from '../types';
+import {
+  matchFragment,
+  matchFragmentHeuristically,
+} from '../fragments/matcher';
+import { Store } from '../store';
 
 const isFragmentNode = (
   node: DefinitionNode
@@ -83,6 +88,8 @@ const shouldInclude = (node: SelectionNode, vars: Variables): boolean => {
 };
 
 export const forEachFieldNode = (
+  fieldKey: string,
+  store: Store,
   select: SelectionSet,
   fragments: Fragments,
   vars: Variables,
@@ -98,13 +105,17 @@ export const forEachFieldNode = (
 
       if (def !== undefined) {
         const fragmentSelect = getSelectionSet(def);
+        const match = matchFragment(store, fieldKey, def);
+        if (match === 'heuristic') {
+          matchFragmentHeuristically(store, fieldKey, def);
+        }
         // TODO: Check for getTypeCondition(def) to match
         // Recursively process the fragments' selection sets
         // TODO: add fragmentMatcher here, that would imply this
         // being expanded with store as an argument.
         // This could entail potential issues... Do we just return
         // when we don't match or do we error out?
-        forEachFieldNode(fragmentSelect, fragments, vars, cb);
+        forEachFieldNode(fieldKey, store, fragmentSelect, fragments, vars, cb);
       }
     } else if (getName(node) !== '__typename') {
       cb(node);

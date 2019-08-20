@@ -117,7 +117,7 @@ const writeSelection = (
   const { store, fragments, variables } = ctx;
   store.writeField(data.__typename, entityKey, '__typename');
 
-  forEachFieldNode(select, fragments, variables, node => {
+  forEachFieldNode(entityKey, ctx.store, select, fragments, variables, node => {
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
     const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
@@ -171,7 +171,7 @@ const writeField = (
 // This is like writeSelection but assumes no parent entity exists
 const writeRoot = (ctx: Context, select: SelectionSet, data: Data) => {
   const { fragments, variables } = ctx;
-  forEachFieldNode(select, fragments, variables, node => {
+  forEachFieldNode('Query', ctx.store, select, fragments, variables, node => {
     const fieldName = getName(node);
     const fieldAlias = getFieldAlias(node);
     const fieldArgs = getFieldArguments(node, variables);
