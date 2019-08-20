@@ -12,10 +12,7 @@ import {
 import { getName, getSelectionSet } from './node';
 import { evaluateValueNode } from './variables';
 import { Fragments, Variables, SelectionSet } from '../types';
-import {
-  matchFragment,
-  matchFragmentHeuristically,
-} from '../fragments/matcher';
+import { matchFragment, matchFragmentHeuristically } from '../fragments';
 import { Store } from '../store';
 
 const isFragmentNode = (

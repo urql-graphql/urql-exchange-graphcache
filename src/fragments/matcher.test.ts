@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import { matchFragment, matchFragmentHeuristically } from './index';
+import { matchFragment, matchFragmentHeuristically } from '.';
 import { Store } from '../store';
 import { write } from '../operations';
 
