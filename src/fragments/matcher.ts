@@ -9,7 +9,6 @@ export const matchFragment = (
 ): boolean | 'heuristic' => {
   const typeCondition = getTypeCondition(fragment);
   const typename = store.getRecord(`${key}.__typename`);
-  if (typename === 'Query') return true;
   // The name and condition are equals so we know they are matched.
   if (typeCondition === typename) return true;
   // We can't know for sure without the schema.
