@@ -105,6 +105,9 @@ export const writeOptimistic = (
             writeRootField(
               ctx,
               resolverValue,
+              // We want to avoid passing [mutationName]: fieldSelection
+              // since this will make us write [mutationName]: undefined
+              // to the store. This because data[mutationName] does not exist.
               (fieldSelect[0] as any).selectionSet.selections
             );
           }
