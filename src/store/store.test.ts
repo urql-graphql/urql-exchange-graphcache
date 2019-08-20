@@ -202,7 +202,7 @@ describe('store', () => {
       1
     );
     expect(dependencies).toEqual(new Set(['Todo:1']));
-    const { data } = query(store, { query: Todos });
+    let { data } = query(store, { query: Todos });
     expect(data).toEqual({
       __typename: 'Query',
       todos: [
@@ -220,6 +220,13 @@ describe('store', () => {
         },
         todosData.todos[2],
       ],
+    });
+
+    store.clearOptimistic(1);
+    ({ data } = query(store, { query: Todos }));
+    expect(data).toEqual({
+      __typename: 'Query',
+      todos: todosData.todos,
     });
   });
 });
