@@ -36,12 +36,12 @@ it('writes queries to the cache', () => {
   );
 
   const [ops$, next] = makeSubject<Operation>();
+  const result = jest.fn();
   const forward: ExchangeIO = ops$ =>
     pipe(
       ops$,
       map(response)
     );
-  const result = jest.fn();
 
   pipe(
     cacheExchange({})({ forward, client })(ops$),
@@ -50,10 +50,8 @@ it('writes queries to the cache', () => {
   );
 
   next(op);
-  expect(response).toHaveBeenCalledTimes(1);
-
   next(op);
-
+  expect(response).toHaveBeenCalledTimes(1);
   expect(result).toHaveBeenCalledTimes(2);
 });
 
@@ -79,14 +77,17 @@ it('updates related queries when their data changes', () => {
   };
 
   const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
+
   const reexec = jest
     .spyOn(client, 'reexecuteOperation')
-    .mockImplementation(() => {});
+    .mockImplementation(next);
 
   const opOne = client.createRequestOperation('query', {
     key: 1,
     query: queryOne,
   });
+
   const opMultiple = client.createRequestOperation('query', {
     key: 2,
     query: queryMultiple,
@@ -104,7 +105,6 @@ it('updates related queries when their data changes', () => {
     }
   );
 
-  const [ops$, next] = makeSubject<Operation>();
   const forward: ExchangeIO = ops$ =>
     pipe(
       ops$,
@@ -120,12 +120,12 @@ it('updates related queries when their data changes', () => {
 
   next(opOne);
   expect(response).toHaveBeenCalledTimes(1);
+  expect(result).toHaveBeenCalledTimes(1);
 
   next(opMultiple);
   expect(response).toHaveBeenCalledTimes(2);
-
   expect(reexec).toHaveBeenCalledWith(opOne);
-  expect(result).toHaveBeenCalledTimes(2);
+  expect(result).toHaveBeenCalledTimes(3);
 });
 
 it('does nothing when no related queries have changed', () => {
@@ -148,9 +148,10 @@ it('does nothing when no related queries have changed', () => {
   };
 
   const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
   const reexec = jest
     .spyOn(client, 'reexecuteOperation')
-    .mockImplementation(() => {});
+    .mockImplementation(next);
 
   const opOne = client.createRequestOperation('query', {
     key: 1,
@@ -173,7 +174,6 @@ it('does nothing when no related queries have changed', () => {
     }
   );
 
-  const [ops$, next] = makeSubject<Operation>();
   const forward: ExchangeIO = ops$ =>
     pipe(
       ops$,
@@ -228,13 +228,17 @@ it('writes optimistic mutations to the cache', () => {
   };
 
   const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
+
   const reexec = jest
     .spyOn(client, 'reexecuteOperation')
-    .mockImplementation(() => {});
+    .mockImplementation(next);
+
   const opOne = client.createRequestOperation('query', {
     key: 1,
     query: queryOne,
   });
+
   const opMutation = client.createRequestOperation('mutation', {
     key: 2,
     query: mutation,
@@ -252,14 +256,13 @@ it('writes optimistic mutations to the cache', () => {
     }
   );
 
-  const [ops$, next] = makeSubject<Operation>();
+  const result = jest.fn();
   const forward: ExchangeIO = ops$ =>
     pipe(
       ops$,
       delay(1),
       map(response)
     );
-  const result = jest.fn();
 
   const optimistic = {
     concealAuthor: jest.fn(() => optimisticMutationData.concealAuthor) as any,
@@ -282,7 +285,5 @@ it('writes optimistic mutations to the cache', () => {
 
   jest.runAllTimers();
   expect(response).toHaveBeenCalledTimes(2);
-  expect(reexec).toHaveBeenCalledTimes(1);
-
-  expect(result).toHaveBeenCalledTimes(2);
+  expect(result).toHaveBeenCalledTimes(4);
 });
