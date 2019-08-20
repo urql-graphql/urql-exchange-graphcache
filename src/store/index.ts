@@ -50,8 +50,9 @@ export const clearStoreState = () => {
 export const getCurrentDependencies = () => refValue(currentDependencies);
 
 // Add a dependency to the internal store state
-export const addDependency = (dependency: string) =>
+export const addDependency = (dependency: string) => {
   refValue(currentDependencies).add(dependency);
+};
 
 const mapSet = <T>(map: Pessimism.Map<T>, key: string, value: T) => {
   const optimisticKey = refValue(currentOptimisticKey);
@@ -147,11 +148,13 @@ export class Store {
 
   resolve(entity: SystemFields, field: string, args?: Variables): DataField {
     if (typeof entity === 'string') {
+      addDependency(entity);
       return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
     } else {
       // This gives us __typename:key
       const entityKey = keyOfEntity(entity);
       if (entityKey === null) return null;
+      addDependency(entityKey);
       return this.resolveValueOrLink(
         joinKeys(entityKey, keyOfField(field, args))
       );

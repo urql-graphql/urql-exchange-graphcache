@@ -80,7 +80,7 @@ export const writeOptimistic = (
   initStoreState(optimisticKey);
 
   const operation = getMainOperation(request.query);
-  const result: WriteResult = { dependencies: new Set() };
+  const result: WriteResult = { dependencies: getCurrentDependencies() };
 
   const ctx: Context = {
     variables: normalizeVariables(operation, request.variables),
@@ -99,7 +99,7 @@ export const writeOptimistic = (
         const resolver = ctx.store.optimisticMutations[fieldName];
         if (resolver !== undefined) {
           const fieldArgs = getFieldArguments(node, ctx.variables);
-          const fieldSelect = getSelectionSet(operation);
+          const fieldSelect = getSelectionSet(node);
           const resolverValue = resolver(fieldArgs || {}, ctx.store, ctx);
           if (!isScalar(resolverValue)) {
             writeRootField(ctx, resolverValue, fieldSelect);
@@ -165,7 +165,6 @@ const writeSelection = (
 
   const { store, fragments, variables } = ctx;
   store.writeField(data.__typename, entityKey, '__typename');
-
   forEachFieldNode(select, fragments, variables, node => {
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
@@ -173,7 +172,6 @@ const writeSelection = (
     const fieldValue = data[getFieldAlias(node)];
 
     if (isQuery) addDependency(fieldKey);
-
     if (node.selectionSet === undefined) {
       // This is a leaf node, so we're setting the field's value directly
       store.writeRecord(fieldValue, fieldKey);
