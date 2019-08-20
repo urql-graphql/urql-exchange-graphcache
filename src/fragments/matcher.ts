@@ -1,4 +1,9 @@
-import { FragmentDefinitionNode, FieldNode, InlineFragmentNode } from 'graphql';
+import {
+  FragmentDefinitionNode,
+  FieldNode,
+  InlineFragmentNode,
+  Kind,
+} from 'graphql';
 import { getTypeCondition, getName, getSelectionSet } from '../ast';
 import { Store } from '../store';
 
@@ -23,16 +28,19 @@ export const matchFragmentHeuristically = (
   fragment: FragmentDefinitionNode | InlineFragmentNode
 ) => {
   const missing: string[] = [];
-  getSelectionSet(fragment).forEach(selection => {
-    const fieldName = getName(selection as FieldNode);
+  getSelectionSet(fragment).forEach(node => {
+    if (node.kind === Kind.FIELD) {
+      const fieldName = getName(node as FieldNode);
 
-    if (store.getRecord(`${key}.${fieldName}`) === undefined) {
-      missing.push(fieldName);
+      if (store.getRecord(`${key}.${fieldName}`) === undefined) {
+        missing.push(fieldName);
+      }
     }
   });
 
   if (missing.length > 0 && process.env.NODE_ENV !== 'production') {
     missing.forEach(name => console.warn(`Missing field "${name}"`));
   }
+
   return missing.length > 0;
 };
