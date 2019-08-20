@@ -1,5 +1,5 @@
-import { FragmentDefinitionNode } from 'graphql';
-import { getTypeCondition } from '../ast';
+import { FragmentDefinitionNode, FieldNode } from 'graphql';
+import { getTypeCondition, getName, getSelectionSet } from '../ast';
 import { Store } from '../store';
 
 export const matchFragment = (
@@ -15,4 +15,23 @@ export const matchFragment = (
   // When we return 'heuristic' + have missing fragmentFields
   // We know we're making a mistake.
   return 'heuristic';
+};
+
+export const matchFragmentHeuristically = (
+  store: Store,
+  key: string,
+  fragment: FragmentDefinitionNode
+) => {
+  const missing: string[] = [];
+  getSelectionSet(fragment).forEach(selection => {
+    const fieldName = getName(selection as FieldNode);
+    if (!store.getRecord(`${key}.${fieldName}`)) {
+      missing.push(fieldName);
+    }
+  });
+
+  if (missing.length > 0) {
+    missing.forEach(name => console.warn('Missing field ', name));
+  }
+  return missing.length > 0;
 };
