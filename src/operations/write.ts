@@ -6,6 +6,7 @@ import {
   normalizeVariables,
   getFragmentTypeName,
   getName,
+  getOperationName,
   getFieldArguments,
 } from '../ast';
 
@@ -62,12 +63,12 @@ export const write = (
   };
 
   const select = getSelectionSet(operation);
-  if (operation.operation === 'query') {
-    writeSelection(ctx, 'Query', select, data);
+  const operationName = getOperationName(operation);
+
+  if (operationName === 'Query') {
+    writeSelection(ctx, operationName, select, data);
   } else {
-    const typename =
-      operation.operation === 'mutation' ? 'Mutation' : 'Subscription';
-    writeRoot(ctx, typename, select, data);
+    writeRoot(ctx, operationName, select, data);
   }
 
   clearStoreState();
@@ -91,12 +92,10 @@ export const writeOptimistic = (
     store,
   };
 
-  if (operation.operation === 'mutation') {
-    const typename = 'Mutation';
+  const operationName = getOperationName(operation);
+  if (operationName === 'Mutation') {
     const select = getSelectionSet(operation);
-
-    // TODO: This is very similar to writeRoot & writeRootField
-    forEachFieldNode(typename, typename, select, ctx, node => {
+    forEachFieldNode(operationName, operationName, select, ctx, node => {
       if (node.selectionSet !== undefined) {
         const fieldName = getName(node);
         const resolver = ctx.store.optimisticMutations[fieldName];

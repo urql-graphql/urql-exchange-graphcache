@@ -5,6 +5,7 @@ import {
   SelectionSetNode,
   InlineFragmentNode,
   FieldNode,
+  OperationDefinitionNode,
   FragmentDefinitionNode,
   Kind,
 } from 'graphql';
@@ -13,6 +14,17 @@ import { SelectionSet } from '../types';
 
 /** Returns the name of a given node */
 export const getName = (node: { name: NameNode }): string => node.name.value;
+
+export const getOperationName = (node: OperationDefinitionNode) => {
+  switch (node.operation) {
+    case 'query':
+      return 'Query';
+    case 'mutation':
+      return 'Mutation';
+    case 'subscription':
+      return 'Subscription';
+  }
+};
 
 export const getFragmentTypeName = (node: FragmentDefinitionNode): string =>
   node.typeCondition.name.value;
