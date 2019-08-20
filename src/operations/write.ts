@@ -102,7 +102,11 @@ export const writeOptimistic = (
           const fieldSelect = getSelectionSet(operation);
           const resolverValue = resolver(fieldArgs || {}, ctx.store, ctx);
           if (!isScalar(resolverValue)) {
-            writeRootField(ctx, resolverValue, fieldSelect, true);
+            writeRootField(
+              ctx,
+              resolverValue,
+              (fieldSelect[0] as any).selectionSet.selections
+            );
           }
         }
       }
@@ -158,41 +162,34 @@ const writeSelection = (
   ctx: Context,
   entityKey: string,
   select: SelectionSet,
-  data: Data,
-  isMutationKey?: boolean
+  data: Data
 ) => {
   const isQuery = entityKey === 'Query';
   if (!isQuery) addDependency(entityKey);
 
   const { store, fragments, variables } = ctx;
   store.writeField(data.__typename, entityKey, '__typename');
-  // @ts-ignore
-  forEachFieldNode(
-    isMutationKey ? select[0].selectionSet.selections : select,
-    fragments,
-    variables,
-    node => {
-      const fieldName = getName(node);
-      const fieldArgs = getFieldArguments(node, variables);
-      const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
-      const fieldValue = data[getFieldAlias(node)];
+  forEachFieldNode(select, fragments, variables, node => {
+    const fieldName = getName(node);
+    const fieldArgs = getFieldArguments(node, variables);
+    const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
+    const fieldValue = data[getFieldAlias(node)];
 
-      if (isQuery) addDependency(fieldKey);
-      if (node.selectionSet === undefined) {
-        // This is a leaf node, so we're setting the field's value directly
-        store.writeRecord(fieldValue, fieldKey);
-      } else if (!isScalar(fieldValue)) {
-        // Process the field and write links for the child entities that have been written
-        const { selections: fieldSelect } = node.selectionSet;
-        const link = writeField(ctx, fieldKey, fieldSelect, fieldValue);
-        store.writeLink(link, fieldKey);
-        store.removeRecord(fieldKey);
-      } else {
-        // This is a rare case for invalid entities
-        store.writeRecord(fieldValue, fieldKey);
-      }
+    if (isQuery) addDependency(fieldKey);
+    if (node.selectionSet === undefined) {
+      // This is a leaf node, so we're setting the field's value directly
+      store.writeRecord(fieldValue, fieldKey);
+    } else if (!isScalar(fieldValue)) {
+      // Process the field and write links for the child entities that have been written
+      const { selections: fieldSelect } = node.selectionSet;
+      const link = writeField(ctx, fieldKey, fieldSelect, fieldValue);
+      store.writeLink(link, fieldKey);
+      store.removeRecord(fieldKey);
+    } else {
+      // This is a rare case for invalid entities
+      store.writeRecord(fieldValue, fieldKey);
     }
-  );
+  });
 };
 
 const writeField = (
@@ -256,11 +253,10 @@ const writeRoot = (ctx: Context, select: SelectionSet, data: Data) => {
 const writeRootField = (
   ctx: Context,
   data: null | Data | NullArray<Data>,
-  select: SelectionSet,
-  isMutationKey?: boolean
+  select: SelectionSet
 ) => {
   if (Array.isArray(data)) {
-    return data.map(item => writeRootField(ctx, item, select, isMutationKey));
+    return data.map(item => writeRootField(ctx, item, select));
   } else if (data === null) {
     return;
   }
@@ -268,7 +264,7 @@ const writeRootField = (
   // Write entity to key that falls back to the given parentFieldKey
   const entityKey = keyOfEntity(data);
   if (entityKey !== null) {
-    writeSelection(ctx, entityKey, select, data, isMutationKey);
+    writeSelection(ctx, entityKey, select, data);
   }
 };
 
