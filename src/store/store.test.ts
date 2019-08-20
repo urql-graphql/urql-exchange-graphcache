@@ -1,5 +1,10 @@
 import gql from 'graphql-tag';
-import { Store, initStoreState, clearStoreState } from '.';
+import {
+  Store,
+  initStoreState,
+  clearStoreState,
+  getCurrentDependencies,
+} from '.';
 import { write, query } from '../operations';
 import { Data } from '../types';
 import { writeOptimistic } from '../operations/write';
@@ -57,8 +62,8 @@ describe('store', () => {
         },
       ],
     };
-
     write(store, { query: Todos }, todosData);
+    initStoreState(null);
   });
 
   it('Should resolve a property', () => {
@@ -72,15 +77,17 @@ describe('store', () => {
     const result = store.resolve({ id: 0, __typename: 'Todo' }, 'text');
     expect(result).toEqual('Go to the shops');
     // TODO: we have no way of asserting this to really be the case.
-    // const deps = getCurrentDependencies();
-    // expect(deps).toEqual(new Set(['Todo:0', 'Author:0']))
+    const deps = getCurrentDependencies();
+    expect(deps).toEqual(new Set(['Todo:0', 'Author:0']));
+    clearStoreState();
   });
 
   it('should resolve witha key as first argument', () => {
     const authorResult = store.resolve('Author:0', 'name');
     expect(authorResult).toBe('Jovi');
-    // const deps = getCurrentDependencies();
-    // expect(deps).toEqual(new Set(['Author:0']))
+    const deps = getCurrentDependencies();
+    expect(deps).toEqual(new Set(['Author:0']));
+    clearStoreState();
   });
 
   it('Should resolve a link property', () => {
@@ -92,8 +99,9 @@ describe('store', () => {
     };
     const result = store.resolve(parent, 'author');
     expect(result).toEqual('Author:0');
-    // const deps = getCurrentDependencies();
-    // expect(deps).toEqual(new Set(['Author:0']))
+    const deps = getCurrentDependencies();
+    expect(deps).toEqual(new Set(['Todo:0']));
+    clearStoreState();
   });
 
   it('should be able to update a fragment', () => {
@@ -113,11 +121,10 @@ describe('store', () => {
       }
     );
 
-    // const deps = getCurrentDependencies();
-    // expect(deps).toEqual(new Set(['Todo:0']))
+    const deps = getCurrentDependencies();
+    expect(deps).toEqual(new Set(['Todo:0']));
 
     const { data } = query(store, { query: Todos });
-    clearStoreState();
 
     expect(data).toEqual({
       __typename: 'Query',
@@ -131,6 +138,7 @@ describe('store', () => {
         todosData.todos[2],
       ],
     });
+    clearStoreState();
   });
 
   it('should be able to update a query', () => {
@@ -168,6 +176,7 @@ describe('store', () => {
         },
       ],
     });
+    clearStoreState();
   });
 
   it('should be able to optimistically mutate', () => {
