@@ -99,17 +99,10 @@ export const writeOptimistic = (
         const resolver = ctx.store.optimisticMutations[fieldName];
         if (resolver !== undefined) {
           const fieldArgs = getFieldArguments(node, ctx.variables);
-          const fieldSelect = getSelectionSet(operation);
+          const fieldSelect = getSelectionSet(node);
           const resolverValue = resolver(fieldArgs || {}, ctx.store, ctx);
           if (!isScalar(resolverValue)) {
-            writeRootField(
-              ctx,
-              resolverValue,
-              // We want to avoid passing [mutationName]: fieldSelection
-              // since this will make us write [mutationName]: undefined
-              // to the store. This because data[mutationName] does not exist.
-              (fieldSelect[0] as any).selectionSet.selections
-            );
+            writeRootField(ctx, resolverValue, fieldSelect);
           }
         }
       }
