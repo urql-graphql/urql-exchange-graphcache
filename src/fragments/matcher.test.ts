@@ -1,5 +1,5 @@
 import gql from 'graphql-tag';
-import { matchFragment } from './matcher';
+import { matchFragment, matchFragmentHeuristically } from './index';
 import { Store } from '../store';
 import { write } from '../operations';
 
@@ -75,6 +75,24 @@ describe('fragmentMatcher', () => {
     `;
     expect(matchFragment(store, 'Query', fragmentQuery.definitions[0])).toBe(
       true
+    );
+  });
+
+  it('warns for unavailable property on a fragment', () => {
+    const fragmentQuery = gql`
+      fragment TodoDataNonExistantProperty on Todo {
+        text
+        complete
+        doesNotExist
+      }
+    `;
+    jest.spyOn(console, 'warn');
+    expect(
+      matchFragmentHeuristically(store, 'Todo:1', fragmentQuery.definitions[0])
+    ).toBe(true);
+    expect(console.warn).toBeCalledTimes(1);
+    expect(console.warn).toHaveBeenLastCalledWith(
+      'Missing field "doesNotExist"'
     );
   });
 });

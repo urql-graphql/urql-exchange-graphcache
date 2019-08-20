@@ -31,8 +31,8 @@ export const matchFragmentHeuristically = (
     }
   });
 
-  if (missing.length > 0) {
-    missing.forEach(name => console.warn('Missing field ', name));
+  if (missing.length > 0 && process.env.NODE_ENV !== 'production') {
+    missing.forEach(name => console.warn(`Missing field "${name}"`));
   }
   return missing.length > 0;
 };
