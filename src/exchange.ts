@@ -76,7 +76,7 @@ export interface CacheExchangeOpts {
   keys?: KeyingConfig;
 }
 
-export const cacheExchange = (opts: CacheExchangeOpts): Exchange => ({
+export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   forward,
   client,
 }) => {
