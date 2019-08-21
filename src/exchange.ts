@@ -29,10 +29,13 @@ interface DependentOperations {
 }
 
 // Returns the given operation with added __typename fields on its query
-const addTypeNames = (op: Operation): Operation => ({
-  ...op,
-  query: formatDocument(op.query),
-});
+const addTypeNames = (op: Operation): Operation => {
+  if (op.operationName === 'subscription') return op;
+  return {
+    ...op,
+    query: formatDocument(op.query),
+  };
+};
 
 // Retrieves the requestPolicy from an operation
 const getRequestPolicy = (op: Operation) => op.context.requestPolicy;
