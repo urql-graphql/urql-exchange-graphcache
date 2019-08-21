@@ -1,6 +1,6 @@
 # Resolvers
 
-This is a way to alter the response you'll get from the cache,
+This is a way to alter the response you'll receive from the cache,
 so let's look at an example to get a better understanding.
 
 ```js
@@ -11,14 +11,12 @@ const cache = cacheExchange({
 });
 ```
 
-Now when we query our `todos` we always encounter `Todo` since
-this is the `__typename` of every single todo in the array of todos.
-This in turn passes `text` when we query it and will see that we don't
-want the original result but something else so your resolver will be
-executed.
+Now when we query our `todos` every time we encounter an object with `Todo`
+as the `__typename` it will change the `text` to `secret`. So here we
+effectively change how we handle a certain property on an entity.
 
 This looks pretty useless right now but let's look at what arguments
-are passed to this method to better understand it.
+are passed to this method so we can get a better understanding.
 
 A resolver gets four arguments:
 
@@ -26,7 +24,7 @@ A resolver gets four arguments:
 - arguments: the arguments used in this field.
 - cache: this is the normalised cache, this cache provides us with a `resolve` method
   more about this underneath.
-- info: contains the fragments used in the query and the variables in the query.
+- info: contains the fragments used in the query and the field arguments in the query.
 
 The `cache.resolve` method is used to get links and property values from the cache,
 our cache methods has three arguments:

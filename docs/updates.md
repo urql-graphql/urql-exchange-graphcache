@@ -4,13 +4,12 @@ When the cache receives a response it will try and do its best to
 incorporate that answer into the current cache, but for adding and
 deleting entities it can't really make assumptions.
 
-That's where updates come into play, this being the third argument
-to our cacheExchange. Analogue to our `resolvers` this gets
+That's where updates come into play. Analogue to our `resolvers` this gets
 arguments but instead of the parent argument (first one) we get the
-result of our mutation.
+result given from the server in response to our mutation.
 
-Before we dive into the code we need to know about two additional methods
-the cache provides us with, these methods are used to update parts in the cache.
+Let's look at two additional methods provided by the cache to enable
+updates.
 
 The first one is named `updateQuery`, this method given a query and a result updates
 the cache.
