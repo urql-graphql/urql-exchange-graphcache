@@ -123,6 +123,7 @@ const makePlugins = (isProduction = false) => [
     exclude: 'node_modules/**',
     presets: [],
     plugins: [
+      ['babel-plugin-transform-dev-warning', {}],
       ['babel-plugin-closure-elimination', {}],
       ['@babel/plugin-transform-object-assign', {}],
       ['@babel/plugin-transform-react-jsx', {
