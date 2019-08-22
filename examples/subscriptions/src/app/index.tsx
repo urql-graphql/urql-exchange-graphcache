@@ -23,7 +23,7 @@ const client = createClient({
     cacheExchange({
       updates: {
         Subscription: {
-          newMessages: (data, _, cache) => {
+          newMessage: (data, _, cache) => {
             cache.updateQuery(
               gql`
                 query {
@@ -33,14 +33,11 @@ const client = createClient({
                   }
                 }
               `,
-              data => ({
-                ...data,
+              prevData => ({
+                ...prevData,
                 messages: [
-                  ...(data.messages as Data[]),
-                  {
-                    ...(data.newMessages as Data[]),
-                    __typename: 'Message',
-                  },
+                  ...(prevData.messages as Data[]),
+                  data.newMessage as Data,
                 ],
               })
             );

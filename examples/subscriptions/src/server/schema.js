@@ -12,7 +12,7 @@ const typeDefs = `
     messages: [Message]
   }
   type Subscription {
-    newMessages: Message
+    newMessage: Message
   }
   type Message {
     id: ID,
@@ -26,8 +26,8 @@ const resolvers = {
     messages: () => store.messages,
   },
   Subscription: {
-    newMessages: {
-      subscribe: () => pubsub.asyncIterator('newMessages'),
+    newMessage: {
+      subscribe: () => pubsub.asyncIterator('newMessage'),
     },
   },
 };
@@ -54,8 +54,8 @@ setInterval(
       from: StarWars.character(),
     }
     store.messages.push(newMessage);
-    pubsub.publish('newMessages', {
-      newMessages: newMessage,
+    pubsub.publish('newMessage', {
+      newMessage: newMessage,
     });
   },
   10000

@@ -1,7 +1,7 @@
 import React, { FC } from 'react';
 import gql from 'graphql-tag';
 import { useSubscription, useQuery } from 'urql';
-import { Error, MessageEntry, Message, MessageResponse } from './components';
+import { Error, Message } from './components';
 
 export const Messages: FC = () => {
   const [{ data: result, fetching, error }] = useQuery({
@@ -40,7 +40,7 @@ const messagesQuery = gql`
 
 const NewMessageSubQuery = gql`
   subscription messageSub {
-    newMessages {
+    newMessage {
       id
       from
       message
