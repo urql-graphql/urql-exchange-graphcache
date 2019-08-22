@@ -10,7 +10,7 @@ This is a basic example of subscriptions being used with `urql`. It demonstrates
 
 #### 1. Install dependencies in repo root.
 
-To get started with the example, make sure to install `urql`'s dependencies in the root directory of your clone. We `link` to the `urql` source from the `examples` directory, so its dependencies need to be installed.
+To get started with the example, make sure to install `graphcache`'s dependencies in the root directory of your clone. We `link` to the source from the `examples` directory, so its dependencies need to be installed.
 
 ```bash
 # In root directory
@@ -20,7 +20,7 @@ yarn
 #### 2. Navigate to this directory and install dependencies.
 
 ```bash
-cd examples/2-using-subscriptions
+cd examples/subscriptions
 yarn
 ```
 

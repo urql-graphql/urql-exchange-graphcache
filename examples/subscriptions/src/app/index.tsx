@@ -33,19 +33,16 @@ const client = createClient({
                   }
                 }
               `,
-              data => {
-                return {
-                  ...data,
-                  messages: [
-                    // @ts-ignore
-                    ...data.messages,
-                    {
-                      ...newMessages,
-                      __typename: 'Message',
-                    },
-                  ],
-                };
-              }
+              data => ({
+                ...data,
+                messages: [
+                  ...data.messages,
+                  {
+                    ...newMessages,
+                    __typename: 'Message',
+                  },
+                ],
+              })
             );
           },
         },
