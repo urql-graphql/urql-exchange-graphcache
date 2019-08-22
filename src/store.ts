@@ -80,14 +80,23 @@ export class Store {
 
   constructor(
     resolvers?: ResolverConfig,
-    updates?: UpdatesConfig,
+    updates?: Partial<UpdatesConfig>,
     optimisticMutations?: OptimisticMutationConfig,
     keys?: KeyingConfig
   ) {
     this.records = Pessimism.make();
     this.links = Pessimism.make();
     this.resolvers = resolvers || {};
-    this.updates = updates || { Subscription: {}, Mutation: {} };
+    if (!updates) {
+      updates = { Subscription: {}, Mutation: {} };
+    }
+    if (!updates.Mutation) {
+      updates.Mutation = {};
+    }
+    if (!updates.Subscription) {
+      updates.Subscription = {};
+    }
+    this.updates = updates as UpdatesConfig;
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
   }

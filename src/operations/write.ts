@@ -73,7 +73,7 @@ export const write = (
     select.forEach((node: any) => {
       const name = getName(node);
       const fieldArgs = getFieldArguments(node, ctx.variables) || {};
-      if (store.updates.Subscription && store.updates.Subscription[name]) {
+      if (store.updates.Subscription[name]) {
         store.updates.Subscription[name](data, fieldArgs, ctx.store, ctx);
       }
     });
@@ -276,8 +276,7 @@ const writeRoot = (
     if (typename === 'Mutation') {
       // We run side-effect updates after the default, normalized updates
       // so that the data is already available in-store if necessary
-      const updater =
-        ctx.store.updates.Mutation && ctx.store.updates.Mutation[fieldName];
+      const updater = ctx.store.updates.Mutation[fieldName];
       if (updater !== undefined) {
         updater(data, fieldArgs || {}, ctx.store, ctx);
       }
