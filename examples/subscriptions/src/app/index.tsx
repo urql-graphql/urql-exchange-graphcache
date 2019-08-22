@@ -7,7 +7,7 @@ import {
   Provider,
   subscriptionExchange,
 } from 'urql';
-import { cacheExchange } from '@urql/exchange-graphcache';
+import { cacheExchange, Data } from '@urql/exchange-graphcache';
 import './index.css';
 import { Messages } from './Messages';
 import gql from 'graphql-tag';
@@ -23,7 +23,7 @@ const client = createClient({
     cacheExchange({
       updates: {
         Subscription: {
-          newMessages: ({ newMessages }, _, cache) => {
+          newMessages: (data, _, cache) => {
             cache.updateQuery(
               gql`
                 query {
@@ -36,9 +36,9 @@ const client = createClient({
               data => ({
                 ...data,
                 messages: [
-                  ...data.messages,
+                  ...(data.messages as Data[]),
                   {
-                    ...newMessages,
+                    ...(data.newMessages as Data[]),
                     __typename: 'Message',
                   },
                 ],
