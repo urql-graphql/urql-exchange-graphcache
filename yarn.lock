@@ -925,11 +925,6 @@ babel-plugin-transform-async-to-promises@^0.8.14:
   resolved "https://registry.yarnpkg.com/babel-plugin-transform-async-to-promises/-/babel-plugin-transform-async-to-promises-0.8.14.tgz#8c783aecb1139f39c608f8bb0f5bb69c343c878e"
   integrity sha512-BHw2WriDbnLwaaIydAjVeXXKBal0pWlFWxfo0UKL2CTaSorvRocrsTflni/mzIOP8c+EJ8xHqtbre8GbIm4ehQ==
 
-babel-plugin-transform-dev-warning@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/babel-plugin-transform-dev-warning/-/babel-plugin-transform-dev-warning-0.1.1.tgz#9e3cca7c22b27a667486fda11bbce29c0c59e76e"
-  integrity sha512-3n6ptKAU1KqhfzmrQuI4Blyvt0T6vHCeaOpULKjAbU+5+JSePSeVorB+24SHe58/zxXsP4sm1q3crsDFD+UHYQ==
-
 babel-preset-jest@^24.6.0:
   version "24.6.0"
   resolved "https://registry.yarnpkg.com/babel-preset-jest/-/babel-preset-jest-24.6.0.tgz#66f06136eefce87797539c0d63f1769cc3915984"

@@ -1,5 +1,4 @@
-const visited = 'visitedByInvariantTransformer';
-const pragma = 'invariant';
+const visited = 'visitedByInvariantWarningTransformer';
 
 export default function Plugin({ template }) {
   const wrapWithDevCheck = template(
@@ -18,7 +17,7 @@ export default function Plugin({ template }) {
           CallExpression(path) {
             if (path.node[visited]) return
             path.node[visited] = true;
-            if (path.node.callee.name === pragma) {
+            if (path.node.callee.name === 'invariant' || path.node.callee.name === 'warning') {
               path.replaceWith(wrapWithDevCheck({ NODE: path.node }));
             }
           }
