@@ -15,8 +15,8 @@ import {
 } from './types';
 
 import { keyOfEntity, joinKeys, keyOfField } from './helpers';
-import { query } from './operations/query';
-import { write, writeFragment } from './operations/write';
+import { startQuery } from './operations/query';
+import { writeFragment, startWrite } from './operations/write';
 
 interface Ref<T> {
   current: null | T;
@@ -192,8 +192,8 @@ export class Store {
     dataQuery: DocumentNode,
     updater: (data: Data | null) => Data
   ): void {
-    const { data } = query(this, { query: dataQuery });
-    write(this, { query: dataQuery }, updater(data));
+    const { data } = startQuery(this, { query: dataQuery });
+    startWrite(this, { query: dataQuery }, updater(data));
   }
 
   writeFragment(dataFragment: DocumentNode, data: Data): void {

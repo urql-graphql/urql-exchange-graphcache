@@ -54,6 +54,18 @@ export const write = (
 ): WriteResult => {
   initStoreState(0);
 
+  const result = startWrite(store, request, data);
+
+  clearStoreState();
+
+  return result;
+};
+
+export const startWrite = (
+  store: Store,
+  request: OperationRequest,
+  data: Data
+) => {
   const operation = getMainOperation(request.query);
   const result: WriteResult = { dependencies: getCurrentDependencies() };
 
@@ -80,8 +92,6 @@ export const write = (
   } else {
     writeRoot(ctx, operationName, select, data);
   }
-
-  clearStoreState();
 
   return result;
 };
