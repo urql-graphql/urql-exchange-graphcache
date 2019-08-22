@@ -87,7 +87,7 @@ export class Store {
     this.records = Pessimism.make();
     this.links = Pessimism.make();
     this.resolvers = resolvers || {};
-    this.updates = updates || {};
+    this.updates = updates || { Subscription: {}, Mutation: {} };
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
   }
