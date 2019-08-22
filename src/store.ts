@@ -87,16 +87,10 @@ export class Store {
     this.records = Pessimism.make();
     this.links = Pessimism.make();
     this.resolvers = resolvers || {};
-    if (!updates) {
-      updates = { Subscription: {}, Mutation: {} };
-    }
-    if (!updates.Mutation) {
-      updates.Mutation = {};
-    }
-    if (!updates.Subscription) {
-      updates.Subscription = {};
-    }
-    this.updates = updates as UpdatesConfig;
+    this.updates = {
+      Mutation: (updates && updates.Mutation) || {},
+      Subscription: (updates && updates.Subscription) || {},
+    } as UpdatesConfig;
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
   }
