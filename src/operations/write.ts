@@ -81,14 +81,6 @@ export const startWrite = (
 
   if (operationName === 'Query') {
     writeSelection(ctx, operationName, select, data);
-  } else if (operationName === 'Subscription') {
-    select.forEach((node: any) => {
-      const name = getName(node);
-      const fieldArgs = getFieldArguments(node, ctx.variables) || {};
-      if (store.updates.Subscription[name]) {
-        store.updates.Subscription[name](data, fieldArgs, ctx.store, ctx);
-      }
-    });
   } else {
     writeRoot(ctx, operationName, select, data);
   }
@@ -283,10 +275,10 @@ const writeRoot = (
       writeRootField(ctx, fieldValue, fieldSelect);
     }
 
-    if (typename === 'Mutation') {
+    if (typename === 'Mutation' || typename === 'Subscription') {
       // We run side-effect updates after the default, normalized updates
       // so that the data is already available in-store if necessary
-      const updater = ctx.store.updates.Mutation[fieldName];
+      const updater = ctx.store.updates[typename][fieldName];
       if (updater !== undefined) {
         updater(data, fieldArgs || {}, ctx.store, ctx);
       }
