@@ -15,6 +15,8 @@ const TodosQuery = gql`
     todos {
       id
       text
+      complete
+      due
       __typename
     }
   }
@@ -22,7 +24,9 @@ const TodosQuery = gql`
 
 const makeTodo = i => ({
   id: `${i}`,
+  due: new Date(+new Date() - Math.floor(Math.random() * 10000000000)),
   text: `Todo ${i}`,
+  complete: Boolean(i % 2),
   __typename: 'Todo',
 });
 const hundredEntries = makeEntries(100, makeTodo);
@@ -147,21 +151,34 @@ suite('10000 entries read', () => {
 const makeWriter = i => ({
   id: `${i}`,
   name: `writer ${i}`,
+  amountOfBooks: Math.random() * 100,
+  recognised: Boolean(i % 2),
+  number: i,
+  interests: 'star wars',
   __typename: 'Writer',
 });
 const makeBook = i => ({
   id: `${i}`,
   title: `book ${i}`,
+  published: Boolean(i % 2),
+  genre: 'Fantasy',
+  rating: (i / Math.random()) * 100,
+  release: new Date(+new Date() - Math.floor(Math.random() * 10000000000)),
   __typename: 'Book',
 });
+const countries = ['UK', 'BE', 'ES', 'US'];
 const makeStore = i => ({
   id: `${i}`,
   name: `store ${i}`,
+  started: countries[Math.floor(Math.random()) * 4],
+  country: countries[Math.floor(Math.random()) * 4],
   __typename: 'Store',
 });
 const makeEmployee = i => ({
   id: `${i}`,
   name: `employee ${i}`,
+  dateOfBirth: new Date(+new Date() - Math.floor(Math.random() * 10000000000)),
+  origin: countries[Math.floor(Math.random()) * 4],
   __typename: 'Employee',
 });
 
@@ -170,6 +187,10 @@ const WritersQuery = gql`
     writers {
       id
       name
+      amountOfBooks
+      interests
+      recognised
+      number
       __typename
     }
   }
@@ -183,6 +204,10 @@ const BooksQuery = gql`
     books {
       id
       title
+      genre
+      published
+      rating
+      release
       __typename
     }
   }
@@ -195,6 +220,8 @@ const StoresQuery = gql`
   query {
     stores {
       id
+      country
+      started
       name
       __typename
     }
@@ -208,7 +235,9 @@ const EmployeesQuery = gql`
   query {
     employees {
       id
+      dateOfBirth
       name
+      origin
       __typename
     }
   }
@@ -336,10 +365,12 @@ suite('10000 entries write five entities', () => {
 const makeAuthor = i => ({
   id: `${i}`,
   name: `author ${i}`,
+  recognised: Boolean(i % 2),
   __typename: 'Author',
   book: {
     id: `${i}`,
     name: `book ${i}`,
+    published: Boolean(i % 2),
     __typename: 'Book',
     review: {
       id: `${i}`,
@@ -355,9 +386,11 @@ const AuthorQuery = gql`
     authors {
       id
       name
+      recognised
       __typename
       book {
         id
+        published
         name
         __typename
         review {
