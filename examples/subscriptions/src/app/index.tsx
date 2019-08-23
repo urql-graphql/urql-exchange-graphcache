@@ -35,10 +35,7 @@ const client = createClient({
               `,
               prevData => ({
                 ...prevData,
-                messages: [
-                  ...(prevData.messages as Data[]),
-                  data.newMessage as Data,
-                ],
+                messages: [...(prevData.messages as Data[]), data.newMessage],
               })
             );
           },
