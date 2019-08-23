@@ -2,6 +2,8 @@ const gql = require('graphql-tag');
 const { InMemoryCache } = require('apollo-cache-inmemory');
 const { Store, write, query } = require('..');
 
+const countries = ['UK', 'BE', 'ES', 'US'];
+
 const makeEntries = (amount, makeEntry) => {
   const entries = [];
   for(let i = 0;i<amount;i++) {
@@ -166,11 +168,10 @@ const makeBook = i => ({
   release: new Date(+new Date() - Math.floor(Math.random() * 10000000000)),
   __typename: 'Book',
 });
-const countries = ['UK', 'BE', 'ES', 'US'];
 const makeStore = i => ({
   id: `${i}`,
   name: `store ${i}`,
-  started: countries[Math.floor(Math.random()) * 4],
+  started: new Date(+new Date() - Math.floor(Math.random() * 10000000000)),
   country: countries[Math.floor(Math.random()) * 4],
   __typename: 'Store',
 });
@@ -377,6 +378,12 @@ const makeAuthor = i => ({
       score: i,
       name: `review ${i}`,
       __typename: 'Review',
+      reviewer: {
+        id: `${i}`,
+        name: `person ${i}`,
+        verified: Boolean(i % 2),
+        __typename: 'Person',
+      },
     },
   },
 });
@@ -398,6 +405,12 @@ const AuthorQuery = gql`
           score
           name
           __typename
+          reviewer {
+            id
+            name
+            verified
+            __typename
+          }
         }
       }
     }
