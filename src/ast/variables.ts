@@ -19,7 +19,7 @@ export const evaluateValueNode = (node: ValueNode, vars: Variables) => {
       return values;
     case Kind.OBJECT:
       const fields = Object.create(null);
-      for (let i = 0, l = nodes.fields.length; i < l; i++) {
+      for (let i = 0, l = node.fields.length; i < l; i++) {
         const field = node.fields[i];
         fields[getName(field)] = evaluateValueNode(field.value, vars);
       }
