@@ -38,13 +38,17 @@ const refValue = <T>(ref: Ref<T>): T => {
 };
 
 // Initialise a store run by resetting its internal state
-export const initStoreState = (optimisticKey: null | number) => {
+export const initStoreState = (store: Store, optimisticKey: null | number) => {
+  store.records = Pessimism.asMutable(store.records);
+  store.links = Pessimism.asMutable(store.links);
   currentDependencies.current = new Set();
   currentOptimisticKey.current = optimisticKey;
 };
 
 // Finalise a store run by clearing its internal state
-export const clearStoreState = () => {
+export const clearStoreState = (store: Store) => {
+  store.records = Pessimism.asImmutable(store.records);
+  store.links = Pessimism.asImmutable(store.links);
   currentDependencies.current = null;
   currentOptimisticKey.current = null;
 };
@@ -84,8 +88,8 @@ export class Store {
     optimisticMutations?: OptimisticMutationConfig,
     keys?: KeyingConfig
   ) {
-    this.records = Pessimism.asMutable(Pessimism.make());
-    this.links = Pessimism.asMutable(Pessimism.make());
+    this.records = Pessimism.make();
+    this.links = Pessimism.make();
     this.resolvers = resolvers || {};
     this.updates = {
       Mutation: (updates && updates.Mutation) || {},

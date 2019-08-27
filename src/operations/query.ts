@@ -47,10 +47,9 @@ interface Context {
 
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
-  initStoreState(0);
-
+  initStoreState(store, 0);
   const result = startQuery(store, request);
-  clearStoreState();
+  clearStoreState(store);
   return result;
 };
 

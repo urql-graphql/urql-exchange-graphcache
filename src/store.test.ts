@@ -80,7 +80,7 @@ describe('Store with OptimisticMutationConfig', () => {
       ],
     };
     write(store, { query: Todos }, todosData);
-    initStoreState(null);
+    initStoreState(store, null);
   });
 
   it('Should resolve a property', () => {
@@ -96,7 +96,7 @@ describe('Store with OptimisticMutationConfig', () => {
     // TODO: we have no way of asserting this to really be the case.
     const deps = getCurrentDependencies();
     expect(deps).toEqual(new Set(['Todo:0', 'Author:0']));
-    clearStoreState();
+    clearStoreState(store);
   });
 
   it('should resolve witha key as first argument', () => {
@@ -104,7 +104,7 @@ describe('Store with OptimisticMutationConfig', () => {
     expect(authorResult).toBe('Jovi');
     const deps = getCurrentDependencies();
     expect(deps).toEqual(new Set(['Author:0']));
-    clearStoreState();
+    clearStoreState(store);
   });
 
   it('Should resolve a link property', () => {
@@ -118,11 +118,11 @@ describe('Store with OptimisticMutationConfig', () => {
     expect(result).toEqual('Author:0');
     const deps = getCurrentDependencies();
     expect(deps).toEqual(new Set(['Todo:0']));
-    clearStoreState();
+    clearStoreState(store);
   });
 
   it('should be able to update a fragment', () => {
-    initStoreState(0);
+    initStoreState(store, 0);
     store.writeFragment(
       gql`
         fragment _ on Todo {
@@ -155,11 +155,11 @@ describe('Store with OptimisticMutationConfig', () => {
         todosData.todos[2],
       ],
     });
-    clearStoreState();
+    clearStoreState(store);
   });
 
   it('should be able to update a query', () => {
-    initStoreState(0);
+    initStoreState(store, 0);
     store.updateQuery(Todos, data => ({
       ...data,
       todos: [
@@ -176,7 +176,7 @@ describe('Store with OptimisticMutationConfig', () => {
         },
       ],
     }));
-    clearStoreState();
+    clearStoreState(store);
 
     const { data: result } = query(store, { query: Todos });
     expect(result).toEqual({
@@ -195,7 +195,7 @@ describe('Store with OptimisticMutationConfig', () => {
         },
       ],
     });
-    clearStoreState();
+    clearStoreState(store);
   });
 
   it('should be able to optimistically mutate', () => {
