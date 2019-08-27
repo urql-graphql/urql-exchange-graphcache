@@ -29,7 +29,7 @@ import {
   clearStoreState,
 } from '../store';
 
-import { forEachFieldNode } from './shared';
+import { SelectionIterator } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 
 export interface QueryResult {
@@ -94,7 +94,10 @@ const readSelection = (
 
   data.__typename = typename;
 
-  forEachFieldNode(typename, entityKey, select, ctx, node => {
+  const iter = new SelectionIterator(typename, entityKey, select, ctx);
+
+  let node;
+  while ((node = iter.next()) !== undefined) {
     // Derive the needed data from our node.
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
@@ -161,7 +164,7 @@ const readSelection = (
         data[fieldAlias] = resolveLink(ctx, link, fieldSelect, prevData);
       }
     }
-  });
+  }
 
   return data;
 };
