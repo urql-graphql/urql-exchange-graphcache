@@ -222,11 +222,13 @@ const resolveLink = (
   prevData: void | Data | Data[]
 ): null | Data | Data[] => {
   if (Array.isArray(link)) {
-    // @ts-ignore: Link cannot be expressed as a recursive type
-    return link.map((childLink, index) => {
-      const data = prevData !== undefined ? prevData[index] : undefined;
-      return resolveLink(ctx, childLink, select, data);
-    });
+    const newLink = new Array(link.length);
+    for (let i = 0, l = link.length; i < l; i++) {
+      const data = prevData !== undefined ? prevData[i] : undefined;
+      newLink[i] = resolveLink(ctx, link[i], select, data);
+    }
+
+    return newLink;
   } else if (link === null) {
     return null;
   } else {

@@ -293,7 +293,10 @@ const writeRootField = (
   select: SelectionSet
 ) => {
   if (Array.isArray(data)) {
-    return data.map(item => writeRootField(ctx, item, select));
+    const newData = new Array(data.length);
+    for (let i = 0, l = data.length; i < l; i++)
+      newData[i] = writeRootField(ctx, data[i], select);
+    return newData;
   } else if (data === null) {
     return;
   }
