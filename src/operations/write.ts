@@ -219,14 +219,18 @@ const writeField = (
   data: null | Data | NullArray<Data>
 ): Link => {
   if (Array.isArray(data)) {
-    return data.map((item, index) => {
+    const newData = new Array(data.length);
+    for (let i = 0, l = data.length; i < l; i++) {
+      const item = data[i];
       // Append the current index to the parentFieldKey fallback
-      const indexKey = joinKeys(parentFieldKey, `${index}`);
+      const indexKey = joinKeys(parentFieldKey, `${i}`);
       // Recursively write array data
       const links = writeField(ctx, indexKey, select, item);
       // Link cannot be expressed as a recursive type
-      return links as string | null;
-    });
+      newData[i] = links as string | null;
+    }
+
+    return newData;
   } else if (data === null) {
     return null;
   }
