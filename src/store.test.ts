@@ -129,7 +129,7 @@ describe('Store with OptimisticMutationConfig', () => {
     store.invalidateQuery(Todos);
     clearStoreState();
     ({ data } = query(store, { query: Todos }));
-    expect(data).toEqual(null);
+    expect((data as any).todos).toEqual(null);
     expect(store.getRecord('Todo:0.text')).toBe(undefined);
   });
 
@@ -174,7 +174,7 @@ describe('Store with OptimisticMutationConfig', () => {
       query: AppointmentQuery,
       variables: { id: '1' },
     }));
-    expect(data).toEqual(null);
+    expect((data as any).appointment).toEqual(null);
     expect(store.getRecord('Appointment:1.info')).toBe(undefined);
   });
 

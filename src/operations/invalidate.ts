@@ -52,6 +52,8 @@ export const invalidateSelection = (
     typename = store.getField(entityKey, '__typename');
     if (typeof typename !== 'string') {
       return;
+    } else {
+      store.removeRecord(joinKeys(entityKey, keyOfField('__typename')));
     }
   } else {
     typename = entityKey;

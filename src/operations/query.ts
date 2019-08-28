@@ -86,7 +86,7 @@ const readSelection = (
   const { store, variables } = ctx;
 
   // Get the __typename field for a given entity to check that it exists
-  const typename = store.getField(entityKey, '__typename');
+  const typename = isQuery ? 'Query' : store.getField(entityKey, '__typename');
   if (typeof typename !== 'string') {
     ctx.result.completeness = 'EMPTY';
     return null;
