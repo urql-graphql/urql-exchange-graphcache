@@ -4,7 +4,7 @@
   "description": "A normalized and configurable cache exchange for urql",
   "repository": "https://github.com/kitten/urql-exchange-graphcache",
   "keywords": [
-    "normalised-cache",
+    "normalized cache",
     "cache",
     "urql",
     "graphql",
