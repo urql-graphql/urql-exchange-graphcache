@@ -124,11 +124,13 @@ describe('Store with OptimisticMutationConfig', () => {
   it('should be able to invalidate data (one relation key)', () => {
     let { data } = query(store, { query: Todos });
     expect((data as any).todos).toHaveLength(3);
+    expect(store.getRecord('Todo:0.text')).toBe('Go to the shops');
     initStoreState(0);
-    store.invalidate('Query', 'todos');
+    store.invalidateQuery(Todos);
     clearStoreState();
     ({ data } = query(store, { query: Todos }));
     expect((data as any).todos).toEqual(null);
+    expect(store.getRecord('Todo:0.text')).toBe(undefined);
   });
 
   it('should be able to invalidate data with arguments', () => {
@@ -164,14 +166,16 @@ describe('Store with OptimisticMutationConfig', () => {
       variables: { id: '1' },
     });
     expect((data as any).appointment.info).toBe('urql meeting');
+    expect(store.getRecord('Appointment:1.info')).toBe('urql meeting');
     initStoreState(0);
-    store.invalidate('Query', 'appointment', { id: '1' });
+    store.invalidateQuery(AppointmentQuery, { id: '1' });
     clearStoreState();
     ({ data } = query(store, {
       query: AppointmentQuery,
       variables: { id: '1' },
     }));
     expect((data as any).appointment).toEqual(null);
+    expect(store.getRecord('Appointment:1.info')).toBe(undefined);
   });
 
   it('should be able to update a fragment', () => {
