@@ -178,18 +178,8 @@ export class Store {
     }
   }
 
-  invalidate(
-    rootKey: string,
-    relationKey: string | string[],
-    args?: Variables
-  ) {
-    if (Array.isArray(relationKey)) {
-      relationKey.forEach(key =>
-        this.removeLink(joinKeys(rootKey, keyOfField(key, args)))
-      );
-    } else {
-      this.removeLink(joinKeys(rootKey, keyOfField(relationKey, args)));
-    }
+  invalidate(rootKey: string, relationKey: string, args?: Variables) {
+    this.removeLink(joinKeys(rootKey, keyOfField(relationKey, args)));
   }
 
   hasField(key: string): boolean {

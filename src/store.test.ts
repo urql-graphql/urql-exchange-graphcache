@@ -131,16 +131,6 @@ describe('Store with OptimisticMutationConfig', () => {
     expect((data as any).todos).toEqual(null);
   });
 
-  it('should be able to invalidate data (array relation keys)', () => {
-    let { data } = query(store, { query: Todos });
-    expect((data as any).todos).toHaveLength(3);
-    initStoreState(0);
-    store.invalidate('Query', ['todos']);
-    clearStoreState();
-    ({ data } = query(store, { query: Todos }));
-    expect((data as any).todos).toEqual(null);
-  });
-
   it('should be able to invalidate data with arguments', () => {
     const AppointmentQuery = gql`
       query appointment($id: String) {
