@@ -52,9 +52,12 @@ export const invalidateSelection = (
       const fieldSelect = getSelectionSet(node);
       const link = store.getLink(fieldKey);
       store.removeLink(fieldKey);
-      if (Array.isArray(link)) {
+      if (link === undefined) {
+        if (store.getRecord(fieldKey) !== undefined)
+          store.removeRecord(fieldKey);
+      } else if (Array.isArray(link)) {
         link.forEach(l => l && invalidateSelection(ctx, l, fieldSelect));
-      } else if (link) {
+      } else if (link !== null) {
         invalidateSelection(ctx, link, fieldSelect);
       }
     }
