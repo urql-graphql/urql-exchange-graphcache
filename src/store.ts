@@ -178,6 +178,20 @@ export class Store {
     }
   }
 
+  invalidate(
+    rootKey: string,
+    relationKey: string | string[],
+    args?: Variables
+  ) {
+    if (Array.isArray(relationKey)) {
+      relationKey.forEach(key =>
+        this.removeLink(joinKeys(rootKey, keyOfField(key, args)))
+      );
+    } else {
+      this.removeLink(joinKeys(rootKey, keyOfField(relationKey, args)));
+    }
+  }
+
   hasField(key: string): boolean {
     return this.getRecord(key) !== undefined || this.getLink(key) !== undefined;
   }
