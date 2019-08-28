@@ -1,6 +1,3 @@
-import { forEachFieldNode } from './shared';
-import { Store, initStoreState, clearStoreState } from '../store';
-import { OperationRequest, Variables, Fragments, SelectionSet } from '../types';
 import {
   getMainOperation,
   normalizeVariables,
@@ -9,6 +6,10 @@ import {
   getName,
   getFieldArguments,
 } from '../ast';
+
+import { OperationRequest, Variables, Fragments, SelectionSet } from '../types';
+import { SelectionIterator } from './shared';
+import { Store, initStoreState, clearStoreState } from '../store';
 import { joinKeys, keyOfField } from '../helpers';
 
 interface Context {
@@ -41,7 +42,10 @@ export const invalidateSelection = (
   const typename = store.getField(entityKey, '__typename');
   if (typeof typename !== 'string') return null;
 
-  forEachFieldNode(typename, entityKey, select, ctx, node => {
+  const iter = new SelectionIterator(typename, entityKey, select, ctx);
+
+  let node;
+  while ((node = iter.next()) !== undefined) {
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
     const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
@@ -52,14 +56,21 @@ export const invalidateSelection = (
       const fieldSelect = getSelectionSet(node);
       const link = store.getLink(fieldKey);
       store.removeLink(fieldKey);
+
       if (link === undefined) {
-        if (store.getRecord(fieldKey) !== undefined)
+        if (store.getRecord(fieldKey) !== undefined) {
           store.removeRecord(fieldKey);
+        }
       } else if (Array.isArray(link)) {
-        link.forEach(l => l && invalidateSelection(ctx, l, fieldSelect));
+        for (let i = 0, l = link.length; i < l; i++) {
+          const childLink = link[i];
+          if (childLink !== null) {
+            invalidateSelection(ctx, childLink, fieldSelect);
+          }
+        }
       } else if (link !== null) {
         invalidateSelection(ctx, link, fieldSelect);
       }
     }
-  });
+  }
 };
