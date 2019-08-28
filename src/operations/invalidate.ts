@@ -9,7 +9,12 @@ import {
 
 import { OperationRequest, Variables, Fragments, SelectionSet } from '../types';
 import { SelectionIterator } from './shared';
-import { Store, initStoreState, clearStoreState } from '../store';
+import {
+  Store,
+  addDependency,
+  initStoreState,
+  clearStoreState,
+} from '../store';
 import { joinKeys, keyOfField } from '../helpers';
 
 interface Context {
@@ -39,8 +44,18 @@ export const invalidateSelection = (
   select: SelectionSet
 ) => {
   const { store, variables } = ctx;
-  const typename = store.getField(entityKey, '__typename');
-  if (typeof typename !== 'string') return null;
+  const isQuery = entityKey === 'Query';
+
+  let typename;
+  if (!isQuery) {
+    addDependency(entityKey);
+    typename = store.getField(entityKey, '__typename');
+    if (typeof typename !== 'string') {
+      return;
+    }
+  } else {
+    typename = entityKey;
+  }
 
   const iter = new SelectionIterator(typename, entityKey, select, ctx);
 
@@ -49,6 +64,8 @@ export const invalidateSelection = (
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, variables);
     const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
+
+    if (isQuery) addDependency(fieldKey);
 
     if (node.selectionSet === undefined) {
       store.removeRecord(fieldKey);
