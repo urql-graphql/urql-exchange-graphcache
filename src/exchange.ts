@@ -185,10 +185,12 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   };
 
   // Take any OperationResult and update the cache with it
-  const updateCacheWithResult = ({ data, operation }: OperationResult) => {
+  const updateCacheWithResult = (result: OperationResult) => {
+    const { data, operation } = result;
     let dependencies;
     if (data !== null && data !== undefined) {
       dependencies = write(store, operation, data).dependencies;
+      result.data = query(store, operation).data;
     }
 
     // Clear old optimistic values from the store
