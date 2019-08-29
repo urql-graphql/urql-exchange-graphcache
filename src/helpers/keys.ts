@@ -1,6 +1,12 @@
 import stringify from 'fast-json-stable-stringify';
 import { Variables, KeyGenerator, Data } from '../types';
 
+export const isDataOrKey = (x: any): x is string | Data =>
+  typeof x === 'string' ||
+  (typeof x === 'object' &&
+    x !== null &&
+    typeof (x as any).__typename === 'string');
+
 export const keyOfEntity: KeyGenerator = (data: Data): null | string => {
   const { __typename: typeName } = data;
   const id = data.id === undefined ? data._id : data.id;

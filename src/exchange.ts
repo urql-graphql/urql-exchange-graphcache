@@ -17,7 +17,9 @@ import {
   ResolverConfig,
   OptimisticMutationConfig,
   KeyingConfig,
+  Data,
 } from './types';
+import { resolveData } from './operations/resolve';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -175,6 +177,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const isComplete = policy === 'cache-only' || res.completeness === 'FULL';
     if (isComplete) {
       updateDependencies(operation, res.dependencies);
+      resolveData(store, operation, res.data as Data);
     }
 
     return {
@@ -199,7 +202,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     if (data !== null && data !== undefined) {
       dependencies = write(store, operation, data).dependencies;
       if (isQueryOperation(operation)) {
-        result.data = query(store, operation).data;
+        result.data = resolveData(store, operation, data);
       }
     }
 
