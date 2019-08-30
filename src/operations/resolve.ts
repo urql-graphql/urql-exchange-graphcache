@@ -37,6 +37,7 @@ export const resolveData = (
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
   };
+
   resolveDataSelection(ctx, 'Query', getSelectionSet(operation), data);
   return data;
 };
@@ -100,6 +101,7 @@ const resolveDataSelection = (
     entityKey === 'Query'
       ? entityKey
       : (store.getField(entityKey, '__typename') as string);
+
   const iter = new SelectionIterator(typename, entityKey, select, ctx);
 
   let node;
@@ -132,6 +134,22 @@ const resolveDataSelection = (
           fieldSelect,
           data[fieldAlias] as Data | Data[]
         );
+      }
+    } else if (node.selectionSet !== undefined) {
+      const fieldSelect = getSelectionSet(node);
+      const link = store.getLink(fieldKey);
+
+      if (Array.isArray(link)) {
+        for (let i = 0, l = link.length; i < l; i++) {
+          const childLink = link[i];
+          if (childLink !== null) {
+            // @ts-ignore
+            resolveDataSelection(ctx, childLink, fieldSelect, data[fieldAlias]);
+          }
+        }
+      } else if (typeof link === 'string') {
+        // @ts-ignore
+        resolveDataSelection(ctx, link, fieldSelect, data[fieldAlias]);
       }
     }
   }
