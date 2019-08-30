@@ -185,9 +185,11 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   };
 
   // Take any OperationResult and update the cache with it
-  const updateCacheWithResult = (result: OperationResult) => {
-    const { data, operation } = result;
-    let writeDependencies, queryDependencies;
+  const updateCacheWithResult = (result: OperationResult): OperationResult => {
+    const { operation, error, extensions } = result;
+    const isQuery = isQueryOperation(operation);
+    let { data } = result;
+
     // Clear old optimistic values from the store
     const { key } = operation;
     if (optimisticKeys.has(key)) {
@@ -195,26 +197,30 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       store.clearOptimistic(key);
     }
 
+    let writeDependencies, queryDependencies;
     if (data !== null && data !== undefined) {
       writeDependencies = write(store, operation, data).dependencies;
-      if (isQueryOperation(operation)) {
+
+      if (isQuery) {
         const queryResult = query(store, operation);
-        result.data = queryResult.data;
+        data = queryResult.data;
         queryDependencies = queryResult.dependencies;
       } else {
-        const res = readOperation(store, operation, data);
-        result.data = res.data;
+        data = readOperation(store, operation, data).data;
       }
     }
 
     if (writeDependencies !== undefined) {
       // Update operations that depend on the updated data (except the current one)
-      processDependencies(operation, writeDependencies);
+      processDependencies(result.operation, writeDependencies);
     }
+
     // Update this operation's dependencies if it's a query
-    if (isQueryOperation(operation) && queryDependencies !== undefined) {
-      updateDependencies(operation, queryDependencies);
+    if (isQuery && queryDependencies !== undefined) {
+      updateDependencies(result.operation, queryDependencies);
     }
+
+    return { data, error, extensions, operation };
   };
 
   return ops$ => {
@@ -267,7 +273,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
           cacheOps$,
         ])
       ),
-      tap(updateCacheWithResult),
+      map(updateCacheWithResult),
       map(addCacheOutcome('miss'))
     );
 
