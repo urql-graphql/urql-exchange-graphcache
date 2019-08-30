@@ -296,3 +296,68 @@ it('writes optimistic mutations to the cache', () => {
   expect(response).toHaveBeenCalledTimes(2);
   expect(result).toHaveBeenCalledTimes(4);
 });
+
+it('calls resolvers with current data', () => {
+  const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
+
+  const opOne = client.createRequestOperation('query', {
+    key: 1,
+    query: queryOne,
+  });
+
+  const response = jest.fn(
+    (forwardOp: Operation): OperationResult => {
+      if (forwardOp.key === 1) {
+        return { operation: opOne, data: queryOneData };
+      }
+
+      return undefined as any;
+    }
+  );
+
+  const forward: ExchangeIO = ops$ =>
+    pipe(
+      ops$,
+      map(response)
+    );
+
+  const result = jest.fn();
+  const fakeResolver = jest.fn();
+  let call = {};
+
+  pipe(
+    cacheExchange({
+      resolvers: {
+        Author: {
+          name: parent => {
+            call = { ...parent };
+            fakeResolver();
+            return 'newName';
+          },
+        },
+      },
+    })({ forward, client })(ops$),
+    tap(result),
+    publish
+  );
+
+  next(opOne);
+  expect(response).toHaveBeenCalledTimes(1);
+  expect(fakeResolver).toHaveBeenCalledTimes(1);
+  expect(result).toHaveBeenCalledTimes(1);
+  expect(result.mock.calls[0][0].data).toEqual({
+    __typename: 'Query',
+    author: {
+      __typename: 'Author',
+      id: '123',
+      name: 'newName',
+    },
+  });
+
+  expect(call).toEqual({
+    __typename: 'Author',
+    name: 'Author',
+    id: '123',
+  });
+});
