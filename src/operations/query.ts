@@ -129,11 +129,16 @@ export const readRoot = (
       fieldValue !== null &&
       !isScalar(fieldValue)
     ) {
-      data[fieldAlias] = { ...fieldValue };
+      data[fieldAlias] = Array.isArray(fieldValue)
+        ? [...fieldValue]
+        : { ...fieldValue };
       const { selections: fieldSelect } = node.selectionSet;
-      readRootField(ctx, data[fieldAlias] as Data, fieldSelect, originalData[
-        fieldAlias
-      ] as Data);
+      data[fieldAlias] = readRootField(
+        ctx,
+        data[fieldAlias] as Data,
+        fieldSelect,
+        originalData[fieldAlias] as Data
+      );
     }
   }
 
@@ -145,14 +150,15 @@ const readRootField = (
   data: null | Data | NullArray<Data>,
   select: SelectionSet,
   originalData: Data | NullArray<Data>
-) => {
+): Data | NullArray<Data> | null => {
   if (Array.isArray(data)) {
     const newData = new Array(data.length);
     for (let i = 0, l = data.length; i < l; i++)
       newData[i] = readRootField(ctx, data[i], select, originalData[i]);
+
     return newData;
   } else if (data === null) {
-    return;
+    return null;
   }
 
   // Write entity to key that falls back to the given parentFieldKey

@@ -354,7 +354,7 @@ it('follows resolvers on initial write', () => {
   });
 });
 
-it('writes optimistic mutations to the cache', () => {
+it('follows resolvers for mutations', () => {
   jest.useFakeTimers();
 
   const mutation = gql`
@@ -442,5 +442,169 @@ it('writes optimistic mutations to the cache', () => {
       id: '123',
       name: 'newName',
     },
+  });
+});
+
+it('follows nested resolvers for mutations', () => {
+  jest.useFakeTimers();
+
+  const mutation = gql`
+    mutation {
+      concealAuthors {
+        id
+        name
+        book {
+          id
+          title
+          __typename
+        }
+        __typename
+      }
+    }
+  `;
+
+  const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
+
+  const query = gql`
+    query {
+      authors {
+        id
+        name
+        book {
+          id
+          title
+          __typename
+        }
+        __typename
+      }
+    }
+  `;
+
+  const queryOperation = client.createRequestOperation('query', {
+    key: 1,
+    query,
+  });
+
+  const mutationOperation = client.createRequestOperation('mutation', {
+    key: 2,
+    query: mutation,
+  });
+
+  const mutationData = {
+    __typename: 'Mutation',
+    concealAuthors: [
+      {
+        __typename: 'Author',
+        id: '123',
+        name: '[REDACTED ONLINE]',
+      },
+      {
+        __typename: 'Author',
+        id: '456',
+        name: 'Formidable',
+        book: {
+          id: '1',
+          title: 'AwesomeGQL',
+          __typename: 'Book',
+        },
+      },
+    ],
+  };
+
+  const queryData = {
+    __typename: 'Query',
+    authors: [
+      {
+        __typename: 'Author',
+        id: '123',
+        name: '[REDACTED ONLINE]',
+      },
+      {
+        __typename: 'Author',
+        id: '456',
+        name: 'Formidable',
+        book: {
+          id: '1',
+          title: 'AwesomeGQL',
+          __typename: 'Book',
+        },
+      },
+    ],
+  };
+
+  const response = jest.fn(
+    (forwardOp: Operation): OperationResult => {
+      if (forwardOp.key === 1) {
+        return { operation: queryOperation, data: queryData };
+      }
+      if (forwardOp.key === 2) {
+        return { operation: mutationOperation, data: mutationData };
+      }
+
+      return undefined as any;
+    }
+  );
+
+  const result = jest.fn();
+  const forward: ExchangeIO = ops$ =>
+    pipe(
+      ops$,
+      delay(1),
+      map(response)
+    );
+
+  const fakeResolver = jest.fn();
+
+  pipe(
+    cacheExchange({
+      resolvers: {
+        Author: {
+          name: () => {
+            fakeResolver();
+            return 'Secret Author';
+          },
+        },
+        Book: {
+          title: () => {
+            fakeResolver();
+            return 'Secret Book';
+          },
+        },
+      },
+    })({ forward, client })(ops$),
+    tap(result),
+    publish
+  );
+
+  next(queryOperation);
+  jest.runAllTimers();
+  expect(response).toHaveBeenCalledTimes(1);
+  expect(fakeResolver).toHaveBeenCalledTimes(3);
+
+  next(mutationOperation);
+  jest.runAllTimers();
+  expect(response).toHaveBeenCalledTimes(2);
+  expect(fakeResolver).toHaveBeenCalledTimes(6);
+  expect(result.mock.calls[1][0].data).toEqual({
+    __typename: 'Mutation',
+    concealAuthors: [
+      {
+        __typename: 'Author',
+        id: '123',
+        book: null,
+        name: 'Secret Author',
+      },
+      {
+        __typename: 'Author',
+        id: '456',
+        name: 'Secret Author',
+        book: {
+          id: '1',
+          title: 'Secret Book',
+          __typename: 'Book',
+        },
+      },
+    ],
   });
 });
