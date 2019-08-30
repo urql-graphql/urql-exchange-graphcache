@@ -144,7 +144,12 @@ const resolveDataSelection = (
           const childLink = link[i];
           if (childLink !== null) {
             // @ts-ignore
-            resolveDataSelection(ctx, childLink, fieldSelect, data[fieldAlias]);
+            resolveDataSelection(
+              ctx,
+              childLink,
+              fieldSelect,
+              data[fieldAlias][i]
+            );
           }
         }
       } else if (typeof link === 'string') {

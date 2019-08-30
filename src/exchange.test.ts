@@ -361,3 +361,122 @@ it('calls resolvers with current data', () => {
     id: '123',
   });
 });
+
+it('calls resolvers with nested list data', () => {
+  const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
+
+  const operation = client.createRequestOperation('query', {
+    key: 1,
+    query: gql`
+      query {
+        todos {
+          id
+          text
+          __typename
+          author {
+            id
+            name
+            __typename
+          }
+        }
+      }
+    `,
+  });
+
+  const data = {
+    __typename: 'Query',
+    todos: [
+      {
+        id: '1',
+        text: 'Install',
+        __typename: 'Todo',
+        author: { id: '2', name: 'Andy', __typename: 'Author' },
+      },
+      {
+        id: '2',
+        text: 'Learn',
+        __typename: 'Todo',
+      },
+    ],
+  };
+
+  const response = jest.fn(
+    (forwardOp: Operation): OperationResult => {
+      if (forwardOp.key === 1) {
+        return { operation, data };
+      }
+
+      return undefined as any;
+    }
+  );
+
+  const forward: ExchangeIO = ops$ =>
+    pipe(
+      ops$,
+      map(response)
+    );
+
+  const result = jest.fn();
+  const fakeResolver = jest.fn();
+  const todoTextCalls: any[] = [];
+
+  pipe(
+    cacheExchange({
+      resolvers: {
+        Todo: {
+          text: parent => {
+            // @ts-ignore
+            todoTextCalls.push({ ...parent, author: { ...parent.author } });
+            fakeResolver();
+            return `${parent.__typename}: ${parent.text}`;
+          },
+        },
+        Author: {
+          name: parent => {
+            fakeResolver();
+            return `${parent.__typename}: ${parent.name}`;
+          },
+        },
+      },
+    })({ forward, client })(ops$),
+    tap(result),
+    publish
+  );
+
+  next(operation);
+  expect(response).toHaveBeenCalledTimes(1);
+  expect(fakeResolver).toHaveBeenCalledTimes(3);
+  expect(result).toHaveBeenCalledTimes(1);
+  expect(result.mock.calls[0][0].data).toEqual({
+    __typename: 'Query',
+    todos: [
+      {
+        id: '1',
+        text: 'Todo: Install',
+        __typename: 'Todo',
+        author: { id: '2', name: 'Author: Andy', __typename: 'Author' },
+      },
+      {
+        id: '2',
+        text: 'Todo: Learn',
+        __typename: 'Todo',
+      },
+    ],
+  });
+
+  expect(todoTextCalls).toEqual([
+    {
+      id: '1',
+      text: 'Install',
+      __typename: 'Todo',
+      author: { id: '2', name: 'Andy', __typename: 'Author' },
+    },
+    {
+      id: '2',
+      text: 'Learn',
+      author: {}, // because of spread
+      __typename: 'Todo',
+    },
+  ]);
+});
