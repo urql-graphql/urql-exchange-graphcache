@@ -210,11 +210,10 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     if (writeDependencies !== undefined) {
       // Update operations that depend on the updated data (except the current one)
       processDependencies(operation, writeDependencies);
-
-      // Update this operation's dependencies if it's a query
-      if (isQueryOperation(operation)) {
-        updateDependencies(operation, queryDependencies);
-      }
+    }
+    // Update this operation's dependencies if it's a query
+    if (isQueryOperation(operation) && queryDependencies !== undefined) {
+      updateDependencies(operation, queryDependencies);
     }
   };
 

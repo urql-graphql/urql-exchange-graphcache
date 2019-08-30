@@ -203,7 +203,7 @@ const writeSelection = (
       store.writeRecord(fieldValue, fieldKey);
     } else if (!isScalar(fieldValue)) {
       // Process the field and write links for the child entities that have been written
-      const { selections: fieldSelect } = node.selectionSet;
+      const fieldSelect = getSelectionSet(node);
       const link = writeField(ctx, fieldKey, fieldSelect, fieldValue);
       store.writeLink(link, fieldKey);
       store.removeRecord(fieldKey);
@@ -288,7 +288,7 @@ const writeRoot = (
       fieldValue !== null &&
       !isScalar(fieldValue)
     ) {
-      const { selections: fieldSelect } = node.selectionSet;
+      const fieldSelect = getSelectionSet(node);
       writeRootField(ctx, fieldValue, fieldSelect);
     }
 

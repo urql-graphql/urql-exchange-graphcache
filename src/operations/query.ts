@@ -129,16 +129,16 @@ export const readRoot = (
       fieldValue !== null &&
       !isScalar(fieldValue)
     ) {
-      data[fieldAlias] = Array.isArray(fieldValue)
-        ? [...fieldValue]
-        : { ...fieldValue };
-      const { selections: fieldSelect } = node.selectionSet;
+      data[fieldAlias] = fieldValue;
+      const fieldSelect = getSelectionSet(node);
       data[fieldAlias] = readRootField(
         ctx,
         data[fieldAlias] as Data,
         fieldSelect,
         originalData[fieldAlias] as Data
       );
+    } else if (node.selectionResult === undefined) {
+      data[fieldAlias] = fieldValue;
     }
   }
 
@@ -151,10 +151,15 @@ const readRootField = (
   select: SelectionSet,
   originalData: Data | NullArray<Data>
 ): Data | NullArray<Data> | null => {
-  if (Array.isArray(data)) {
-    const newData = new Array(data.length);
-    for (let i = 0, l = data.length; i < l; i++)
-      newData[i] = readRootField(ctx, data[i], select, originalData[i]);
+  if (Array.isArray(originalData)) {
+    const newData = new Array(originalData.length);
+    for (let i = 0, l = originalData.length; i < l; i++)
+      newData[i] = readRootField(
+        ctx,
+        (data as NullArray<Data>)[i],
+        select,
+        (originalData as NullArray<Data>)[i] as Data
+      );
 
     return newData;
   } else if (data === null) {
@@ -162,12 +167,12 @@ const readRootField = (
   }
 
   // Write entity to key that falls back to the given parentFieldKey
-  const entityKey = ctx.store.keyOfEntity(data);
+  const entityKey = ctx.store.keyOfEntity(originalData as Data);
   if (entityKey !== null) {
-    return readSelection(ctx, entityKey, select, data);
+    return readSelection(ctx, entityKey, select, data as Data);
   } else {
-    const typename = data.__typename;
-    return readRoot(ctx, typename, select, data, originalData);
+    const typename = (data as Data).__typename;
+    return readRoot(ctx, typename, select, data as Data, originalData);
   }
 };
 
