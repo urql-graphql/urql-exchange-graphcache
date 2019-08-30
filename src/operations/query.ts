@@ -47,6 +47,13 @@ interface Context {
   fragments: Fragments;
 }
 
+interface OperationContext {
+  result: QueryResult & { originalData: Data };
+  store: Store;
+  variables: Variables;
+  fragments: Fragments;
+}
+
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
   initStoreState(0);
@@ -77,7 +84,7 @@ export const startQuery = (store: Store, request: OperationRequest) => {
   return result;
 };
 
-export const readMutation = (
+export const readOperation = (
   store: Store,
   request: OperationRequest,
   data: Data
@@ -93,37 +100,47 @@ export const readMutation = (
   };
 
   const operationName = getOperationName(operation);
-  const ctx: Context = {
+  const ctx: OperationContext = {
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
     result,
     store,
   };
 
-  result.data = readRoot(ctx, operationName, getSelectionSet(operation), data);
+  root.__typename = operationName;
+  result.data = readRoot(
+    ctx,
+    operationName,
+    getSelectionSet(operation),
+    result.data as Data
+  );
   clearStoreState();
   return result;
 };
 
 export const readRoot = (
-  ctx: Context,
+  ctx: OperationContext,
   entityKey: string,
   select: SelectionSet,
   data: Data
 ): Data => {
+  const {
+    result: { originalData },
+  } = ctx;
   const iter = new SelectionIterator(entityKey, entityKey, select, ctx);
   let node;
   while ((node = iter.next()) !== undefined) {
     const fieldAlias = getFieldAlias(node);
-    const fieldValue = data[fieldAlias];
+    const fieldValue = originalData[fieldAlias];
 
     if (
       node.selectionSet !== undefined &&
       fieldValue !== null &&
       !isScalar(fieldValue)
     ) {
+      data[fieldAlias] = { ...fieldValue };
       const { selections: fieldSelect } = node.selectionSet;
-      readRootField(ctx, fieldValue, fieldSelect);
+      readRootField(ctx, data[fieldAlias] as Data, fieldSelect);
     }
   }
 
@@ -131,7 +148,7 @@ export const readRoot = (
 };
 
 const readRootField = (
-  ctx: Context,
+  ctx: OperationContext,
   data: null | Data | NullArray<Data>,
   select: SelectionSet
 ) => {
@@ -147,10 +164,10 @@ const readRootField = (
   // Write entity to key that falls back to the given parentFieldKey
   const entityKey = ctx.store.keyOfEntity(data);
   if (entityKey !== null) {
-    readSelection(ctx, entityKey, select, data);
+    return readSelection(ctx, entityKey, select, data);
   } else {
     const typename = data.__typename;
-    readRoot(ctx, typename, select, data);
+    return readRoot(ctx, typename, select, data);
   }
 };
 

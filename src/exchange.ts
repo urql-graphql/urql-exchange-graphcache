@@ -8,7 +8,7 @@ import {
 } from 'urql';
 
 import { filter, map, merge, pipe, share, tap } from 'wonka';
-import { query, write, writeOptimistic } from './operations';
+import { query, write, writeOptimistic, readOperation } from './operations';
 import { Store } from './store';
 
 import {
@@ -18,7 +18,6 @@ import {
   OptimisticMutationConfig,
   KeyingConfig,
 } from './types';
-import { readMutation } from './operations/query';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -203,7 +202,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
         result.data = queryResult.data;
         queryDependencies = queryResult.dependencies;
       } else {
-        const res = readMutation(store, operation, data);
+        const res = readOperation(store, operation, data);
         result.data = res.data;
       }
     }
