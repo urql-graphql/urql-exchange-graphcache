@@ -185,12 +185,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   };
 
   // Take any OperationResult and update the cache with it
-  const updateCacheWithResult = ({ data, operation }: OperationResult) => {
-    let dependencies;
-    if (data !== null && data !== undefined) {
-      dependencies = write(store, operation, data).dependencies;
-    }
-
+  const updateCacheWithResult = (result: OperationResult) => {
+    const { data, operation } = result;
+    let writeDependencies, queryDependencies;
     // Clear old optimistic values from the store
     const { key } = operation;
     if (optimisticKeys.has(key)) {
@@ -198,13 +195,22 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       store.clearOptimistic(key);
     }
 
-    if (dependencies !== undefined) {
+    if (data !== null && data !== undefined) {
+      writeDependencies = write(store, operation, data).dependencies;
+      if (isQueryOperation(operation)) {
+        const queryResult = query(store, operation);
+        result.data = queryResult.data;
+        queryDependencies = queryResult.dependencies;
+      }
+    }
+
+    if (writeDependencies !== undefined) {
       // Update operations that depend on the updated data (except the current one)
-      processDependencies(operation, dependencies);
+      processDependencies(operation, writeDependencies);
 
       // Update this operation's dependencies if it's a query
       if (isQueryOperation(operation)) {
-        updateDependencies(operation, dependencies);
+        updateDependencies(operation, queryDependencies);
       }
     }
   };
