@@ -47,13 +47,6 @@ interface Context {
   fragments: Fragments;
 }
 
-interface OperationContext {
-  result: QueryResult & { originalData: Data };
-  store: Store;
-  variables: Variables;
-  fragments: Fragments;
-}
-
 /** Reads a request entirely from the store */
 export const query = (store: Store, request: OperationRequest): QueryResult => {
   initStoreState(0);
@@ -92,15 +85,14 @@ export const readOperation = (
   initStoreState(0);
   const operation = getMainOperation(request.query);
   const root: Data = Object.create(null);
-  const result: QueryResult & { originalData: Data } = {
+  const result: QueryResult = {
     completeness: 'FULL',
     dependencies: getCurrentDependencies(),
     data: root,
-    originalData: data,
   };
 
   const operationName = getOperationName(operation);
-  const ctx: OperationContext = {
+  const ctx: Context = {
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
     result,
@@ -112,21 +104,20 @@ export const readOperation = (
     ctx,
     operationName,
     getSelectionSet(operation),
-    result.data as Data
+    result.data as Data,
+    data
   );
   clearStoreState();
   return result;
 };
 
 export const readRoot = (
-  ctx: OperationContext,
+  ctx: Context,
   entityKey: string,
   select: SelectionSet,
-  data: Data
+  data: Data,
+  originalData: Data | NullArray<Data>
 ): Data => {
-  const {
-    result: { originalData },
-  } = ctx;
   const iter = new SelectionIterator(entityKey, entityKey, select, ctx);
   let node;
   while ((node = iter.next()) !== undefined) {
@@ -140,7 +131,9 @@ export const readRoot = (
     ) {
       data[fieldAlias] = { ...fieldValue };
       const { selections: fieldSelect } = node.selectionSet;
-      readRootField(ctx, data[fieldAlias] as Data, fieldSelect);
+      readRootField(ctx, data[fieldAlias] as Data, fieldSelect, originalData[
+        fieldAlias
+      ] as Data);
     }
   }
 
@@ -148,14 +141,15 @@ export const readRoot = (
 };
 
 const readRootField = (
-  ctx: OperationContext,
+  ctx: Context,
   data: null | Data | NullArray<Data>,
-  select: SelectionSet
+  select: SelectionSet,
+  originalData: Data | NullArray<Data>
 ) => {
   if (Array.isArray(data)) {
     const newData = new Array(data.length);
     for (let i = 0, l = data.length; i < l; i++)
-      newData[i] = readRootField(ctx, data[i], select);
+      newData[i] = readRootField(ctx, data[i], select, originalData[i]);
     return newData;
   } else if (data === null) {
     return;
@@ -167,7 +161,7 @@ const readRootField = (
     return readSelection(ctx, entityKey, select, data);
   } else {
     const typename = data.__typename;
-    return readRoot(ctx, typename, select, data);
+    return readRoot(ctx, typename, select, data, originalData);
   }
 };
 
