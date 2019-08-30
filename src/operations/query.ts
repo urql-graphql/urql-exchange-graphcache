@@ -8,6 +8,7 @@ import {
   getName,
   getFieldArguments,
   getFieldAlias,
+  getOperationName,
 } from '../ast';
 
 import {
@@ -19,6 +20,7 @@ import {
   SelectionSet,
   Completeness,
   OperationRequest,
+  NullArray,
 } from '../types';
 
 import {
@@ -29,7 +31,7 @@ import {
   clearStoreState,
 } from '../store';
 
-import { SelectionIterator } from './shared';
+import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 
 export interface QueryResult {
@@ -71,7 +73,85 @@ export const startQuery = (store: Store, request: OperationRequest) => {
   };
 
   result.data = readSelection(ctx, 'Query', getSelectionSet(operation), root);
+
   return result;
+};
+
+export const readMutation = (
+  store: Store,
+  request: OperationRequest,
+  data: Data
+) => {
+  initStoreState(0);
+  const operation = getMainOperation(request.query);
+  const root: Data = Object.create(null);
+  const result: QueryResult & { originalData: Data } = {
+    completeness: 'FULL',
+    dependencies: getCurrentDependencies(),
+    data: root,
+    originalData: data,
+  };
+
+  const operationName = getOperationName(operation);
+  const ctx: Context = {
+    variables: normalizeVariables(operation, request.variables),
+    fragments: getFragments(request.query),
+    result,
+    store,
+  };
+
+  result.data = readRoot(ctx, operationName, getSelectionSet(operation), data);
+  clearStoreState();
+  return result;
+};
+
+export const readRoot = (
+  ctx: Context,
+  entityKey: string,
+  select: SelectionSet,
+  data: Data
+): Data => {
+  const iter = new SelectionIterator(entityKey, entityKey, select, ctx);
+  let node;
+  while ((node = iter.next()) !== undefined) {
+    const fieldAlias = getFieldAlias(node);
+    const fieldValue = data[fieldAlias];
+
+    if (
+      node.selectionSet !== undefined &&
+      fieldValue !== null &&
+      !isScalar(fieldValue)
+    ) {
+      const { selections: fieldSelect } = node.selectionSet;
+      readRootField(ctx, fieldValue, fieldSelect);
+    }
+  }
+
+  return data;
+};
+
+const readRootField = (
+  ctx: Context,
+  data: null | Data | NullArray<Data>,
+  select: SelectionSet
+) => {
+  if (Array.isArray(data)) {
+    const newData = new Array(data.length);
+    for (let i = 0, l = data.length; i < l; i++)
+      newData[i] = readRootField(ctx, data[i], select);
+    return newData;
+  } else if (data === null) {
+    return;
+  }
+
+  // Write entity to key that falls back to the given parentFieldKey
+  const entityKey = ctx.store.keyOfEntity(data);
+  if (entityKey !== null) {
+    readSelection(ctx, entityKey, select, data);
+  } else {
+    const typename = data.__typename;
+    readRoot(ctx, typename, select, data);
+  }
 };
 
 const readSelection = (

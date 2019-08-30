@@ -18,6 +18,7 @@ import {
   OptimisticMutationConfig,
   KeyingConfig,
 } from './types';
+import { readMutation } from './operations/query';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -201,6 +202,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
         const queryResult = query(store, operation);
         result.data = queryResult.data;
         queryDependencies = queryResult.dependencies;
+      } else {
+        const res = readMutation(store, operation, data);
+        result.data = res.data;
       }
     }
 
