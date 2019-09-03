@@ -18,7 +18,6 @@ import {
   OptimisticMutationConfig,
   KeyingConfig,
 } from './types';
-import { DocumentNode } from 'graphql';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -133,7 +132,7 @@ export interface CacheExchangeOpts {
    * results. Since we could check the selection further and see all other fields are optional
    * --> return and fetch
    */
-  schema?: DocumentNode;
+  schema?: object;
 }
 
 export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({

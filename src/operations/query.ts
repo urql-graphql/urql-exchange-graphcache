@@ -8,7 +8,6 @@ import {
   getName,
   getFieldArguments,
   getFieldAlias,
-  getOperationName,
 } from '../ast';
 
 import {
@@ -101,7 +100,7 @@ export const readOperation = (
 
   result.data = readRoot(
     ctx,
-    getOperationName(operation),
+    ctx.store.rootFields[operation.operation],
     getSelectionSet(operation),
     data
   );

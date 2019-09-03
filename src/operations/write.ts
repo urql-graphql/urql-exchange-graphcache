@@ -9,7 +9,6 @@ import {
   normalizeVariables,
   getFragmentTypeName,
   getName,
-  getOperationName,
   getFieldArguments,
 } from '../ast';
 
@@ -76,7 +75,7 @@ export const startWrite = (
   };
 
   const select = getSelectionSet(operation);
-  const operationName = getOperationName(operation);
+  const operationName = ctx.store.rootFields[operation.operation];
 
   if (operationName === 'Query') {
     writeSelection(ctx, operationName, select, data);
@@ -104,7 +103,7 @@ export const writeOptimistic = (
     store,
   };
 
-  const operationName = getOperationName(operation);
+  const operationName = ctx.store.rootFields[operation.operation];
   if (operationName === 'Mutation') {
     const select = getSelectionSet(operation);
     const iter = new SelectionIterator(
