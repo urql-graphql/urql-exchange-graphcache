@@ -117,9 +117,17 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   client,
 }) => {
   if (!opts) opts = {};
-  let schema$ = fromValue(opts.schema);
+  let schema$ = pipe(
+    fromValue(opts.schema),
+    map((v?: DocumentNode) => v && store.setSchema(v))
+  );
+  // TODO: evaluate, other libraries only allow the above. Introducing a new convention
+  // could cause friction. Introspection in production is not really done at this point in time.
   if (opts.schemaUrl) {
-    schema$ = fromPromise(getSchema(opts.schemaUrl));
+    schema$ = pipe(
+      fromPromise(getSchema(opts.schemaUrl)),
+      map((v: DocumentNode) => store.setSchema(v))
+    );
   }
 
   const store = new Store(

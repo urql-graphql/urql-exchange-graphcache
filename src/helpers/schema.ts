@@ -27,7 +27,7 @@ export const getSchema = (schemaUrl: string): Promise<DocumentNode> => {
           // TODO: we need to check what errors can be present here.
           reject(`Something went wrong while fetching your schema.`);
         }
-        resolve(schema);
+        resolve(parseSchema(schema));
       });
   });
 };

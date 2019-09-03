@@ -78,6 +78,7 @@ export class Store {
   updates: UpdatesConfig;
   optimisticMutations: OptimisticMutationConfig;
   keys: KeyingConfig;
+  schema?: DocumentNode;
 
   constructor(
     resolvers?: ResolverConfig,
@@ -94,6 +95,10 @@ export class Store {
     } as UpdatesConfig;
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
+  }
+
+  setSchema(schema: DocumentNode) {
+    this.schema = schema;
   }
 
   keyOfEntity(data: Data) {
