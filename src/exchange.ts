@@ -7,7 +7,21 @@ import {
   CacheOutcome,
 } from 'urql';
 
-import { filter, map, merge, pipe, share, tap } from 'wonka';
+import {
+  filter,
+  map,
+  merge,
+  pipe,
+  share,
+  tap,
+  concatMap,
+  fromArray,
+  fromValue,
+  fromPromise,
+  buffer,
+  take,
+  concat,
+} from 'wonka';
 import { query, write, writeOptimistic, readOperation } from './operations';
 import { Store } from './store';
 
@@ -18,6 +32,8 @@ import {
   OptimisticMutationConfig,
   KeyingConfig,
 } from './types';
+import { DocumentNode } from 'graphql';
+import { getSchema } from './helpers';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -92,6 +108,8 @@ export interface CacheExchangeOpts {
   resolvers?: ResolverConfig;
   optimistic?: OptimisticMutationConfig;
   keys?: KeyingConfig;
+  schema?: DocumentNode;
+  schemaUrl?: string;
 }
 
 export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
@@ -99,6 +117,11 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   client,
 }) => {
   if (!opts) opts = {};
+  let schema$ = fromValue(opts.schema);
+  if (opts.schemaUrl) {
+    schema$ = fromPromise(getSchema(opts.schemaUrl));
+  }
+
   const store = new Store(
     opts.resolvers,
     opts.updates,
@@ -231,9 +254,18 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       share
     );
 
+    const pausedOps$ = pipe(
+      sharedOps$,
+      buffer(schema$),
+      take(1),
+      concatMap(ops => fromArray(ops))
+    );
+
+    const allOps$ = concat([pausedOps$, sharedOps$]);
+
     // Filter by operations that are cacheable and attempt to query them from the cache
     const cache$ = pipe(
-      sharedOps$,
+      allOps$,
       filter(op => isCacheableQuery(op)),
       map(operationResultFromCache),
       share
@@ -267,7 +299,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       forward(
         merge([
           pipe(
-            sharedOps$,
+            allOps$,
             filter(op => !isCacheableQuery(op))
           ),
           cacheOps$,
