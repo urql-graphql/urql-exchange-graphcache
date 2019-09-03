@@ -16,6 +16,9 @@ import { SelectionSet } from '../types';
 export const getName = (node: { name: NameNode }): string => node.name.value;
 
 export const getOperationName = (node: OperationDefinitionNode) => {
+  // Schema awareness would give us certainty about these.
+  // This would effectively allow us to make this into an object:
+  // { query: schema.queryType.name || 'Query', ... }
   switch (node.operation) {
     case 'query':
       return 'Query';

@@ -7,21 +7,7 @@ import {
   CacheOutcome,
 } from 'urql';
 
-import {
-  filter,
-  map,
-  merge,
-  pipe,
-  share,
-  tap,
-  concatMap,
-  fromArray,
-  fromValue,
-  fromPromise,
-  buffer,
-  take,
-  concat,
-} from 'wonka';
+import { filter, map, merge, pipe, share, tap } from 'wonka';
 import { query, write, writeOptimistic, readOperation } from './operations';
 import { Store } from './store';
 
@@ -33,7 +19,6 @@ import {
   KeyingConfig,
 } from './types';
 import { DocumentNode } from 'graphql';
-import { getSchema } from './helpers';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -109,7 +94,6 @@ export interface CacheExchangeOpts {
   optimistic?: OptimisticMutationConfig;
   keys?: KeyingConfig;
   schema?: DocumentNode;
-  schemaUrl?: string;
 }
 
 export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
@@ -117,18 +101,6 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   client,
 }) => {
   if (!opts) opts = {};
-  let schema$ = pipe(
-    fromValue(opts.schema),
-    map((v?: DocumentNode) => v && store.setSchema(v))
-  );
-  // TODO: evaluate, other libraries only allow the above. Introducing a new convention
-  // could cause friction. Introspection in production is not really done at this point in time.
-  if (opts.schemaUrl) {
-    schema$ = pipe(
-      fromPromise(getSchema(opts.schemaUrl)),
-      map((v: DocumentNode) => store.setSchema(v))
-    );
-  }
 
   const store = new Store(
     opts.resolvers,
@@ -136,6 +108,11 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     opts.optimistic,
     opts.keys
   );
+
+  if (opts.schema) {
+    store.setSchema(opts.schema);
+  }
+
   const optimisticKeys = new Set();
   const ops: OperationMap = new Map();
   const deps = Object.create(null) as DependentOperations;
@@ -264,18 +241,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       share
     );
 
-    const pausedOps$ = pipe(
-      sharedOps$,
-      buffer(schema$),
-      take(1),
-      concatMap(ops => fromArray(ops))
-    );
-
-    const allOps$ = concat([pausedOps$, sharedOps$]);
-
     // Filter by operations that are cacheable and attempt to query them from the cache
     const cache$ = pipe(
-      allOps$,
+      sharedOps$,
       filter(op => isCacheableQuery(op)),
       map(operationResultFromCache),
       share
@@ -310,7 +278,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       forward(
         merge([
           pipe(
-            allOps$,
+            sharedOps$,
             filter(op => !isCacheableQuery(op))
           ),
           cacheOps$,
