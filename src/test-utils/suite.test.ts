@@ -2,6 +2,7 @@ import { DocumentNode } from 'graphql';
 import gql from 'graphql-tag';
 import { query, write } from '../operations';
 import { Store } from '../store';
+import { SchemaPredicates } from '../ast/schemaPredicates';
 
 interface TestCase {
   query: DocumentNode;
@@ -10,10 +11,10 @@ interface TestCase {
 }
 
 const expectCacheIntegrity = (testcase: TestCase) => {
-  const store = new Store();
+  const store = new Store(new SchemaPredicates());
   const request = { query: testcase.query, variables: testcase.variables };
-  const writeRes = write(store, request, testcase.data);
-  const queryRes = query(store, request);
+  const writeRes = write(store, new SchemaPredicates(), request, testcase.data);
+  const queryRes = query(store, new SchemaPredicates(), request);
   expect(queryRes.data).toEqual(testcase.data);
   expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.dependencies).toEqual(writeRes.dependencies);

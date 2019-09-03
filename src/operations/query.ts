@@ -32,6 +32,7 @@ import {
 
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
+import { SchemaPredicates } from 'src/ast/schemaPredicates';
 
 export interface QueryResult {
   completeness: Completeness;
@@ -44,18 +45,27 @@ interface Context {
   store: Store;
   variables: Variables;
   fragments: Fragments;
+  schemaPredicates: SchemaPredicates;
 }
 
 /** Reads a request entirely from the store */
-export const query = (store: Store, request: OperationRequest): QueryResult => {
+export const query = (
+  store: Store,
+  schemaPredicates: SchemaPredicates,
+  request: OperationRequest
+): QueryResult => {
   initStoreState(0);
 
-  const result = startQuery(store, request);
+  const result = startQuery(store, schemaPredicates, request);
   clearStoreState();
   return result;
 };
 
-export const startQuery = (store: Store, request: OperationRequest) => {
+export const startQuery = (
+  store: Store,
+  schemaPredicates: SchemaPredicates,
+  request: OperationRequest
+) => {
   const operation = getMainOperation(request.query);
   const root: Data = Object.create(null);
   const result: QueryResult = {
@@ -69,6 +79,7 @@ export const startQuery = (store: Store, request: OperationRequest) => {
     fragments: getFragments(request.query),
     result,
     store,
+    schemaPredicates,
   };
 
   result.data = readSelection(ctx, 'Query', getSelectionSet(operation), root);
@@ -78,6 +89,7 @@ export const startQuery = (store: Store, request: OperationRequest) => {
 
 export const readOperation = (
   store: Store,
+  schemaPredicates: SchemaPredicates,
   request: OperationRequest,
   data: Data
 ) => {
@@ -96,11 +108,12 @@ export const readOperation = (
     fragments: getFragments(request.query),
     result,
     store,
+    schemaPredicates,
   };
 
   result.data = readRoot(
     ctx,
-    ctx.store.rootFields[operation.operation],
+    schemaPredicates.getRootKey(operation.operation),
     getSelectionSet(operation),
     data
   );

@@ -18,6 +18,7 @@ import {
   OptimisticMutationConfig,
   KeyingConfig,
 } from './types';
+import { SchemaPredicates } from './ast/schemaPredicates';
 
 type OperationResultWithMeta = OperationResult & {
   completeness: Completeness;
@@ -141,16 +142,14 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
 }) => {
   if (!opts) opts = {};
 
+  const schemaPredicates = new SchemaPredicates(opts.schema);
   const store = new Store(
+    schemaPredicates,
     opts.resolvers,
     opts.updates,
     opts.optimistic,
     opts.keys
   );
-
-  if (opts.schema) {
-    store.setSchema(opts.schema);
-  }
 
   const optimisticKeys = new Set();
   const ops: OperationMap = new Map();
@@ -188,7 +187,12 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   const optimisticUpdate = (operation: Operation) => {
     if (isOptimisticMutation(operation)) {
       const { key } = operation;
-      const { dependencies } = writeOptimistic(store, operation, key);
+      const { dependencies } = writeOptimistic(
+        store,
+        schemaPredicates,
+        operation,
+        key
+      );
       if (dependencies.size !== 0) {
         optimisticKeys.add(key);
         processDependencies(operation, dependencies);
@@ -218,7 +222,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     operation: Operation
   ): OperationResultWithMeta => {
     const policy = getRequestPolicy(operation);
-    const res = query(store, operation);
+    const res = query(store, schemaPredicates, operation);
     const isComplete = policy === 'cache-only' || res.completeness === 'FULL';
     if (isComplete) {
       updateDependencies(operation, res.dependencies);
@@ -251,14 +255,15 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
 
     let writeDependencies, queryDependencies;
     if (data !== null && data !== undefined) {
-      writeDependencies = write(store, operation, data).dependencies;
+      writeDependencies = write(store, schemaPredicates, operation, data)
+        .dependencies;
 
       if (isQuery) {
-        const queryResult = query(store, operation);
+        const queryResult = query(store, schemaPredicates, operation);
         data = queryResult.data;
         queryDependencies = queryResult.dependencies;
       } else {
-        data = readOperation(store, operation, data).data;
+        data = readOperation(store, schemaPredicates, operation, data).data;
       }
     }
 

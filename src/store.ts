@@ -18,6 +18,7 @@ import { keyOfEntity, joinKeys, keyOfField } from './helpers';
 import { startQuery } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';
+import { SchemaPredicates } from './ast/schemaPredicates';
 
 interface Ref<T> {
   current: null | T;
@@ -78,9 +79,10 @@ export class Store {
   updates: UpdatesConfig;
   optimisticMutations: OptimisticMutationConfig;
   keys: KeyingConfig;
-  rootFields: { query: string; mutation: string; subscription: string };
+  schemaPredicates: SchemaPredicates;
 
   constructor(
+    schemaPredicates: SchemaPredicates,
     resolvers?: ResolverConfig,
     updates?: Partial<UpdatesConfig>,
     optimisticMutations?: OptimisticMutationConfig,
@@ -95,22 +97,7 @@ export class Store {
     } as UpdatesConfig;
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
-    this.rootFields = {
-      query: 'Query',
-      mutation: 'Mutation',
-      subscription: 'Subscription',
-    };
-  }
-
-  setSchema(schema: any) {
-    this.rootFields = {
-      query: schema.__schema.queryType && schema.__schema.queryType.name,
-      mutation:
-        schema.__schema.mutationType && schema.__schema.mutationType.name,
-      subscription:
-        schema.__schema.subscriptionType &&
-        schema.__schema.subscriptionType.name,
-    };
+    this.schemaPredicates = schemaPredicates;
   }
 
   keyOfEntity(data: Data) {
@@ -208,15 +195,15 @@ export class Store {
     ctx: { query: DocumentNode; variables?: Variables },
     updater: (data: Data | null) => null | Data
   ): void {
-    const { data, completeness } = startQuery(this, ctx);
+    const { data, completeness } = startQuery(this, this.schemaPredicates, ctx);
     const input = completeness === 'EMPTY' ? null : data;
     const output = updater(input);
     if (output !== null) {
-      startWrite(this, ctx, output);
+      startWrite(this, this.schemaPredicates, ctx, output);
     }
   }
 
   writeFragment(dataFragment: DocumentNode, data: Data): void {
-    writeFragment(this, dataFragment, data);
+    writeFragment(this, this.schemaPredicates, dataFragment, data);
   }
 }

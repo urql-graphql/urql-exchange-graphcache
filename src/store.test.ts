@@ -10,6 +10,7 @@ import {
 import { Data } from './types';
 import { query } from './operations/query';
 import { write, writeOptimistic } from './operations/write';
+import { SchemaPredicates } from './ast/schemaPredicates';
 
 const Appointment = gql`
   query appointment($id: String) {
@@ -39,9 +40,15 @@ const Todos = gql`
 
 describe('Store with KeyingConfig', () => {
   it('generates keys from custom keying function', () => {
-    const store = new Store(undefined, undefined, undefined, {
-      User: () => 'me',
-    });
+    const store = new Store(
+      new SchemaPredicates(),
+      undefined,
+      undefined,
+      undefined,
+      {
+        User: () => 'me',
+      }
+    );
 
     expect(store.keyOfEntity({ __typename: 'Any', id: '123' })).toBe('Any:123');
     expect(store.keyOfEntity({ __typename: 'Any', _id: '123' })).toBe(
@@ -56,7 +63,7 @@ describe('Store with OptimisticMutationConfig', () => {
   let store, todosData;
 
   beforeEach(() => {
-    store = new Store(undefined, undefined, {
+    store = new Store(new SchemaPredicates(), undefined, undefined, {
       addTodo: variables => {
         return {
           ...variables,
@@ -89,7 +96,7 @@ describe('Store with OptimisticMutationConfig', () => {
         },
       ],
     };
-    write(store, { query: Todos }, todosData);
+    write(store, new SchemaPredicates(), { query: Todos }, todosData);
     initStoreState(null);
   });
 
@@ -132,13 +139,13 @@ describe('Store with OptimisticMutationConfig', () => {
   });
 
   it('should be able to invalidate data (one relation key)', () => {
-    let { data } = query(store, { query: Todos });
+    let { data } = query(store, new SchemaPredicates(), { query: Todos });
     expect((data as any).todos).toHaveLength(3);
     expect(store.getRecord('Todo:0.text')).toBe('Go to the shops');
     initStoreState(0);
     store.invalidateQuery(Todos);
     clearStoreState();
-    ({ data } = query(store, { query: Todos }));
+    ({ data } = query(store, new SchemaPredicates(), { query: Todos }));
     expect((data as any).todos).toEqual(null);
     expect(store.getRecord('Todo:0.text')).toBe(undefined);
   });
@@ -147,6 +154,7 @@ describe('Store with OptimisticMutationConfig', () => {
     initStoreState(0);
     write(
       store,
+      new SchemaPredicates(),
       {
         query: Appointment,
         variables: { id: '1' },
@@ -162,7 +170,7 @@ describe('Store with OptimisticMutationConfig', () => {
     );
     clearStoreState();
 
-    let { data } = query(store, {
+    let { data } = query(store, new SchemaPredicates(), {
       query: Appointment,
       variables: { id: '1' },
     });
@@ -171,7 +179,7 @@ describe('Store with OptimisticMutationConfig', () => {
     initStoreState(0);
     store.invalidateQuery(Appointment, { id: '1' });
     clearStoreState();
-    ({ data } = query(store, {
+    ({ data } = query(store, new SchemaPredicates(), {
       query: Appointment,
       variables: { id: '1' },
     }));
@@ -199,7 +207,7 @@ describe('Store with OptimisticMutationConfig', () => {
     const deps = getCurrentDependencies();
     expect(deps).toEqual(new Set(['Todo:0']));
 
-    const { data } = query(store, { query: Todos });
+    const { data } = query(store, new SchemaPredicates(), { query: Todos });
 
     expect(data).toEqual({
       __typename: 'Query',
@@ -236,7 +244,9 @@ describe('Store with OptimisticMutationConfig', () => {
     }));
     clearStoreState();
 
-    const { data: result } = query(store, { query: Todos });
+    const { data: result } = query(store, new SchemaPredicates(), {
+      query: Todos,
+    });
     expect(result).toEqual({
       __typename: 'Query',
       todos: [
@@ -260,6 +270,7 @@ describe('Store with OptimisticMutationConfig', () => {
     initStoreState(0);
     write(
       store,
+      new SchemaPredicates(),
       {
         query: Appointment,
         variables: { id: '1' },
@@ -284,7 +295,7 @@ describe('Store with OptimisticMutationConfig', () => {
     }));
     clearStoreState();
 
-    const { data: result } = query(store, {
+    const { data: result } = query(store, new SchemaPredicates(), {
       query: Appointment,
       variables: { id: '1' },
     });
@@ -302,6 +313,7 @@ describe('Store with OptimisticMutationConfig', () => {
   it('should be able to optimistically mutate', () => {
     const { dependencies } = writeOptimistic(
       store,
+      new SchemaPredicates(),
       {
         query: gql`
           mutation {
@@ -322,7 +334,7 @@ describe('Store with OptimisticMutationConfig', () => {
       1
     );
     expect(dependencies).toEqual(new Set(['Todo:1']));
-    let { data } = query(store, { query: Todos });
+    let { data } = query(store, new SchemaPredicates(), { query: Todos });
     expect(data).toEqual({
       __typename: 'Query',
       todos: [
@@ -343,7 +355,7 @@ describe('Store with OptimisticMutationConfig', () => {
     });
 
     store.clearOptimistic(1);
-    ({ data } = query(store, { query: Todos }));
+    ({ data } = query(store, new SchemaPredicates(), { query: Todos }));
     expect(data).toEqual({
       __typename: 'Query',
       todos: todosData.todos,

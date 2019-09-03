@@ -2,6 +2,7 @@ import { Store } from '../store';
 import gql from 'graphql-tag';
 import { write } from './write';
 import { query } from './query';
+import { SchemaPredicates } from '../ast/schemaPredicates';
 
 const TODO_QUERY = gql`
   query todos {
@@ -27,10 +28,11 @@ describe('Query', () => {
   });
 
   beforeEach(() => {
-    store = new Store();
+    store = new Store(new SchemaPredicates());
     store.setSchema(schema);
     write(
       store,
+      new SchemaPredicates(),
       { query: TODO_QUERY },
       {
         __typename: 'Query',
@@ -43,7 +45,7 @@ describe('Query', () => {
   });
 
   it('test partial results', () => {
-    const result = query(store, { query: TODO_QUERY });
+    const result = query(store, new SchemaPredicates(), { query: TODO_QUERY });
     expect(result.completeness).toEqual('PARTIAL');
   });
 });
