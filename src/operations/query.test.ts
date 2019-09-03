@@ -35,7 +35,7 @@ describe('Query', () => {
       {
         __typename: 'Query',
         todos: [
-          { id: '1', text: 'Teach', __typename: 'Todo' },
+          { id: '0', text: 'Teach', __typename: 'Todo' },
           { id: '1', text: 'Learn', __typename: 'Todo' },
         ],
       }

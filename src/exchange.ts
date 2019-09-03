@@ -222,6 +222,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const isComplete = policy === 'cache-only' || res.completeness === 'FULL';
     if (isComplete) {
       updateDependencies(operation, res.dependencies);
+    } else if (res.completeness === 'PARTIAL') {
+      updateDependencies(operation, res.dependencies);
+      client.reexecuteOperation(operation);
     }
 
     // Here we make a distinction we'll have to partially update the deps in case of partial AND
@@ -292,7 +295,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const cacheOps$ = pipe(
       cache$,
       // When it's partial we'll see this continue through to the fetchExchange.
-      filter(res => res.completeness !== 'FULL'),
+      filter(
+        res => res.completeness === 'PARTIAL' || res.completeness !== 'FULL'
+      ),
       map(res => res.operation)
     );
 
