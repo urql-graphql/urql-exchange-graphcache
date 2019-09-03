@@ -235,6 +235,8 @@ const readSelection = (
       }
     } else if (node.selectionSet === undefined) {
       // The field is a scalar and can be retrieved directly
+      // Here we should check if it's a mandatory field, if it is
+      // we should indicate EMPTY else PARTIAL
       if (fieldValue === undefined) {
         // Cache Incomplete: A missing field means it wasn't cached
         ctx.result.completeness = 'EMPTY';
@@ -254,6 +256,8 @@ const readSelection = (
           // The entity on the field was invalid and can still be recovered
           data[fieldAlias] = fieldValue;
         } else {
+          // Here we should check if it's a mandatory field, if it is
+          // we should indicate EMPTY else PARTIAL
           ctx.result.completeness = 'EMPTY';
           data[fieldAlias] = null;
         }

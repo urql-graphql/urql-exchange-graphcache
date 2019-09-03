@@ -208,6 +208,8 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       updateDependencies(operation, res.dependencies);
     }
 
+    // Here we make a distinction we'll have to partially update the deps in case of partial AND
+    // continue the chain leading towards the fetchExchange.
     return {
       operation,
       completeness: isComplete ? 'FULL' : 'EMPTY',
@@ -282,6 +284,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     // Rebound operations that are incomplete, i.e. couldn't be queried just from the cache
     const cacheOps$ = pipe(
       cache$,
+      // When it's partial we'll see this continue through to the fetchExchange.
       filter(res => res.completeness !== 'FULL'),
       map(res => res.operation)
     );
