@@ -122,13 +122,7 @@ export const readRoot = (
   const data = Object.create(null);
   data.__typename = originalData.__typename;
 
-  const iter = new SelectionIterator(
-    entityKey,
-    entityKey,
-    select,
-    ctx,
-    ctx.store.schema
-  );
+  const iter = new SelectionIterator(entityKey, entityKey, select, ctx);
 
   let node;
   while ((node = iter.next()) !== undefined) {
@@ -193,14 +187,7 @@ const readSelection = (
   }
 
   data.__typename = typename;
-
-  const iter = new SelectionIterator(
-    typename,
-    entityKey,
-    select,
-    ctx,
-    store.schema
-  );
+  const iter = new SelectionIterator(typename, entityKey, select, ctx);
 
   let node;
   while ((node = iter.next()) !== undefined) {

@@ -1,11 +1,4 @@
-import {
-  FieldNode,
-  InlineFragmentNode,
-  FragmentDefinitionNode,
-  DocumentNode,
-  ObjectTypeDefinitionNode,
-  Kind,
-} from 'graphql';
+import { FieldNode, InlineFragmentNode, FragmentDefinitionNode } from 'graphql';
 import { Fragments, Variables, SelectionSet, Scalar } from '../types';
 import { Store } from '../store';
 import { joinKeys, keyOfField } from '../helpers';
@@ -54,7 +47,6 @@ export class SelectionIterator {
   indexStack: number[];
   context: Context;
   selectionStack: SelectionSet[];
-  schema?: ObjectTypeDefinitionNode;
 
   // We can add schema here and iterate over query simultaneously with
   // our selectionset. This would probably make us return both of them in .next()
@@ -69,19 +61,13 @@ export class SelectionIterator {
     typename: void | string,
     entityKey: string,
     select: SelectionSet,
-    ctx: Context,
-    schema?: DocumentNode
+    ctx: Context
   ) {
     this.typename = typename;
     this.entityKey = entityKey;
     this.context = ctx;
     this.indexStack = [0];
     this.selectionStack = [select];
-    if (schema) {
-      this.schema = schema.definitions.find(
-        ({ name }: any) => name.value === typename
-      ) as ObjectTypeDefinitionNode;
-    }
   }
 
   next(): void | FieldNode {
@@ -118,16 +104,6 @@ export class SelectionIterator {
         } else if (getName(node) === '__typename') {
           continue;
         } else {
-          let nullable = true;
-          if (this.schema && this.schema.fields) {
-            const schemaNode = this.schema.fields.find(
-              ({ name }) => name.value === node.name.value
-            );
-            if (schemaNode) {
-              nullable = schemaNode.type.kind !== Kind.NON_NULL_TYPE;
-            }
-          }
-          // console.log(node.name.value, nullable);
           return node;
         }
       }

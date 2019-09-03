@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import { DocumentNode, parse, buildClientSchema, printSchema } from 'graphql';
+import { DocumentNode } from 'graphql';
 import * as Pessimism from 'pessimism';
 
 import {
@@ -22,8 +22,6 @@ import { invalidate } from './operations/invalidate';
 interface Ref<T> {
   current: null | T;
 }
-
-const parseSchema = schema => parse(printSchema(buildClientSchema(schema)));
 
 const currentDependencies: Ref<Set<string>> = { current: null };
 const currentOptimisticKey: Ref<number> = { current: null };
@@ -80,7 +78,6 @@ export class Store {
   updates: UpdatesConfig;
   optimisticMutations: OptimisticMutationConfig;
   keys: KeyingConfig;
-  schema?: DocumentNode;
   rootFields: { query: string; mutation: string; subscription: string };
 
   constructor(
@@ -106,7 +103,6 @@ export class Store {
   }
 
   setSchema(schema: any) {
-    this.schema = parseSchema(schema);
     this.rootFields = {
       query: schema.__schema.queryType && schema.__schema.queryType.name,
       mutation:
