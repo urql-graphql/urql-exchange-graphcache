@@ -1,4 +1,9 @@
-import { FieldNode, InlineFragmentNode, FragmentDefinitionNode } from 'graphql';
+import {
+  FieldNode,
+  InlineFragmentNode,
+  FragmentDefinitionNode,
+  DocumentNode,
+} from 'graphql';
 import { Fragments, Variables, SelectionSet, Scalar } from '../types';
 import { Store } from '../store';
 import { joinKeys, keyOfField } from '../helpers';
@@ -47,6 +52,7 @@ export class SelectionIterator {
   indexStack: number[];
   context: Context;
   selectionStack: SelectionSet[];
+  schema?: DocumentNode;
 
   // We can add schema here and iterate over query simultaneously with
   // our selectionset. This would probably make us return both of them in .next()
@@ -61,13 +67,15 @@ export class SelectionIterator {
     typename: void | string,
     entityKey: string,
     select: SelectionSet,
-    ctx: Context
+    ctx: Context,
+    schema?: DocumentNode
   ) {
     this.typename = typename;
     this.entityKey = entityKey;
     this.context = ctx;
     this.indexStack = [0];
     this.selectionStack = [select];
+    this.schema = schema;
   }
 
   next(): void | FieldNode {
