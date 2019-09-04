@@ -234,25 +234,24 @@ const readSelection = (
       }
     }
 
-    // When dataFieldValue is undefined that means that we have to check whether we can continue,
-    // or whether this Data is now invalid, in which case we return undefined
-    if (schemaPredicates !== undefined) {
-      // If we can check against the schema an uncached field may be acceptable for partial results
-      if (
-        dataFieldValue === undefined &&
-        schemaPredicates.isFieldNullable(typename, fieldName)
-      ) {
-        hasFields = true;
-        data[fieldAlias] = null;
-        ctx.partial = true;
-      } else {
-        return undefined;
-      }
+    // Now that dataFieldValue has been retrieved it'll be set on data
+    // If it's uncached (undefined) but nullable we can continue assembling
+    // a partial query result
+    if (
+      dataFieldValue === undefined &&
+      schemaPredicates !== undefined &&
+      schemaPredicates.isFieldNullable(typename, fieldName)
+    ) {
+      // The field is uncached but we have a schema that says it's nullable
+      // Set the field to null and continue
+      hasFields = true;
+      data[fieldAlias] = null;
+      ctx.partial = true;
     } else if (dataFieldValue === undefined) {
-      // Otherwise an uncached field means that the Data is invalid, so we return undefined
+      // The field is uncached and not nullable; return undefined
       return undefined;
     } else {
-      // Otherwise we can set the field on data and continue
+      // Otherwise continue as usual
       hasFields = true;
       data[fieldAlias] = dataFieldValue;
     }
