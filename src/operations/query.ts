@@ -172,6 +172,7 @@ const readSelection = (
 
   let node;
   let hasFields = false;
+  let hasPartials = false;
   while ((node = iter.next()) !== undefined) {
     // Derive the needed data from our node.
     const fieldName = getName(node);
@@ -248,8 +249,8 @@ const readSelection = (
     ) {
       // The field is uncached but we have a schema that says it's nullable
       // Set the field to null and continue
+      hasPartials = true;
       data[fieldAlias] = null;
-      ctx.partial = true;
     } else if (dataFieldValue === undefined) {
       // The field is uncached and not nullable; return undefined
       return undefined;
@@ -260,7 +261,8 @@ const readSelection = (
     }
   }
 
-  return isQuery && ctx.partial && !hasFields ? undefined : data;
+  if (hasPartials) ctx.partial = true;
+  return isQuery && hasPartials && !hasFields ? undefined : data;
 };
 
 const resolveResolverResult = (
