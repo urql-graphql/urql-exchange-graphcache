@@ -292,7 +292,7 @@ const readSelection = (
     }
   }
 
-  if (isQuery && !hasFields) {
+  if (isQuery && ctx.result.completeness === 'PARTIAL' && !hasFields) {
     ctx.result.completeness = 'EMPTY';
     return null;
   }
