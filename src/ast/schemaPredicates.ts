@@ -4,7 +4,6 @@ import warning from 'warning';
 import {
   buildClientSchema,
   isNullableType,
-  GraphQLType,
   GraphQLSchema,
   GraphQLAbstractType,
   GraphQLObjectType,
@@ -21,7 +20,7 @@ export class SchemaPredicates {
 
   isFieldNullable(typename: string, fieldName: string): boolean {
     const type = this.schema.getType(typename);
-    expectObjectType(type);
+    expectObjectType(type, typename);
 
     const object = type as GraphQLObjectType;
     if (object === undefined) {
@@ -61,17 +60,17 @@ export class SchemaPredicates {
     if (typename === typeCondition) return true;
 
     const abstractType = this.schema.getType(typeCondition);
-    expectAbstractType(abstractType);
+    expectAbstractType(abstractType, typeCondition);
     const objectType = this.schema.getType(typename);
-    expectObjectType(objectType);
+    expectObjectType(objectType, typename);
 
-    const abstractNode = typeCondition as GraphQLAbstractType;
+    const abstractNode = abstractType as GraphQLAbstractType;
     const concreteNode = objectType as GraphQLObjectType;
     return this.schema.isPossibleType(abstractNode, concreteNode);
   }
 }
 
-const expectObjectType = (type: GraphQLType) => {
+const expectObjectType = (type: any, typename: string) => {
   invariant(
     type instanceof GraphQLObjectType,
     'Invalid type: The type `%s` is not an object in the defined schema, ' +
@@ -80,7 +79,7 @@ const expectObjectType = (type: GraphQLType) => {
   );
 };
 
-const expectAbstractType = (type: GraphQLType) => {
+const expectAbstractType = (type: any, typename: string) => {
   invariant(
     type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType,
     'Invalid type: The type `%s` is not an Interface or Union type in the defined schema, ' +
