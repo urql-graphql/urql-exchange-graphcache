@@ -12,34 +12,27 @@ import {
   getSelectionSet,
   getName,
 } from '../ast';
+import { SchemaPredicates } from '../ast/schemaPredicates';
 
 interface Context {
   store: Store;
   variables: Variables;
   fragments: Fragments;
+  schemaPredicates: SchemaPredicates;
 }
 
-const isFragmentMatching = (
+const isFragmentHeuristicallyMatching = (
   node: InlineFragmentNode | FragmentDefinitionNode,
-  typename: void | string,
   entityKey: string,
   ctx: Context
-) => {
-  if (!typename) {
-    return false;
-  } else if (typename === getTypeCondition(node)) {
-    return true;
-  }
-
-  // This is a heuristic for now, but temporary until schema awareness becomes a thing
-  return !getSelectionSet(node).some(node => {
+) =>
+  !getSelectionSet(node).some(node => {
     if (!isFieldNode(node)) return false;
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, ctx.variables);
     const fieldKey = keyOfField(fieldName, fieldArgs);
     return !ctx.store.hasField(joinKeys(entityKey, fieldKey));
   });
-};
 
 export class SelectionIterator {
   typename: void | string;
@@ -87,19 +80,27 @@ export class SelectionIterator {
           const fragmentNode = !isInlineFragment(node)
             ? this.context.fragments[getName(node)]
             : node;
-          if (
-            fragmentNode !== undefined &&
-            isFragmentMatching(
-              fragmentNode,
-              this.typename,
-              this.entityKey,
-              this.context
+
+          if (fragmentNode !== undefined) {
+            const typeCondition = getTypeCondition(fragmentNode);
+            const isMatching = this.context.schemaPredicates.isInterfaceOfType(
+              typeCondition as string,
+              this.typename as string
+            );
+            if (
+              !isMatching ||
+              (isMatching === 'heuristic' &&
+                !isFragmentHeuristicallyMatching(
+                  fragmentNode,
+                  this.entityKey,
+                  this.context
+                ))
             )
-          ) {
+              continue;
+
             this.indexStack.push(0);
             this.selectionStack.push(getSelectionSet(fragmentNode));
           }
-
           continue;
         } else if (getName(node) === '__typename') {
           continue;

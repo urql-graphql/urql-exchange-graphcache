@@ -53,7 +53,11 @@ export class SchemaPredicates {
   }
 
   isFieldNullable(typename: string, fieldName: string): boolean {
-    if (!this.schema) return true;
+    // When there is no schema we don't assume the nullability of fields.
+    if (!this.schema) return false;
+
+    // Get the overcoupling type, for instance Todo.
+    // Perf boost: make a mapping of objectTypes.
     const objectTypeNode = this.schema.definitions.find(
       node =>
         node.kind === Kind.OBJECT_TYPE_DEFINITION &&
@@ -61,21 +65,26 @@ export class SchemaPredicates {
     );
 
     // TODO: error when the type does not exist
-    if (!objectTypeNode) return true;
+    if (!objectTypeNode) return false;
 
+    // Get the specific field.
     const field = (
       (objectTypeNode as ObjectTypeDefinitionNode).fields || []
     ).find(node => node.name.value === fieldName);
 
     // TODO: error when the field does not exist
-    if (!field) return true;
+    if (!field) return false;
 
     return field.type.kind !== Kind.NON_NULL_TYPE;
   }
 
-  isInterfaceOfType(typeCondition: string, typename: string): boolean {
+  isInterfaceOfType(
+    typeCondition: string,
+    typename: string
+  ): boolean | 'heuristic' {
+    if (!typename) return false;
     if (typename === typeCondition) return true;
-    if (!this.fragTypes) return true; // TODO: heuristic here
+    if (!this.fragTypes) return 'heuristic';
     const possibleTypes = this.fragTypes[typeCondition];
     if (possibleTypes && possibleTypes.includes(typename)) return true;
     return false;
