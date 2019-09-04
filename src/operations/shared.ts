@@ -45,15 +45,6 @@ export class SelectionIterator {
   context: Context;
   selectionStack: SelectionSet[];
 
-  // We can add schema here and iterate over query simultaneously with
-  // our selectionset. This would probably make us return both of them in .next()
-  // So we'd get for example query { todos { id title } } This would make us go into
-  // the selectionSet and see it's a query. Go to the subpath of the schema return the node.
-  // Selection gets selected again and so on. This way we always have the same node in the
-  // schema and in the iterator. This would ensure we can always compare non-nullable.
-  //
-  // This does introduce a problem for partial queries since for that we would have to explore
-  // the tree further to see if we can return or should just go for an EMPTY result.
   constructor(
     typename: void | string,
     entityKey: string,
