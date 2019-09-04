@@ -520,6 +520,7 @@ it('follows nested resolvers for mutations', () => {
         __typename: 'Author',
         id: '123',
         name: '[REDACTED ONLINE]',
+        book: null,
       },
       {
         __typename: 'Author',

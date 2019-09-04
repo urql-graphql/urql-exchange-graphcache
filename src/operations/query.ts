@@ -209,6 +209,8 @@ const readSelection = (
         resolverValue = resolveResolverResult(
           ctx,
           resolverValue,
+          typename,
+          fieldName,
           fieldKey,
           getSelectionSet(node),
           data[fieldAlias] as Data | Data[]
@@ -233,7 +235,14 @@ const readSelection = (
 
       if (link !== undefined) {
         const prevData = data[fieldAlias] as Data;
-        dataFieldValue = resolveLink(ctx, link, fieldSelect, prevData);
+        dataFieldValue = resolveLink(
+          ctx,
+          link,
+          typename,
+          fieldName,
+          fieldSelect,
+          prevData
+        );
       } else if (typeof fieldValue === 'object' && fieldValue !== null) {
         // The entity on the field was invalid but can still be recovered
         dataFieldValue = fieldValue;
@@ -269,20 +278,39 @@ const readSelection = (
 const resolveResolverResult = (
   ctx: Context,
   result: DataField,
+  typename: string,
+  fieldName: string,
   key: string,
   select: SelectionSet,
   prevData: void | Data | Data[]
 ): DataField | undefined => {
   // When we are dealing with a list we have to call this method again.
   if (Array.isArray(result)) {
-    // TODO: Convert to for-loop
-    // @ts-ignore: Link cannot be expressed as a recursive type
-    return result.map((childResult, index) => {
-      const data = prevData !== undefined ? prevData[index] : undefined;
-      const indexKey = joinKeys(key, `${index}`);
-      // TODO: If SchemaPredicates.isListNullable is false we may need to return undefined for the entire list
-      return resolveResolverResult(ctx, childResult, indexKey, select, data);
-    });
+    const { schemaPredicates } = ctx;
+    const isListNullable =
+      schemaPredicates !== undefined &&
+      schemaPredicates.isListNullable(typename, fieldName);
+    const newResult = new Array(result.length);
+    for (let i = 0, l = result.length; i < l; i++) {
+      const data = prevData !== undefined ? prevData[i] : undefined;
+      const childKey = joinKeys(key, `${i}`);
+      const childResult = resolveResolverResult(
+        ctx,
+        result[i],
+        typename,
+        fieldName,
+        childKey,
+        select,
+        data
+      );
+      if (childResult === undefined && !isListNullable) {
+        return undefined;
+      } else {
+        result[i] = childResult !== undefined ? childResult : null;
+      }
+    }
+
+    return newResult;
   } else if (result === null) {
     return null;
   } else if (isDataOrKey(result)) {
@@ -310,17 +338,34 @@ const resolveResolverResult = (
 const resolveLink = (
   ctx: Context,
   link: Link | Link[],
+  typename: string,
+  fieldName: string,
   select: SelectionSet,
   prevData: void | Data | Data[]
 ): DataField | undefined => {
   if (Array.isArray(link)) {
+    const { schemaPredicates } = ctx;
+    const isListNullable =
+      schemaPredicates !== undefined &&
+      schemaPredicates.isListNullable(typename, fieldName);
     const newLink = new Array(link.length);
     for (let i = 0, l = link.length; i < l; i++) {
       const innerPrevData = prevData !== undefined ? prevData[i] : undefined;
-      newLink[i] = resolveLink(ctx, link[i], select, innerPrevData);
+      const childLink = resolveLink(
+        ctx,
+        link[i],
+        typename,
+        fieldName,
+        select,
+        innerPrevData
+      );
+      if (childLink === undefined && !isListNullable) {
+        return undefined;
+      } else {
+        newLink[i] = childLink !== undefined ? childLink : null;
+      }
     }
 
-    // TODO: If SchemaPredicates.isListNullable is false we may need to return undefined for the entire list
     return newLink;
   } else if (link === null) {
     return null;
