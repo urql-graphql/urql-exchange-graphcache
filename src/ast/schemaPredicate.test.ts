@@ -41,24 +41,4 @@ describe('SchemaPredicates', () => {
     expect(schemaPredicates.isFieldNullable('Todo', 'complete')).toBeTruthy();
     expect(schemaPredicates.isFieldNullable('Todo', 'author')).toBeTruthy();
   });
-
-  it('should correctly find the rootFields', () => {
-    expect(schemaPredicates.rootFields).toEqual({
-      query: 'Query',
-      mutation: 'Mutation',
-      subscription: null,
-    });
-    expect(schemaPredicates.getRootKey('query')).toEqual('Query');
-    expect(schemaPredicates.getRootKey('subscription')).toEqual(null);
-  });
-
-  it('should correctly default the rootFields without a schema', () => {
-    const predicates = new SchemaPredicates();
-    expect(predicates.rootFields).toEqual({
-      query: 'Query',
-      mutation: 'Mutation',
-      subscription: 'Subscription',
-    });
-    expect(predicates.getRootKey('query')).toEqual('Query');
-  });
 });

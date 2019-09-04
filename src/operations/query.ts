@@ -45,7 +45,7 @@ interface Context {
   store: Store;
   variables: Variables;
   fragments: Fragments;
-  schemaPredicates: SchemaPredicates;
+  schemaPredicates?: SchemaPredicates;
 }
 
 /** Reads a request entirely from the store */
@@ -76,7 +76,7 @@ export const startQuery = (store: Store, request: OperationRequest) => {
 
   result.data = readSelection(
     ctx,
-    ctx.schemaPredicates.getRootKey('query'),
+    ctx.store.getRootKey('query'),
     getSelectionSet(operation),
     root
   );
@@ -109,7 +109,7 @@ export const readOperation = (
 
   result.data = readRoot(
     ctx,
-    ctx.schemaPredicates.getRootKey(operation.operation),
+    ctx.store.getRootKey(operation.operation),
     getSelectionSet(operation),
     data
   );
@@ -184,12 +184,12 @@ const readSelection = (
   data: Data
 ): Data | null => {
   const { store, variables, schemaPredicates } = ctx;
-  const isQuery = entityKey === schemaPredicates.getRootKey('query');
+  const isQuery = entityKey === store.getRootKey('query');
   if (!isQuery) addDependency(entityKey);
 
   // Get the __typename field for a given entity to check that it exists
   const typename = isQuery
-    ? schemaPredicates.getRootKey('query')
+    ? store.getRootKey('query')
     : store.getField(entityKey, '__typename');
   if (typeof typename !== 'string') {
     ctx.result.completeness = 'EMPTY';
@@ -245,10 +245,9 @@ const readSelection = (
       // The field is a scalar and can be retrieved directly
       // Here we should check if it's a mandatory field, if it is
       // we should indicate EMPTY else PARTIAL
-      const isFieldNullable = schemaPredicates.isFieldNullable(
-        typename,
-        fieldName
-      );
+      const isFieldNullable =
+        schemaPredicates &&
+        schemaPredicates.isFieldNullable(typename, fieldName);
       if (fieldValue === undefined && !isFieldNullable) {
         // Cache Incomplete: A missing field means it wasn't cached
         ctx.result.completeness = 'EMPTY';
@@ -263,10 +262,9 @@ const readSelection = (
       // null values mean that a field might be linked to other entities
       const fieldSelect = getSelectionSet(node);
       const link = store.getLink(fieldKey);
-      const isFieldNullable = schemaPredicates.isFieldNullable(
-        typename,
-        fieldName
-      );
+      const isFieldNullable =
+        schemaPredicates &&
+        schemaPredicates.isFieldNullable(typename, fieldName);
       // Cache Incomplete: A missing link for a field means it's not cached
       if (link === undefined) {
         if (typeof fieldValue === 'object' && fieldValue !== null) {

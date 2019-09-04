@@ -18,21 +18,25 @@ interface Context {
   store: Store;
   variables: Variables;
   fragments: Fragments;
-  schemaPredicates: SchemaPredicates;
+  schemaPredicates?: SchemaPredicates;
 }
 
 const isFragmentHeuristicallyMatching = (
   node: InlineFragmentNode | FragmentDefinitionNode,
+  typename: void | string,
   entityKey: string,
   ctx: Context
-) =>
-  !getSelectionSet(node).some(node => {
+) => {
+  if (!typename) return false;
+  if (typename === getTypeCondition(node)) return true;
+  return !getSelectionSet(node).some(node => {
     if (!isFieldNode(node)) return false;
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, ctx.variables);
     const fieldKey = keyOfField(fieldName, fieldArgs);
     return !ctx.store.hasField(joinKeys(entityKey, fieldKey));
   });
+};
 
 export class SelectionIterator {
   typename: void | string;
@@ -83,20 +87,22 @@ export class SelectionIterator {
 
           if (fragmentNode !== undefined) {
             const typeCondition = getTypeCondition(fragmentNode);
-            const isMatching = this.context.schemaPredicates.isInterfaceOfType(
-              typeCondition as string,
-              this.typename as string
-            );
-            if (
-              !isMatching ||
-              (isMatching === 'heuristic' &&
-                !isFragmentHeuristicallyMatching(
-                  fragmentNode,
-                  this.entityKey,
-                  this.context
-                ))
-            )
-              continue;
+            let isMatching;
+            if (this.context.schemaPredicates) {
+              isMatching = this.context.schemaPredicates.isInterfaceOfType(
+                typeCondition as string,
+                this.typename as string
+              );
+            } else {
+              isMatching = isFragmentHeuristicallyMatching(
+                fragmentNode,
+                this.typename,
+                this.entityKey,
+                this.context
+              );
+            }
+
+            if (!isMatching) continue;
 
             this.indexStack.push(0);
             this.selectionStack.push(getSelectionSet(fragmentNode));

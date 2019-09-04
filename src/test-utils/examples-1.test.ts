@@ -2,7 +2,6 @@ import gql from 'graphql-tag';
 import { query, write } from '../operations';
 import { Store } from '../store';
 import { Data } from '../types';
-import { SchemaPredicates } from '../ast/schemaPredicates';
 
 const Todos = gql`
   query {
@@ -44,7 +43,7 @@ const NestedClearNameTodo = gql`
 `;
 
 it('passes the "getting-started" example', () => {
-  const store = new Store(new SchemaPredicates());
+  const store = new Store(undefined);
   const todosData = {
     __typename: 'Query',
     todos: [
@@ -118,7 +117,7 @@ it('passes the "getting-started" example', () => {
 });
 
 it('respects property-level resolvers when given', () => {
-  const store = new Store(new SchemaPredicates(), {
+  const store = new Store(undefined, {
     Todo: { text: () => 'hi' },
   });
   const todosData = {
@@ -178,7 +177,7 @@ it('respects property-level resolvers when given', () => {
 });
 
 it('Respects property-level resolvers when given', () => {
-  const store = new Store(new SchemaPredicates(), undefined, {
+  const store = new Store(undefined, undefined, {
     Mutation: {
       toggleTodo: function toggleTodo(result, _, cache) {
         cache.updateQuery({ query: Todos }, data => {

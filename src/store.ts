@@ -1,5 +1,5 @@
 import invariant from 'invariant';
-import { DocumentNode } from 'graphql';
+import { DocumentNode, GraphQLSchema } from 'graphql';
 import * as Pessimism from 'pessimism';
 
 import {
@@ -71,6 +71,14 @@ const mapRemove = <T>(map: Pessimism.Map<T>, key: string) => {
     : Pessimism.remove(map, key);
 };
 
+const defaultRootFields = {
+  query: 'Query',
+  mutation: 'Mutation',
+  subscription: 'Subscription',
+};
+
+type RootField = 'query' | 'mutation' | 'subscription';
+
 export class Store {
   records: Pessimism.Map<EntityField>;
   links: Pessimism.Map<Link>;
@@ -79,10 +87,11 @@ export class Store {
   updates: UpdatesConfig;
   optimisticMutations: OptimisticMutationConfig;
   keys: KeyingConfig;
-  schemaPredicates: SchemaPredicates;
+  schemaPredicates?: SchemaPredicates;
+  rootFields: { query: string; mutation: string; subscription: string };
 
   constructor(
-    schemaPredicates: SchemaPredicates,
+    schemaPredicates?: SchemaPredicates,
     resolvers?: ResolverConfig,
     updates?: Partial<UpdatesConfig>,
     optimisticMutations?: OptimisticMutationConfig,
@@ -98,6 +107,13 @@ export class Store {
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
     this.schemaPredicates = schemaPredicates;
+    this.rootFields = schemaPredicates
+      ? getRootTypes(schemaPredicates.schema)
+      : defaultRootFields;
+  }
+
+  getRootKey(name: RootField) {
+    return this.rootFields[name];
   }
 
   keyOfEntity(data: Data) {
@@ -207,3 +223,14 @@ export class Store {
     writeFragment(this, dataFragment, data);
   }
 }
+
+const getRootTypes = (schema: GraphQLSchema) => {
+  const queryType = schema.getQueryType();
+  const mutationType = schema.getMutationType();
+  const subscriptionType = schema.getSubscriptionType();
+  return {
+    query: queryType ? queryType.name : 'Query',
+    mutation: mutationType ? mutationType.name : 'Mutation',
+    subscription: subscriptionType ? subscriptionType.name : 'Subscription',
+  };
+};

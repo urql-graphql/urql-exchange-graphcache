@@ -43,7 +43,7 @@ interface Context {
   store: Store;
   variables: Variables;
   fragments: Fragments;
-  schemaPredicates: SchemaPredicates;
+  schemaPredicates?: SchemaPredicates;
 }
 
 /** Writes a request given its response to the store */
@@ -78,9 +78,9 @@ export const startWrite = (
   };
 
   const select = getSelectionSet(operation);
-  const operationName = ctx.schemaPredicates.getRootKey(operation.operation);
+  const operationName = ctx.store.getRootKey(operation.operation);
 
-  if (operationName === ctx.schemaPredicates.getRootKey('query')) {
+  if (operationName === ctx.store.getRootKey('query')) {
     writeSelection(ctx, operationName, select, data);
   } else {
     writeRoot(ctx, operationName, select, data);
@@ -107,8 +107,8 @@ export const writeOptimistic = (
     schemaPredicates: store.schemaPredicates,
   };
 
-  const operationName = ctx.schemaPredicates.getRootKey(operation.operation);
-  if (operationName === ctx.schemaPredicates.getRootKey('mutation')) {
+  const operationName = ctx.store.getRootKey(operation.operation);
+  if (operationName === ctx.store.getRootKey('mutation')) {
     const select = getSelectionSet(operation);
     const iter = new SelectionIterator(
       operationName,
@@ -186,7 +186,7 @@ const writeSelection = (
   data: Data
 ) => {
   const { store, variables } = ctx;
-  const isQuery = entityKey === ctx.schemaPredicates.getRootKey('query');
+  const isQuery = entityKey === ctx.store.getRootKey('query');
   const typename = data.__typename;
   if (!isQuery) addDependency(entityKey);
 
@@ -297,8 +297,8 @@ const writeRoot = (
     }
 
     if (
-      typename === ctx.schemaPredicates.getRootKey('mutation') ||
-      typename === ctx.schemaPredicates.getRootKey('subscription')
+      typename === ctx.store.getRootKey('mutation') ||
+      typename === ctx.store.getRootKey('subscription')
     ) {
       // We run side-effect updates after the default, normalized updates
       // so that the data is already available in-store if necessary

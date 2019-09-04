@@ -1,39 +1,23 @@
 import {
-  DocumentNode,
   Kind,
   ObjectTypeDefinitionNode,
   buildClientSchema,
   printSchema,
   parse,
+  GraphQLSchema,
 } from 'graphql';
 import invariant from 'invariant';
 
-type RootField = 'query' | 'mutation' | 'subscription';
-
 export class SchemaPredicates {
-  schema?: DocumentNode;
+  schema: GraphQLSchema;
   objectTypes: { [typename: string]: ObjectTypeDefinitionNode };
-  fragTypes?: { [typeCondition: string]: Array<string> };
-  rootFields: { query: string; mutation: string; subscription: string };
+  fragTypes: { [typeCondition: string]: Array<string> };
 
-  constructor(schema?) {
-    if (schema) {
-      this.schema = parseSchema(schema);
-      this.objectTypes = getObjectTypes(this.schema.definitions);
-      this.fragTypes = getFragmentTypes(schema.__schema.types);
-      this.rootFields = getRootTypes(schema.__schema);
-    } else {
-      this.objectTypes = {};
-      this.rootFields = {
-        query: 'Query',
-        mutation: 'Mutation',
-        subscription: 'Subscription',
-      };
-    }
-  }
-
-  getRootKey(name: RootField) {
-    return this.rootFields[name];
+  constructor(schema) {
+    this.schema = buildClientSchema(schema);
+    const parsedSchema = parseSchema(schema);
+    this.objectTypes = getObjectTypes(parsedSchema.definitions);
+    this.fragTypes = getFragmentTypes(schema.__schema.types);
   }
 
   isFieldNullable(typename: string, fieldName: string): boolean {
@@ -75,6 +59,7 @@ export class SchemaPredicates {
 }
 
 const parseSchema = schema => parse(printSchema(buildClientSchema(schema)));
+
 const getFragmentTypes = types => {
   const mapping = {};
   types.forEach(type => {
@@ -85,12 +70,6 @@ const getFragmentTypes = types => {
   });
   return mapping;
 };
-
-const getRootTypes = schema => ({
-  query: schema.queryType && schema.queryType.name,
-  mutation: schema.mutationType && schema.mutationType.name,
-  subscription: schema.subscriptionType && schema.subscriptionType.name,
-});
 
 const getField = (
   objectTypeNode: ObjectTypeDefinitionNode,

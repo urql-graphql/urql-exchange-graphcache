@@ -22,7 +22,7 @@ interface Context {
   store: Store;
   variables: Variables;
   fragments: Fragments;
-  schemaPredicates: SchemaPredicates;
+  schemaPredicates?: SchemaPredicates;
 }
 
 export const invalidate = (store: Store, request: OperationRequest) => {
@@ -38,7 +38,7 @@ export const invalidate = (store: Store, request: OperationRequest) => {
 
   invalidateSelection(
     ctx,
-    ctx.schemaPredicates.getRootKey('query'),
+    ctx.store.getRootKey('query'),
     getSelectionSet(operation)
   );
 

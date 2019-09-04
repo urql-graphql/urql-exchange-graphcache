@@ -142,7 +142,11 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
 }) => {
   if (!opts) opts = {};
 
-  const schemaPredicates = new SchemaPredicates(opts.schema);
+  let schemaPredicates;
+  if (opts.schema) {
+    schemaPredicates = new SchemaPredicates(opts.schema);
+  }
+
   const store = new Store(
     schemaPredicates,
     opts.resolvers,
@@ -294,9 +298,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const cacheOps$ = pipe(
       cache$,
       // When it's partial we'll see this continue through to the fetchExchange.
-      filter(
-        res => res.completeness === 'PARTIAL' || res.completeness !== 'FULL'
-      ),
+      filter(res => res.completeness === 'EMPTY'),
       map(res => res.operation)
     );
 

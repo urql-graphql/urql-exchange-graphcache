@@ -10,7 +10,6 @@ import {
 import { Data } from './types';
 import { query } from './operations/query';
 import { write, writeOptimistic } from './operations/write';
-import { SchemaPredicates } from './ast/schemaPredicates';
 
 const Appointment = gql`
   query appointment($id: String) {
@@ -40,15 +39,9 @@ const Todos = gql`
 
 describe('Store with KeyingConfig', () => {
   it('generates keys from custom keying function', () => {
-    const store = new Store(
-      new SchemaPredicates(),
-      undefined,
-      undefined,
-      undefined,
-      {
-        User: () => 'me',
-      }
-    );
+    const store = new Store(undefined, undefined, undefined, undefined, {
+      User: () => 'me',
+    });
 
     expect(store.keyOfEntity({ __typename: 'Any', id: '123' })).toBe('Any:123');
     expect(store.keyOfEntity({ __typename: 'Any', _id: '123' })).toBe(
@@ -63,7 +56,7 @@ describe('Store with OptimisticMutationConfig', () => {
   let store, todosData;
 
   beforeEach(() => {
-    store = new Store(new SchemaPredicates(), undefined, undefined, {
+    store = new Store(undefined, undefined, undefined, {
       addTodo: variables => {
         return {
           ...variables,
