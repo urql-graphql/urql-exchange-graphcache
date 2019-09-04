@@ -43,7 +43,7 @@ describe('Query', () => {
     );
   });
 
-  it.only('test partial results', () => {
+  it('test partial results', () => {
     const result = query(store, { query: TODO_QUERY });
     expect(result.partial).toBe(true);
     expect(result.data).toEqual({
