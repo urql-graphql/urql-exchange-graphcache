@@ -25,7 +25,7 @@ describe('Query', () => {
   let schema, store;
 
   beforeAll(() => {
-    schema = require('./simple_schema.json');
+    schema = require('../test-utils/simple_schema.json');
   });
 
   beforeEach(() => {
