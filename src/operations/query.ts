@@ -58,7 +58,7 @@ export const query = (
   return result;
 };
 
-const read = (
+export const read = (
   store: Store,
   request: OperationRequest,
   input?: Data
