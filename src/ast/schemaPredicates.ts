@@ -1,23 +1,17 @@
 import {
-  Kind,
-  ObjectTypeDefinitionNode,
   buildClientSchema,
-  printSchema,
-  parse,
   GraphQLSchema,
+  isNullableType,
+  GraphQLAbstractType,
+  GraphQLObjectType,
 } from 'graphql';
 import invariant from 'invariant';
 
 export class SchemaPredicates {
   schema: GraphQLSchema;
-  objectTypes: { [typename: string]: ObjectTypeDefinitionNode };
-  fragTypes: { [typeCondition: string]: Array<string> };
 
   constructor(schema) {
     this.schema = buildClientSchema(schema);
-    const parsedSchema = parseSchema(schema);
-    this.objectTypes = getObjectTypes(parsedSchema.definitions);
-    this.fragTypes = getFragmentTypes(schema.__schema.types);
   }
 
   isFieldNullable(typename: string, fieldName: string): boolean {
@@ -26,65 +20,33 @@ export class SchemaPredicates {
 
     // Get the overcoupling type, for instance Todo.
     // Perf boost: make a mapping of objectTypes.
-    const objectTypeNode = this.objectTypes[typename];
+    const objectTypeNode = this.schema.getType(typename);
 
     invariant(
       !!objectTypeNode,
       `The type ${typename} does not exist in your schema`
     );
 
-    // Get the specific field.
-    const field = getField(objectTypeNode, fieldName);
+    // @ts-ignore
+    const field = objectTypeNode.getFields()[fieldName];
 
     invariant(
       !!field,
       `The type ${typename}.${fieldName} does not exist in your schema`
     );
 
-    // @ts-ignore
-    return field.type.kind !== Kind.NON_NULL_TYPE;
+    return isNullableType(field.type);
   }
 
-  isInterfaceOfType(
-    typeCondition: string,
-    typename: string
-  ): boolean | 'heuristic' {
+  isInterfaceOfType(typeCondition: string, typename: string | void): boolean {
     if (!typename) return false;
     if (typename === typeCondition) return true;
-    if (!this.fragTypes) return 'heuristic';
-    const possibleTypes = this.fragTypes[typeCondition];
-    if (possibleTypes && possibleTypes.includes(typename)) return true;
-    return false;
+
+    const abstractNode = this.schema.getType(
+      typeCondition
+    ) as GraphQLAbstractType;
+    const concreteNode = this.schema.getType(typename) as GraphQLObjectType;
+
+    return this.schema.isPossibleType(abstractNode, concreteNode);
   }
 }
-
-const parseSchema = schema => parse(printSchema(buildClientSchema(schema)));
-
-const getFragmentTypes = types => {
-  const mapping = {};
-  types.forEach(type => {
-    // TODO: find the possibleTypes on the parsed schema.
-    if (type.kind === 'UNION' || type.kind === 'INTERFACE') {
-      mapping[type.name] = type.possibleTypes.map(({ name }) => name);
-    }
-  });
-  return mapping;
-};
-
-const getField = (
-  objectTypeNode: ObjectTypeDefinitionNode,
-  fieldName: string
-) => {
-  return (objectTypeNode.fields || []).find(
-    node => node.name.value === fieldName
-  );
-};
-
-const getObjectTypes = definitions => {
-  const mapping = {};
-  definitions.forEach(type => {
-    if (type.kind === Kind.OBJECT_TYPE_DEFINITION)
-      mapping[type.name.value] = type;
-  });
-  return mapping;
-};
