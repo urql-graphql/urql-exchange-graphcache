@@ -15,19 +15,13 @@ export class SchemaPredicates {
   }
 
   isFieldNullable(typename: string, fieldName: string): boolean {
-    // When there is no schema we don't assume the nullability of fields.
-    if (!this.schema) return false;
-
-    // Get the overcoupling type, for instance Todo.
-    // Perf boost: make a mapping of objectTypes.
-    const objectTypeNode = this.schema.getType(typename);
+    const objectTypeNode = this.schema.getType(typename) as GraphQLObjectType;
 
     invariant(
       !!objectTypeNode,
       `The type ${typename} does not exist in your schema`
     );
 
-    // @ts-ignore
     const field = objectTypeNode.getFields()[fieldName];
 
     invariant(
