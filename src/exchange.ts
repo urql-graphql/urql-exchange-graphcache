@@ -12,7 +12,6 @@ import { query, write, writeOptimistic, readOperation } from './operations';
 import { Store } from './store';
 
 import {
-  Completeness,
   UpdatesConfig,
   ResolverConfig,
   OptimisticMutationConfig,
@@ -21,7 +20,7 @@ import {
 import { SchemaPredicates } from './ast/schemaPredicates';
 
 type OperationResultWithMeta = OperationResult & {
-  completeness: Completeness;
+  outcome: CacheOutcome;
 };
 
 type OperationMap = Map<number, Operation>;
@@ -31,18 +30,13 @@ interface DependentOperations {
 }
 
 // Returns the given operation result with added cacheOutcome meta field
-const addCacheOutcome = (outcome: CacheOutcome) => (res: OperationResult) => ({
-  data: res.data,
-  error: res.error,
-  extensions: res.extensions,
-  operation: {
-    ...res.operation,
-    context: {
-      ...res.operation.context,
-      meta: {
-        ...res.operation.context.meta,
-        cacheOutcome: outcome,
-      },
+const addCacheOutcome = (op: Operation, outcome: CacheOutcome) => ({
+  ...op,
+  context: {
+    ...op.context,
+    meta: {
+      ...op.context.meta,
+      cacheOutcome: outcome,
     },
   },
 });
@@ -181,19 +175,23 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     operation: Operation
   ): OperationResultWithMeta => {
     const policy = getRequestPolicy(operation);
-    const res = query(store, operation);
-    const isComplete = policy === 'cache-only' || res.completeness === 'FULL';
-    if (isComplete) {
-      updateDependencies(operation, res.dependencies);
-    } else if (res.completeness === 'PARTIAL') {
-      updateDependencies(operation, res.dependencies);
-      client.reexecuteOperation(operation);
+    const { data, dependencies, completeness } = query(store, operation);
+    let cacheOutcome: CacheOutcome;
+
+    if (completeness === 'FULL' || policy === 'cache-only') {
+      updateDependencies(operation, dependencies);
+      cacheOutcome = 'hit';
+    } else if (completeness === 'PARTIAL') {
+      updateDependencies(operation, dependencies);
+      cacheOutcome = 'partial';
+    } else {
+      cacheOutcome = 'miss';
     }
 
     return {
-      operation,
-      completeness: isComplete ? 'FULL' : 'EMPTY',
-      data: res.data,
+      operation: addCacheOutcome(operation, cacheOutcome),
+      outcome: cacheOutcome,
+      data,
     };
   };
 
@@ -255,7 +253,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     // Rebound operations that are incomplete, i.e. couldn't be queried just from the cache
     const cacheOps$ = pipe(
       cache$,
-      filter(res => res.completeness === 'EMPTY'),
+      filter(res => res.outcome === 'miss'),
       map(res => res.operation)
     );
 
@@ -263,15 +261,17 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     // a network request if the current operation's policy is cache-and-network
     const cacheResult$ = pipe(
       cache$,
-      filter(res => res.completeness === 'FULL'),
-      tap(({ operation }) => {
+      filter(res => res.outcome !== 'miss'),
+      tap(({ operation, outcome }) => {
         const policy = getRequestPolicy(operation);
-        if (policy === 'cache-and-network') {
+        if (
+          policy === 'cache-and-network' ||
+          (policy === 'cache-first' && outcome === 'partial')
+        ) {
           const networkOnly = toRequestPolicy(operation, 'network-only');
           client.reexecuteOperation(networkOnly);
         }
-      }),
-      map(addCacheOutcome('hit'))
+      })
     );
 
     // Forward operations that aren't cacheable and rebound operations
@@ -286,8 +286,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
           cacheOps$,
         ])
       ),
-      map(updateCacheWithResult),
-      map(addCacheOutcome('miss'))
+      map(updateCacheWithResult)
     );
 
     return merge([result$, cacheResult$]);
