@@ -4,9 +4,12 @@ import warning from 'warning';
 import {
   buildClientSchema,
   isNullableType,
+  GraphQLType,
   GraphQLSchema,
   GraphQLAbstractType,
   GraphQLObjectType,
+  GraphQLInterfaceType,
+  GraphQLUnionType,
 } from 'graphql';
 
 export class SchemaPredicates {
@@ -17,13 +20,8 @@ export class SchemaPredicates {
   }
 
   isFieldNullable(typename: string, fieldName: string): boolean {
-    const type = this.schema.getType(typename) as GraphQLObjectType;
-    invariant(
-      type instanceof GraphQLObjectType,
-      'Invalid type: The type `%s` is not an object in the defined schema, ' +
-        'but the GraphQL document is traversing it.',
-      typename
-    );
+    const type = this.schema.getType(typename);
+    expectObjectType(type);
 
     const object = type as GraphQLObjectType;
     if (object === undefined) {
@@ -56,14 +54,34 @@ export class SchemaPredicates {
   }
 
   isInterfaceOfType(typeCondition: string, typename: string | void): boolean {
-    if (!typename) return false;
+    if (typename === undefined) return false;
     if (typename === typeCondition) return true;
 
-    const abstractNode = this.schema.getType(
-      typeCondition
-    ) as GraphQLAbstractType;
-    const concreteNode = this.schema.getType(typename) as GraphQLObjectType;
+    const abstractType = this.schema.getType(typeCondition);
+    expectAbstractType(abstractType);
+    const objectType = this.schema.getType(typename);
+    expectObjectType(objectType);
 
+    const abstractNode = typeCondition as GraphQLAbstractType;
+    const concreteNode = objectType as GraphQLObjectType;
     return this.schema.isPossibleType(abstractNode, concreteNode);
   }
 }
+
+const expectObjectType = (type: GraphQLType) => {
+  invariant(
+    type instanceof GraphQLObjectType,
+    'Invalid type: The type `%s` is not an object in the defined schema, ' +
+      'but the GraphQL document is traversing it.',
+    typename
+  );
+};
+
+const expectAbstractType = (type: GraphQLType) => {
+  invariant(
+    type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType,
+    'Invalid type: The type `%s` is not an Interface or Union type in the defined schema, ' +
+      'but a fragment in the GraphQL document is using it as a type condition.',
+    typename
+  );
+};

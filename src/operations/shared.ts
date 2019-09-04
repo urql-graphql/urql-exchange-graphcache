@@ -77,27 +77,25 @@ export class SelectionIterator {
             : node;
 
           if (fragmentNode !== undefined) {
-            const typeCondition = getTypeCondition(fragmentNode);
-            let isMatching;
-            if (this.context.schemaPredicates) {
-              isMatching = this.context.schemaPredicates.isInterfaceOfType(
-                typeCondition as string,
-                this.typename as string
-              );
-            } else {
-              isMatching = isFragmentHeuristicallyMatching(
-                fragmentNode,
-                this.typename,
-                this.entityKey,
-                this.context
-              );
+            const isMatching =
+              this.context.schemaPredicates !== undefined
+                ? this.context.schemaPredicates.isInterfaceOfType(
+                    getTypeCondition(fragmentNode),
+                    this.typename
+                  )
+                : isFragmentHeuristicallyMatching(
+                    fragmentNode,
+                    this.typename,
+                    this.entityKey,
+                    this.context
+                  );
+
+            if (isMatching) {
+              this.indexStack.push(0);
+              this.selectionStack.push(getSelectionSet(fragmentNode));
             }
-
-            if (!isMatching) continue;
-
-            this.indexStack.push(0);
-            this.selectionStack.push(getSelectionSet(fragmentNode));
           }
+
           continue;
         } else if (getName(node) === '__typename') {
           continue;
