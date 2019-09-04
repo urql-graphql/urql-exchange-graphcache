@@ -273,6 +273,7 @@ const readSelection = (
         if (typeof fieldValue === 'object' && fieldValue !== null) {
           // The entity on the field was invalid and can still be recovered
           data[fieldAlias] = fieldValue;
+          hasFields = true;
         } else if (
           schemaPredicates !== undefined &&
           schemaPredicates.isFieldNullable(typename, fieldName)
