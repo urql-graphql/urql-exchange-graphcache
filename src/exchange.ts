@@ -8,7 +8,7 @@ import {
 } from 'urql';
 
 import { filter, map, merge, pipe, share, tap } from 'wonka';
-import { query, write, writeOptimistic, readOperation } from './operations';
+import { query, write, writeOptimistic } from './operations';
 import { Store } from './store';
 
 import {
@@ -217,7 +217,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
         data = queryResult.data;
         queryDependencies = queryResult.dependencies;
       } else {
-        data = readOperation(store, operation, data).data;
+        data = query(store, operation, data).data;
       }
     }
 
