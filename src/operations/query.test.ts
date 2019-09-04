@@ -49,8 +49,20 @@ describe('Query', () => {
     expect(result.data).toEqual({
       __typename: 'Query',
       todos: [
-        { id: '0', text: 'Teach', __typename: 'Todo' },
-        { id: '1', text: 'Learn', __typename: 'Todo' },
+        {
+          id: '0',
+          text: 'Teach',
+          __typename: 'Todo',
+          author: null,
+          complete: null,
+        },
+        {
+          id: '1',
+          text: 'Learn',
+          __typename: 'Todo',
+          author: null,
+          complete: null,
+        },
       ],
     });
   });
