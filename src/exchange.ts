@@ -30,7 +30,7 @@ interface DependentOperations {
 }
 
 // Returns the given operation result with added cacheOutcome meta field
-const addCacheOutcome = (op: Operation, outcome: CacheOutcome) => ({
+const addCacheOutcome = (op: Operation, outcome: CacheOutcome): Operation => ({
   ...op,
   context: {
     ...op.context,
@@ -189,7 +189,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     }
 
     return {
-      operation: addCacheOutcome(operation, cacheOutcome),
+      operation,
       outcome: cacheOutcome,
       data,
     };
@@ -254,7 +254,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const cacheOps$ = pipe(
       cache$,
       filter(res => res.outcome === 'miss'),
-      map(res => res.operation)
+      map(res => addCacheOutcome(res.operation, res.outcome))
     );
 
     // Resolve OperationResults that the cache was able to assemble completely and trigger
@@ -262,16 +262,26 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const cacheResult$ = pipe(
       cache$,
       filter(res => res.outcome !== 'miss'),
-      tap(({ operation, outcome }) => {
-        const policy = getRequestPolicy(operation);
-        if (
-          policy === 'cache-and-network' ||
-          (policy === 'cache-first' && outcome === 'partial')
-        ) {
-          const networkOnly = toRequestPolicy(operation, 'network-only');
-          client.reexecuteOperation(networkOnly);
+      map(
+        (res: OperationResultWithMeta): OperationResult => {
+          const { operation, outcome } = res;
+          const policy = getRequestPolicy(operation);
+          if (
+            policy === 'cache-and-network' ||
+            (policy === 'cache-first' && outcome === 'partial')
+          ) {
+            const networkOnly = toRequestPolicy(operation, 'network-only');
+            client.reexecuteOperation(networkOnly);
+          }
+
+          return {
+            operation: addCacheOutcome(operation, outcome),
+            data: res.data,
+            error: res.error,
+            extensions: res.extensions,
+          };
         }
-      })
+      )
     );
 
     // Forward operations that aren't cacheable and rebound operations

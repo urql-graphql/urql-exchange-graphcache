@@ -623,7 +623,7 @@ it('follows nested resolvers for mutations', () => {
   ]);
 });
 
-it('reexecutes query and returns data on partial result', () => {
+it.only('reexecutes query and returns data on partial result', () => {
   jest.useFakeTimers();
   const client = createClient({ url: '' });
   const [ops$, next] = makeSubject<Operation>();
@@ -700,21 +700,58 @@ it('reexecutes query and returns data on partial result', () => {
   next(queryOperation);
   jest.runAllTimers();
   expect(response).toHaveBeenCalledTimes(1);
-  expect(result).toHaveBeenCalledTimes(1);
-  expect(reexec).toHaveBeenCalledTimes(1);
+  expect(reexec).toHaveBeenCalledTimes(0);
   expect(result.mock.calls[0][0].data).toEqual({
     __typename: 'Query',
     todos: [
       {
         __typename: 'Todo',
+        author: null,
+        complete: null,
         id: '123',
         text: 'Learn',
       },
       {
         __typename: 'Todo',
+        author: null,
+        complete: null,
         id: '456',
         text: 'Teach',
       },
     ],
   });
+
+  expect(result.mock.calls[0][0]).toHaveProperty(
+    'operation.context.meta',
+    undefined
+  );
+
+  next(queryOperation);
+  jest.runAllTimers();
+  expect(result).toHaveBeenCalledTimes(2);
+  expect(reexec).toHaveBeenCalledTimes(1);
+  expect(result.mock.calls[1][0].data).toEqual({
+    __typename: 'Query',
+    todos: [
+      {
+        __typename: 'Todo',
+        author: null,
+        complete: null,
+        id: '123',
+        text: 'Learn',
+      },
+      {
+        __typename: 'Todo',
+        author: null,
+        complete: null,
+        id: '456',
+        text: 'Teach',
+      },
+    ],
+  });
+
+  expect(result.mock.calls[1][0]).toHaveProperty(
+    'operation.context.meta.cacheOutcome',
+    'partial'
+  );
 });
