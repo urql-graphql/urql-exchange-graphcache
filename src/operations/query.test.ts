@@ -9,6 +9,7 @@ const TODO_QUERY = gql`
     todos {
       id
       text
+      complete
       author {
         id
         name
@@ -28,11 +29,9 @@ describe('Query', () => {
   });
 
   beforeEach(() => {
-    store = new Store(new SchemaPredicates());
-    store.setSchema(schema);
+    store = new Store(new SchemaPredicates(schema));
     write(
       store,
-      new SchemaPredicates(),
       { query: TODO_QUERY },
       {
         __typename: 'Query',
@@ -45,7 +44,14 @@ describe('Query', () => {
   });
 
   it('test partial results', () => {
-    const result = query(store, new SchemaPredicates(), { query: TODO_QUERY });
+    const result = query(store, { query: TODO_QUERY });
     expect(result.completeness).toEqual('PARTIAL');
+    expect(result.data).toEqual({
+      __typename: 'Query',
+      todos: [
+        { id: '0', text: 'Teach', __typename: 'Todo' },
+        { id: '1', text: 'Learn', __typename: 'Todo' },
+      ],
+    });
   });
 });

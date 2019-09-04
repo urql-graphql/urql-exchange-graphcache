@@ -187,12 +187,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   const optimisticUpdate = (operation: Operation) => {
     if (isOptimisticMutation(operation)) {
       const { key } = operation;
-      const { dependencies } = writeOptimistic(
-        store,
-        schemaPredicates,
-        operation,
-        key
-      );
+      const { dependencies } = writeOptimistic(store, operation, key);
       if (dependencies.size !== 0) {
         optimisticKeys.add(key);
         processDependencies(operation, dependencies);
@@ -222,7 +217,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     operation: Operation
   ): OperationResultWithMeta => {
     const policy = getRequestPolicy(operation);
-    const res = query(store, schemaPredicates, operation);
+    const res = query(store, operation);
     const isComplete = policy === 'cache-only' || res.completeness === 'FULL';
     if (isComplete) {
       updateDependencies(operation, res.dependencies);
@@ -255,15 +250,14 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
 
     let writeDependencies, queryDependencies;
     if (data !== null && data !== undefined) {
-      writeDependencies = write(store, schemaPredicates, operation, data)
-        .dependencies;
+      writeDependencies = write(store, operation, data).dependencies;
 
       if (isQuery) {
-        const queryResult = query(store, schemaPredicates, operation);
+        const queryResult = query(store, operation);
         data = queryResult.data;
         queryDependencies = queryResult.dependencies;
       } else {
-        data = readOperation(store, schemaPredicates, operation, data).data;
+        data = readOperation(store, operation, data).data;
       }
     }
 

@@ -6,40 +6,24 @@ import {
   printSchema,
   parse,
 } from 'graphql';
-
-const parseSchema = schema => parse(printSchema(buildClientSchema(schema)));
+import invariant from 'invariant';
 
 type RootField = 'query' | 'mutation' | 'subscription';
 
 export class SchemaPredicates {
   schema?: DocumentNode;
+  objectTypes: { [typename: string]: ObjectTypeDefinitionNode };
   fragTypes?: { [typeCondition: string]: Array<string> };
   rootFields: { query: string; mutation: string; subscription: string };
 
   constructor(schema?) {
     if (schema) {
       this.schema = parseSchema(schema);
-      this.fragTypes = {};
-      schema.__schema.types.forEach(type => {
-        if (
-          type.kind === Kind.UNION_TYPE_DEFINITION ||
-          type.kind === Kind.INTERFACE_TYPE_DEFINITION
-        ) {
-          // @ts-ignore
-          this.fragTypes[type.name] = type.possibleTypes.map(
-            ({ name }) => name
-          );
-        }
-      });
-      this.rootFields = {
-        query: schema.__schema.queryType && schema.__schema.queryType.name,
-        mutation:
-          schema.__schema.mutationType && schema.__schema.mutationType.name,
-        subscription:
-          schema.__schema.subscriptionType &&
-          schema.__schema.subscriptionType.name,
-      };
+      this.objectTypes = getObjectTypes(this.schema.definitions);
+      this.fragTypes = getFragmentTypes(schema.__schema.types);
+      this.rootFields = getRootTypes(schema.__schema);
     } else {
+      this.objectTypes = {};
       this.rootFields = {
         query: 'Query',
         mutation: 'Mutation',
@@ -58,23 +42,22 @@ export class SchemaPredicates {
 
     // Get the overcoupling type, for instance Todo.
     // Perf boost: make a mapping of objectTypes.
-    const objectTypeNode = this.schema.definitions.find(
-      node =>
-        node.kind === Kind.OBJECT_TYPE_DEFINITION &&
-        node.name.value === typename
+    const objectTypeNode = this.objectTypes[typename];
+
+    invariant(
+      !!objectTypeNode,
+      `The type ${typename} does not exist in your schema`
     );
 
-    // TODO: error when the type does not exist
-    if (!objectTypeNode) return false;
-
     // Get the specific field.
-    const field = (
-      (objectTypeNode as ObjectTypeDefinitionNode).fields || []
-    ).find(node => node.name.value === fieldName);
+    const field = getField(objectTypeNode, fieldName);
 
-    // TODO: error when the field does not exist
-    if (!field) return false;
+    invariant(
+      !!field,
+      `The type ${typename}.${fieldName} does not exist in your schema`
+    );
 
+    // @ts-ignore
     return field.type.kind !== Kind.NON_NULL_TYPE;
   }
 
@@ -90,3 +73,41 @@ export class SchemaPredicates {
     return false;
   }
 }
+
+const parseSchema = schema => parse(printSchema(buildClientSchema(schema)));
+const getFragmentTypes = types => {
+  const mapping = {};
+  types.forEach(type => {
+    if (
+      type.kind === Kind.UNION_TYPE_DEFINITION ||
+      type.kind === Kind.INTERFACE_TYPE_DEFINITION
+    ) {
+      mapping[type.name] = type.possibleTypes.map(({ name }) => name);
+    }
+  });
+  return mapping;
+};
+
+const getRootTypes = schema => ({
+  query: schema.queryType && schema.queryType.name,
+  mutation: schema.mutationType && schema.mutationType.name,
+  subscription: schema.subscriptionType && schema.subscriptionType.name,
+});
+
+const getField = (
+  objectTypeNode: ObjectTypeDefinitionNode,
+  fieldName: string
+) => {
+  return (objectTypeNode.fields || []).find(
+    node => node.name.value === fieldName
+  );
+};
+
+const getObjectTypes = definitions => {
+  const mapping = {};
+  definitions.forEach(type => {
+    if (type.kind === Kind.OBJECT_TYPE_DEFINITION)
+      mapping[type.name.value] = type;
+  });
+  return mapping;
+};

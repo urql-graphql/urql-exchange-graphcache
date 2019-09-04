@@ -13,8 +13,8 @@ interface TestCase {
 const expectCacheIntegrity = (testcase: TestCase) => {
   const store = new Store(new SchemaPredicates());
   const request = { query: testcase.query, variables: testcase.variables };
-  const writeRes = write(store, new SchemaPredicates(), request, testcase.data);
-  const queryRes = query(store, new SchemaPredicates(), request);
+  const writeRes = write(store, request, testcase.data);
+  const queryRes = query(store, request);
   expect(queryRes.data).toEqual(testcase.data);
   expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.dependencies).toEqual(writeRes.dependencies);

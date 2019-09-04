@@ -32,7 +32,7 @@ import {
 
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
-import { SchemaPredicates } from 'src/ast/schemaPredicates';
+import { SchemaPredicates } from '../ast/schemaPredicates';
 
 export interface QueryResult {
   completeness: Completeness;
@@ -49,23 +49,15 @@ interface Context {
 }
 
 /** Reads a request entirely from the store */
-export const query = (
-  store: Store,
-  schemaPredicates: SchemaPredicates,
-  request: OperationRequest
-): QueryResult => {
+export const query = (store: Store, request: OperationRequest): QueryResult => {
   initStoreState(0);
 
-  const result = startQuery(store, schemaPredicates, request);
+  const result = startQuery(store, request);
   clearStoreState();
   return result;
 };
 
-export const startQuery = (
-  store: Store,
-  schemaPredicates: SchemaPredicates,
-  request: OperationRequest
-) => {
+export const startQuery = (store: Store, request: OperationRequest) => {
   const operation = getMainOperation(request.query);
   const root: Data = Object.create(null);
   const result: QueryResult = {
@@ -79,7 +71,7 @@ export const startQuery = (
     fragments: getFragments(request.query),
     result,
     store,
-    schemaPredicates,
+    schemaPredicates: store.schemaPredicates,
   };
 
   result.data = readSelection(ctx, 'Query', getSelectionSet(operation), root);
@@ -89,7 +81,6 @@ export const startQuery = (
 
 export const readOperation = (
   store: Store,
-  schemaPredicates: SchemaPredicates,
   request: OperationRequest,
   data: Data
 ) => {
@@ -108,12 +99,12 @@ export const readOperation = (
     fragments: getFragments(request.query),
     result,
     store,
-    schemaPredicates,
+    schemaPredicates: store.schemaPredicates,
   };
 
   result.data = readRoot(
     ctx,
-    schemaPredicates.getRootKey(operation.operation),
+    ctx.schemaPredicates.getRootKey(operation.operation),
     getSelectionSet(operation),
     data
   );
@@ -190,7 +181,7 @@ const readSelection = (
   const isQuery = entityKey === 'Query';
   if (!isQuery) addDependency(entityKey);
 
-  const { store, variables } = ctx;
+  const { store, variables, schemaPredicates } = ctx;
 
   // Get the __typename field for a given entity to check that it exists
   const typename = isQuery ? 'Query' : store.getField(entityKey, '__typename');
@@ -248,10 +239,16 @@ const readSelection = (
       // The field is a scalar and can be retrieved directly
       // Here we should check if it's a mandatory field, if it is
       // we should indicate EMPTY else PARTIAL
-      if (fieldValue === undefined) {
+      const isFieldNullable = schemaPredicates.isFieldNullable(
+        typename,
+        fieldName
+      );
+      if (fieldValue === undefined && !isFieldNullable) {
         // Cache Incomplete: A missing field means it wasn't cached
         ctx.result.completeness = 'EMPTY';
         data[fieldAlias] = null;
+      } else if (fieldValue === undefined) {
+        ctx.result.completeness = 'PARTIAL';
       } else {
         // Not dealing with undefined means it's a cached field
         data[fieldAlias] = fieldValue;
@@ -260,17 +257,22 @@ const readSelection = (
       // null values mean that a field might be linked to other entities
       const fieldSelect = getSelectionSet(node);
       const link = store.getLink(fieldKey);
-
+      const isFieldNullable = schemaPredicates.isFieldNullable(
+        typename,
+        fieldName
+      );
       // Cache Incomplete: A missing link for a field means it's not cached
       if (link === undefined) {
         if (typeof fieldValue === 'object' && fieldValue !== null) {
           // The entity on the field was invalid and can still be recovered
           data[fieldAlias] = fieldValue;
-        } else {
+        } else if (!isFieldNullable) {
           // Here we should check if it's a mandatory field, if it is
           // we should indicate EMPTY else PARTIAL
           ctx.result.completeness = 'EMPTY';
           data[fieldAlias] = null;
+        } else {
+          ctx.result.completeness = 'PARTIAL';
         }
       } else {
         const prevData = data[fieldAlias] as Data;

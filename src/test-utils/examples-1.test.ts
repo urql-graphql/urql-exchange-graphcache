@@ -54,17 +54,12 @@ it('passes the "getting-started" example', () => {
     ],
   };
 
-  const writeRes = write(
-    store,
-    new SchemaPredicates(),
-    { query: Todos },
-    todosData
-  );
+  const writeRes = write(store, { query: Todos }, todosData);
 
   const expectedSet = new Set(['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']);
   expect(writeRes.dependencies).toEqual(expectedSet);
 
-  let queryRes = query(store, new SchemaPredicates(), { query: Todos });
+  let queryRes = query(store, { query: Todos });
 
   expect(queryRes.data).toEqual(todosData);
   expect(queryRes.dependencies).toEqual(writeRes.dependencies);
@@ -77,7 +72,6 @@ it('passes the "getting-started" example', () => {
 
   const mutationRes = write(
     store,
-    new SchemaPredicates(),
     { query: ToggleTodo, variables: { id: '2' } },
     {
       __typename: 'Mutation',
@@ -87,7 +81,7 @@ it('passes the "getting-started" example', () => {
 
   expect(mutationRes.dependencies).toEqual(new Set(['Todo:2']));
 
-  queryRes = query(store, new SchemaPredicates(), { query: Todos });
+  queryRes = query(store, { query: Todos });
 
   expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.data).toEqual({
@@ -102,7 +96,6 @@ it('passes the "getting-started" example', () => {
 
   const newMutationRes = write(
     store,
-    new SchemaPredicates(),
     { query: NestedClearNameTodo, variables: { id: '2' } },
     {
       __typename: 'Mutation',
@@ -115,7 +108,7 @@ it('passes the "getting-started" example', () => {
 
   expect(newMutationRes.dependencies).toEqual(new Set(['Todo:2']));
 
-  queryRes = query(store, new SchemaPredicates(), { query: Todos });
+  queryRes = query(store, { query: Todos });
 
   expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.data).toEqual({
@@ -137,17 +130,12 @@ it('respects property-level resolvers when given', () => {
     ],
   };
 
-  const writeRes = write(
-    store,
-    new SchemaPredicates(),
-    { query: Todos },
-    todosData
-  );
+  const writeRes = write(store, { query: Todos }, todosData);
 
   const expectedSet = new Set(['Query.todos', 'Todo:0', 'Todo:1', 'Todo:2']);
   expect(writeRes.dependencies).toEqual(expectedSet);
 
-  let queryRes = query(store, new SchemaPredicates(), { query: Todos });
+  let queryRes = query(store, { query: Todos });
 
   expect(queryRes.data).toEqual({
     __typename: 'Query',
@@ -167,7 +155,6 @@ it('respects property-level resolvers when given', () => {
 
   const mutationRes = write(
     store,
-    new SchemaPredicates(),
     { query: ToggleTodo, variables: { id: '2' } },
     {
       __typename: 'Mutation',
@@ -177,7 +164,7 @@ it('respects property-level resolvers when given', () => {
 
   expect(mutationRes.dependencies).toEqual(new Set(['Todo:2']));
 
-  queryRes = query(store, new SchemaPredicates(), { query: Todos });
+  queryRes = query(store, { query: Todos });
 
   expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.data).toEqual({
@@ -234,11 +221,10 @@ it('Respects property-level resolvers when given', () => {
     ],
   };
 
-  write(store, new SchemaPredicates(), { query: Todos }, todosData);
+  write(store, { query: Todos }, todosData);
 
   write(
     store,
-    new SchemaPredicates(),
     { query: ToggleTodo, variables: { id: '1' } },
     {
       __typename: 'Mutation',
@@ -251,7 +237,6 @@ it('Respects property-level resolvers when given', () => {
 
   write(
     store,
-    new SchemaPredicates(),
     { query: ToggleTodo, variables: { id: '2' } },
     {
       __typename: 'Mutation',
@@ -262,7 +247,7 @@ it('Respects property-level resolvers when given', () => {
     }
   );
 
-  const queryRes = query(store, new SchemaPredicates(), { query: Todos });
+  const queryRes = query(store, { query: Todos });
 
   expect(queryRes.completeness).toBe('FULL');
   expect(queryRes.data).toEqual({

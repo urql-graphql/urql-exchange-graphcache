@@ -32,7 +32,7 @@ import {
 
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
-import { SchemaPredicates } from 'src/ast/schemaPredicates';
+import { SchemaPredicates } from '../ast/schemaPredicates';
 
 export interface WriteResult {
   dependencies: Set<string>;
@@ -49,13 +49,12 @@ interface Context {
 /** Writes a request given its response to the store */
 export const write = (
   store: Store,
-  schemaPredicates: SchemaPredicates,
   request: OperationRequest,
   data: Data
 ): WriteResult => {
   initStoreState(0);
 
-  const result = startWrite(store, schemaPredicates, request, data);
+  const result = startWrite(store, request, data);
 
   clearStoreState();
 
@@ -64,7 +63,6 @@ export const write = (
 
 export const startWrite = (
   store: Store,
-  schemaPredicates: SchemaPredicates,
   request: OperationRequest,
   data: Data
 ) => {
@@ -76,11 +74,11 @@ export const startWrite = (
     fragments: getFragments(request.query),
     result,
     store,
-    schemaPredicates,
+    schemaPredicates: store.schemaPredicates,
   };
 
   const select = getSelectionSet(operation);
-  const operationName = schemaPredicates.getRootKey(operation.operation);
+  const operationName = ctx.schemaPredicates.getRootKey(operation.operation);
 
   if (operationName === 'Query') {
     writeSelection(ctx, operationName, select, data);
@@ -93,7 +91,6 @@ export const startWrite = (
 
 export const writeOptimistic = (
   store: Store,
-  schemaPredicates: SchemaPredicates,
   request: OperationRequest,
   optimisticKey: number
 ): WriteResult => {
@@ -107,10 +104,10 @@ export const writeOptimistic = (
     fragments: getFragments(request.query),
     result,
     store,
-    schemaPredicates,
+    schemaPredicates: store.schemaPredicates,
   };
 
-  const operationName = schemaPredicates.getRootKey(operation.operation);
+  const operationName = ctx.schemaPredicates.getRootKey(operation.operation);
   if (operationName === 'Mutation') {
     const select = getSelectionSet(operation);
     const iter = new SelectionIterator(
@@ -143,7 +140,6 @@ export const writeOptimistic = (
 
 export const writeFragment = (
   store: Store,
-  schemaPredicates: SchemaPredicates,
   query: DocumentNode,
   data: Data
 ) => {
@@ -177,7 +173,7 @@ export const writeFragment = (
     fragments,
     result: { dependencies: getCurrentDependencies() },
     store,
-    schemaPredicates,
+    schemaPredicates: store.schemaPredicates,
   };
 
   writeSelection(ctx, entityKey, select, writeData);
