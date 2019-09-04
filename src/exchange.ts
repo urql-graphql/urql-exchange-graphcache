@@ -177,7 +177,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       cacheOutcome = 'miss';
     } else {
       updateDependencies(operation, dependencies);
-      cacheOutcome = partial || policy === 'cache-only' ? 'hit' : 'partial';
+      cacheOutcome = !partial || policy === 'cache-only' ? 'hit' : 'partial';
     }
 
     return {
