@@ -74,7 +74,12 @@ export const startQuery = (store: Store, request: OperationRequest) => {
     schemaPredicates: store.schemaPredicates,
   };
 
-  result.data = readSelection(ctx, 'Query', getSelectionSet(operation), root);
+  result.data = readSelection(
+    ctx,
+    ctx.schemaPredicates.getRootKey('query'),
+    getSelectionSet(operation),
+    root
+  );
 
   return result;
 };
@@ -178,13 +183,14 @@ const readSelection = (
   select: SelectionSet,
   data: Data
 ): Data | null => {
-  const isQuery = entityKey === 'Query';
+  const { store, variables, schemaPredicates } = ctx;
+  const isQuery = entityKey === schemaPredicates.getRootKey('query');
   if (!isQuery) addDependency(entityKey);
 
-  const { store, variables, schemaPredicates } = ctx;
-
   // Get the __typename field for a given entity to check that it exists
-  const typename = isQuery ? 'Query' : store.getField(entityKey, '__typename');
+  const typename = isQuery
+    ? schemaPredicates.getRootKey('query')
+    : store.getField(entityKey, '__typename');
   if (typeof typename !== 'string') {
     ctx.result.completeness = 'EMPTY';
     return null;

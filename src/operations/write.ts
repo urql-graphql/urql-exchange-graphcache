@@ -80,7 +80,7 @@ export const startWrite = (
   const select = getSelectionSet(operation);
   const operationName = ctx.schemaPredicates.getRootKey(operation.operation);
 
-  if (operationName === 'Query') {
+  if (operationName === ctx.schemaPredicates.getRootKey('query')) {
     writeSelection(ctx, operationName, select, data);
   } else {
     writeRoot(ctx, operationName, select, data);
@@ -108,7 +108,7 @@ export const writeOptimistic = (
   };
 
   const operationName = ctx.schemaPredicates.getRootKey(operation.operation);
-  if (operationName === 'Mutation') {
+  if (operationName === ctx.schemaPredicates.getRootKey('mutation')) {
     const select = getSelectionSet(operation);
     const iter = new SelectionIterator(
       operationName,
@@ -186,7 +186,7 @@ const writeSelection = (
   data: Data
 ) => {
   const { store, variables } = ctx;
-  const isQuery = entityKey === 'Query';
+  const isQuery = entityKey === ctx.schemaPredicates.getRootKey('query');
   const typename = data.__typename;
   if (!isQuery) addDependency(entityKey);
 
@@ -296,7 +296,10 @@ const writeRoot = (
       writeRootField(ctx, fieldValue, fieldSelect);
     }
 
-    if (typename === 'Mutation' || typename === 'Subscription') {
+    if (
+      typename === ctx.schemaPredicates.getRootKey('mutation') ||
+      typename === ctx.schemaPredicates.getRootKey('subscription')
+    ) {
       // We run side-effect updates after the default, normalized updates
       // so that the data is already available in-store if necessary
       const updater = ctx.store.updates[typename][fieldName];
