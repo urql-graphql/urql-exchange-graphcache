@@ -1196,6 +1196,26 @@
         "possibleTypes": null
       },
       {
+        "kind": "UNION",
+        "name": "Search",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": [
+          {
+            "kind": "OBJECT",
+            "name": "SmallTodo",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "BigTodo",
+            "ofType": null
+          }
+        ]
+      },
+      {
         "kind": "ENUM",
         "name": "CacheControlScope",
         "fields": null,

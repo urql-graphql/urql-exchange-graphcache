@@ -6,6 +6,10 @@ Object {
     "BigTodo",
     "SmallTodo",
   ],
+  "Search": Array [
+    "SmallTodo",
+    "BigTodo",
+  ],
 }
 `;
 
@@ -523,34 +527,34 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 537,
-          "start": 530,
+          "end": 573,
+          "start": 566,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 532,
-            "start": 530,
+            "end": 568,
+            "start": 566,
           },
           "value": "id",
         },
         "type": Object {
           "kind": "NonNullType",
           "loc": Object {
-            "end": 537,
-            "start": 534,
+            "end": 573,
+            "start": 570,
           },
           "type": Object {
             "kind": "NamedType",
             "loc": Object {
-              "end": 536,
-              "start": 534,
+              "end": 572,
+              "start": 570,
             },
             "name": Object {
               "kind": "Name",
               "loc": Object {
-                "end": 536,
-                "start": 534,
+                "end": 572,
+                "start": 570,
               },
               "value": "ID",
             },
@@ -563,34 +567,34 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 553,
-          "start": 540,
+          "end": 589,
+          "start": 576,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 544,
-            "start": 540,
+            "end": 580,
+            "start": 576,
           },
           "value": "text",
         },
         "type": Object {
           "kind": "NonNullType",
           "loc": Object {
-            "end": 553,
-            "start": 546,
+            "end": 589,
+            "start": 582,
           },
           "type": Object {
             "kind": "NamedType",
             "loc": Object {
-              "end": 552,
-              "start": 546,
+              "end": 588,
+              "start": 582,
             },
             "name": Object {
               "kind": "Name",
               "loc": Object {
-                "end": 552,
-                "start": 546,
+                "end": 588,
+                "start": 582,
               },
               "value": "String",
             },
@@ -603,28 +607,28 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 573,
-          "start": 556,
+          "end": 609,
+          "start": 592,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 564,
-            "start": 556,
+            "end": 600,
+            "start": 592,
           },
           "value": "complete",
         },
         "type": Object {
           "kind": "NamedType",
           "loc": Object {
-            "end": 573,
-            "start": 566,
+            "end": 609,
+            "start": 602,
           },
           "name": Object {
             "kind": "Name",
             "loc": Object {
-              "end": 573,
-              "start": 566,
+              "end": 609,
+              "start": 602,
             },
             "value": "Boolean",
           },
@@ -636,28 +640,28 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 590,
-          "start": 576,
+          "end": 626,
+          "start": 612,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 582,
-            "start": 576,
+            "end": 618,
+            "start": 612,
           },
           "value": "author",
         },
         "type": Object {
           "kind": "NamedType",
           "loc": Object {
-            "end": 590,
-            "start": 584,
+            "end": 626,
+            "start": 620,
           },
           "name": Object {
             "kind": "Name",
             "loc": Object {
-              "end": 590,
-              "start": 584,
+              "end": 626,
+              "start": 620,
             },
             "value": "Author",
           },
@@ -669,28 +673,28 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 607,
-          "start": 593,
+          "end": 643,
+          "start": 629,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 602,
-            "start": 593,
+            "end": 638,
+            "start": 629,
           },
           "value": "maxLength",
         },
         "type": Object {
           "kind": "NamedType",
           "loc": Object {
-            "end": 607,
-            "start": 604,
+            "end": 643,
+            "start": 640,
           },
           "name": Object {
             "kind": "Name",
             "loc": Object {
-              "end": 607,
-              "start": 604,
+              "end": 643,
+              "start": 640,
             },
             "value": "Int",
           },
@@ -701,14 +705,14 @@ Object {
       Object {
         "kind": "NamedType",
         "loc": Object {
-          "end": 525,
-          "start": 520,
+          "end": 561,
+          "start": 556,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 525,
-            "start": 520,
+            "end": 561,
+            "start": 556,
           },
           "value": "ITodo",
         },
@@ -716,14 +720,14 @@ Object {
     ],
     "kind": "ObjectTypeDefinition",
     "loc": Object {
-      "end": 609,
-      "start": 494,
+      "end": 645,
+      "start": 530,
     },
     "name": Object {
       "kind": "Name",
       "loc": Object {
-        "end": 508,
-        "start": 499,
+        "end": 544,
+        "start": 535,
       },
       "value": "SmallTodo",
     },
@@ -738,34 +742,34 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 632,
-          "start": 625,
+          "end": 668,
+          "start": 661,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 627,
-            "start": 625,
+            "end": 663,
+            "start": 661,
           },
           "value": "id",
         },
         "type": Object {
           "kind": "NonNullType",
           "loc": Object {
-            "end": 632,
-            "start": 629,
+            "end": 668,
+            "start": 665,
           },
           "type": Object {
             "kind": "NamedType",
             "loc": Object {
-              "end": 631,
-              "start": 629,
+              "end": 667,
+              "start": 665,
             },
             "name": Object {
               "kind": "Name",
               "loc": Object {
-                "end": 631,
-                "start": 629,
+                "end": 667,
+                "start": 665,
               },
               "value": "ID",
             },
@@ -778,34 +782,34 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 648,
-          "start": 635,
+          "end": 684,
+          "start": 671,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 639,
-            "start": 635,
+            "end": 675,
+            "start": 671,
           },
           "value": "text",
         },
         "type": Object {
           "kind": "NonNullType",
           "loc": Object {
-            "end": 648,
-            "start": 641,
+            "end": 684,
+            "start": 677,
           },
           "type": Object {
             "kind": "NamedType",
             "loc": Object {
-              "end": 647,
-              "start": 641,
+              "end": 683,
+              "start": 677,
             },
             "name": Object {
               "kind": "Name",
               "loc": Object {
-                "end": 647,
-                "start": 641,
+                "end": 683,
+                "start": 677,
               },
               "value": "String",
             },
@@ -818,28 +822,28 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 668,
-          "start": 651,
+          "end": 704,
+          "start": 687,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 659,
-            "start": 651,
+            "end": 695,
+            "start": 687,
           },
           "value": "complete",
         },
         "type": Object {
           "kind": "NamedType",
           "loc": Object {
-            "end": 668,
-            "start": 661,
+            "end": 704,
+            "start": 697,
           },
           "name": Object {
             "kind": "Name",
             "loc": Object {
-              "end": 668,
-              "start": 661,
+              "end": 704,
+              "start": 697,
             },
             "value": "Boolean",
           },
@@ -851,28 +855,28 @@ Object {
         "directives": Array [],
         "kind": "FieldDefinition",
         "loc": Object {
-          "end": 685,
-          "start": 671,
+          "end": 721,
+          "start": 707,
         },
         "name": Object {
           "kind": "Name",
           "loc": Object {
-            "end": 677,
-            "start": 671,
+            "end": 713,
+            "start": 707,
           },
           "value": "author",
         },
         "type": Object {
           "kind": "NamedType",
           "loc": Object {
-            "end": 685,
-            "start": 679,
+            "end": 721,
+            "start": 715,
           },
           "name": Object {
             "kind": "Name",
             "loc": Object {
-              "end": 685,
-              "start": 679,
+              "end": 721,
+              "start": 715,
             },
             "value": "Author",
           },
@@ -882,14 +886,14 @@ Object {
     "interfaces": Array [],
     "kind": "ObjectTypeDefinition",
     "loc": Object {
-      "end": 687,
-      "start": 611,
+      "end": 723,
+      "start": 647,
     },
     "name": Object {
       "kind": "Name",
       "loc": Object {
-        "end": 620,
-        "start": 616,
+        "end": 656,
+        "start": 652,
       },
       "value": "Todo",
     },
