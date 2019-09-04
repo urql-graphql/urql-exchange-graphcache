@@ -200,6 +200,7 @@ const readSelection = (
   const iter = new SelectionIterator(typename, entityKey, select, ctx);
 
   let node;
+  let hasFields = false;
   while ((node = iter.next()) !== undefined) {
     // Derive the needed data from our node.
     const fieldName = getName(node);
@@ -213,9 +214,12 @@ const readSelection = (
     const resolvers = store.resolvers[typename];
     if (resolvers !== undefined && resolvers.hasOwnProperty(fieldName)) {
       // We have a resolver for this field.
+      hasFields = true;
+      // Prepare the actual fieldValue, so that the resolver can use it
       if (fieldValue !== undefined) {
         data[fieldAlias] = fieldValue;
       }
+
       const resolverValue = resolvers[fieldName](
         data,
         fieldArgs || {},
@@ -243,43 +247,53 @@ const readSelection = (
       }
     } else if (node.selectionSet === undefined) {
       // The field is a scalar and can be retrieved directly
-      const isFieldNullable =
-        schemaPredicates &&
-        schemaPredicates.isFieldNullable(typename, fieldName);
-      if (fieldValue === undefined && !isFieldNullable) {
+      if (
+        fieldValue === undefined &&
+        schemaPredicates !== undefined &&
+        schemaPredicates.isFieldNullable(typename, fieldName)
+      ) {
         // Cache Incomplete: A missing field means it wasn't cached
-        ctx.result.completeness = 'EMPTY';
+        ctx.result.completeness = 'PARTIAL';
         data[fieldAlias] = null;
       } else if (fieldValue === undefined) {
-        ctx.result.completeness = 'PARTIAL';
+        ctx.result.completeness = 'EMPTY';
+        data[fieldAlias] = null;
       } else {
         // Not dealing with undefined means it's a cached field
         data[fieldAlias] = fieldValue;
+        hasFields = true;
       }
     } else {
       // null values mean that a field might be linked to other entities
       const fieldSelect = getSelectionSet(node);
       const link = store.getLink(fieldKey);
-      const isFieldNullable =
-        schemaPredicates &&
-        schemaPredicates.isFieldNullable(typename, fieldName);
 
       // Cache Incomplete: A missing link for a field means it's not cached
       if (link === undefined) {
         if (typeof fieldValue === 'object' && fieldValue !== null) {
           // The entity on the field was invalid and can still be recovered
           data[fieldAlias] = fieldValue;
-        } else if (!isFieldNullable) {
-          ctx.result.completeness = 'EMPTY';
+        } else if (
+          schemaPredicates !== undefined &&
+          schemaPredicates.isFieldNullable(typename, fieldName)
+        ) {
+          ctx.result.completeness = 'PARTIAL';
           data[fieldAlias] = null;
         } else {
-          ctx.result.completeness = 'PARTIAL';
+          ctx.result.completeness = 'EMPTY';
+          data[fieldAlias] = null;
         }
       } else {
         const prevData = data[fieldAlias] as Data;
         data[fieldAlias] = resolveLink(ctx, link, fieldSelect, prevData);
+        hasFields = true;
       }
     }
+  }
+
+  if (isQuery && !hasFields) {
+    ctx.result.completeness = 'EMPTY';
+    return null;
   }
 
   return data;
