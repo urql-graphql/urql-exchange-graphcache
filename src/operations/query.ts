@@ -171,6 +171,7 @@ const readSelection = (
   const iter = new SelectionIterator(typename, entityKey, select, ctx);
 
   let node;
+  let hasFields = false;
   while ((node = iter.next()) !== undefined) {
     // Derive the needed data from our node.
     const fieldName = getName(node);
@@ -241,6 +242,7 @@ const readSelection = (
         dataFieldValue === undefined &&
         schemaPredicates.isFieldNullable(typename, fieldName)
       ) {
+        hasFields = true;
         data[fieldAlias] = null;
         ctx.partial = true;
       } else {
@@ -251,11 +253,12 @@ const readSelection = (
       return undefined;
     } else {
       // Otherwise we can set the field on data and continue
+      hasFields = true;
       data[fieldAlias] = dataFieldValue;
     }
   }
 
-  return data;
+  return isQuery && ctx.partial && !hasFields ? undefined : data;
 };
 
 const resolveResolverResult = (
