@@ -196,32 +196,32 @@ const readSelection = (
         data[fieldAlias] = fieldValue;
       }
 
-      const resolverValue = resolvers[fieldName](
+      let resolverValue: DataField | undefined = resolvers[fieldName](
         data,
         fieldArgs || {},
         store,
         ctx
       );
 
-      if (node.selectionSet === undefined) {
-        // When we have a schema we check for a user's resolver whether the field is nullable
-        // Otherwise we trust the resolver and assume that it is
-        const isNull = resolverValue === undefined || resolverValue === null;
-        if (isNull && schemaPredicates !== undefined) {
-          dataFieldValue = undefined;
-        } else {
-          dataFieldValue = isNull ? null : resolverValue;
-        }
-      } else {
+      if (node.selectionSet !== undefined) {
         // When it has a selection set we are resolving an entity with a
         // subselection. This can either be a list or an object.
-        dataFieldValue = resolveResolverResult(
+        resolverValue = resolveResolverResult(
           ctx,
           resolverValue,
           fieldKey,
           getSelectionSet(node),
           data[fieldAlias] as Data | Data[]
         );
+      }
+
+      // When we have a schema we check for a user's resolver whether the field is nullable
+      // Otherwise we trust the resolver and assume that it is
+      const isNull = resolverValue === undefined || resolverValue === null;
+      if (isNull && schemaPredicates !== undefined) {
+        dataFieldValue = undefined;
+      } else {
+        dataFieldValue = isNull ? null : resolverValue;
       }
     } else if (node.selectionSet === undefined) {
       // The field is a scalar and can be retrieved directly
@@ -316,8 +316,8 @@ const resolveLink = (
   if (Array.isArray(link)) {
     const newLink = new Array(link.length);
     for (let i = 0, l = link.length; i < l; i++) {
-      const data = prevData !== undefined ? prevData[i] : undefined;
-      newLink[i] = resolveLink(ctx, link[i], select, data);
+      const innerPrevData = prevData !== undefined ? prevData[i] : undefined;
+      newLink[i] = resolveLink(ctx, link[i], select, innerPrevData);
     }
 
     // TODO: If SchemaPredicates.isListNullable is false we may need to return undefined for the entire list
