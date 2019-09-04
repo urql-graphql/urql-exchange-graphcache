@@ -1,11 +1,13 @@
+import invariant from 'invariant';
+import warning from 'warning';
+
 import {
   buildClientSchema,
-  GraphQLSchema,
   isNullableType,
+  GraphQLSchema,
   GraphQLAbstractType,
   GraphQLObjectType,
 } from 'graphql';
-import invariant from 'invariant';
 
 export class SchemaPredicates {
   schema: GraphQLSchema;
@@ -15,19 +17,40 @@ export class SchemaPredicates {
   }
 
   isFieldNullable(typename: string, fieldName: string): boolean {
-    const objectTypeNode = this.schema.getType(typename) as GraphQLObjectType;
-
+    const type = this.schema.getType(typename) as GraphQLObjectType;
     invariant(
-      !!objectTypeNode,
-      `The type ${typename} does not exist in your schema`
+      type instanceof GraphQLObjectType,
+      'Invalid type: The type `%s` is not an object in the defined schema, ' +
+        'but the GraphQL document is traversing it.',
+      typename
     );
 
-    const field = objectTypeNode.getFields()[fieldName];
+    const object = type as GraphQLObjectType;
+    if (object === undefined) {
+      warning(
+        false,
+        'Invalid type: The type `%s` is not a type in the defined schema, ' +
+          'but the GraphQL document expects it to exist.\n' +
+          'Traversal will continue, however this may lead to undefined behavior!',
+        typename
+      );
 
-    invariant(
-      !!field,
-      `The type ${typename}.${fieldName} does not exist in your schema`
-    );
+      return false;
+    }
+
+    const field = object.getFields()[fieldName];
+    if (field === undefined) {
+      warning(
+        false,
+        'Invalid field: The field `%s` does not exist on `%s`, ' +
+          'but the GraphQL document expects it to exist.\n' +
+          'Traversal will continue, however this may lead to undefined behavior!',
+        fieldName,
+        typename
+      );
+
+      return false;
+    }
 
     return isNullableType(field.type);
   }
