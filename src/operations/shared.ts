@@ -1,3 +1,4 @@
+import warning from 'warning';
 import { FieldNode, InlineFragmentNode, FragmentDefinitionNode } from 'graphql';
 import { Fragments, Variables, SelectionSet, Scalar } from '../types';
 import { Store } from '../store';
@@ -28,7 +29,20 @@ const isFragmentHeuristicallyMatching = (
   ctx: Context
 ) => {
   if (!typename) return false;
-  if (typename === getTypeCondition(node)) return true;
+  const typeCondition = getTypeCondition(node);
+  if (typename === typeCondition) return true;
+
+  warning(
+    false,
+    'Heuristic Fragment Matching: A fragment is trying to match against the `%s` type, ' +
+      'but the type condition is `%s`. Since GraphQL allows for interfaces `%s` may be an' +
+      'interface.\nA schema needs to be defined for this match to be deterministic, ' +
+      'otherwise the fragment will be matched heuristically!',
+    typename,
+    typeCondition,
+    typeCondition
+  );
+
   return !getSelectionSet(node).some(node => {
     if (!isFieldNode(node)) return false;
     const fieldName = getName(node);
