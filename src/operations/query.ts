@@ -243,8 +243,6 @@ const readSelection = (
       }
     } else if (node.selectionSet === undefined) {
       // The field is a scalar and can be retrieved directly
-      // Here we should check if it's a mandatory field, if it is
-      // we should indicate EMPTY else PARTIAL
       const isFieldNullable =
         schemaPredicates &&
         schemaPredicates.isFieldNullable(typename, fieldName);
@@ -265,14 +263,13 @@ const readSelection = (
       const isFieldNullable =
         schemaPredicates &&
         schemaPredicates.isFieldNullable(typename, fieldName);
+
       // Cache Incomplete: A missing link for a field means it's not cached
       if (link === undefined) {
         if (typeof fieldValue === 'object' && fieldValue !== null) {
           // The entity on the field was invalid and can still be recovered
           data[fieldAlias] = fieldValue;
         } else if (!isFieldNullable) {
-          // Here we should check if it's a mandatory field, if it is
-          // we should indicate EMPTY else PARTIAL
           ctx.result.completeness = 'EMPTY';
           data[fieldAlias] = null;
         } else {

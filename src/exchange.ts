@@ -255,7 +255,6 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     // Rebound operations that are incomplete, i.e. couldn't be queried just from the cache
     const cacheOps$ = pipe(
       cache$,
-      // When it's partial we'll see this continue through to the fetchExchange.
       filter(res => res.completeness === 'EMPTY'),
       map(res => res.operation)
     );
