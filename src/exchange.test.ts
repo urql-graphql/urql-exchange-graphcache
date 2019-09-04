@@ -497,6 +497,7 @@ it('follows nested resolvers for mutations', () => {
       {
         __typename: 'Author',
         id: '123',
+        book: null,
         name: '[REDACTED ONLINE]',
       },
       {
@@ -537,8 +538,7 @@ it('follows nested resolvers for mutations', () => {
     (forwardOp: Operation): OperationResult => {
       if (forwardOp.key === 1) {
         return { operation: queryOperation, data: queryData };
-      }
-      if (forwardOp.key === 2) {
+      } else if (forwardOp.key === 2) {
         return { operation: mutationOperation, data: mutationData };
       }
 
