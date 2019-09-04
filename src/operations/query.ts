@@ -201,11 +201,15 @@ const readSelection = (
         ctx
       );
 
-      const isNull = resolverValue === undefined || resolverValue === null;
-      // When we have a schema we check for a user's resolver whether the field is nullable
-      // Otherwise we trust the resolver and assume that it is
-      if (node.selectionSet === undefined || isNull) {
-        dataFieldValue = isNull ? undefined : resolverValue;
+      if (node.selectionSet === undefined) {
+        // When we have a schema we check for a user's resolver whether the field is nullable
+        // Otherwise we trust the resolver and assume that it is
+        const isNull = resolverValue === undefined || resolverValue === null;
+        if (isNull && schemaPredicates !== undefined) {
+          dataFieldValue = undefined;
+        } else {
+          dataFieldValue = isNull ? null : resolverValue;
+        }
       } else {
         // When it has a selection set we are resolving an entity with a
         // subselection. This can either be a list or an object.
