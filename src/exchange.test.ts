@@ -622,3 +622,99 @@ it('follows nested resolvers for mutations', () => {
     'AwesomeGQL',
   ]);
 });
+
+it('reexecutes query and returns data on partial result', () => {
+  jest.useFakeTimers();
+  const client = createClient({ url: '' });
+  const [ops$, next] = makeSubject<Operation>();
+  const reexec = jest
+    .spyOn(client, 'reexecuteOperation')
+    // Empty mock to avoid going in an endless loop, since we would again return
+    // partial data.
+    .mockImplementation(() => {});
+
+  const query = gql`
+    query {
+      todos {
+        id
+        text
+        complete
+        author {
+          id
+          name
+          __typename
+        }
+        __typename
+      }
+    }
+  `;
+
+  const queryOperation = client.createRequestOperation('query', {
+    key: 1,
+    query,
+  });
+
+  const queryData = {
+    __typename: 'Query',
+    todos: [
+      {
+        __typename: 'Todo',
+        id: '123',
+        text: 'Learn',
+      },
+      {
+        __typename: 'Todo',
+        id: '456',
+        text: 'Teach',
+      },
+    ],
+  };
+
+  const response = jest.fn(
+    (forwardOp: Operation): OperationResult => {
+      if (forwardOp.key === 1) {
+        return { operation: queryOperation, data: queryData };
+      }
+
+      return undefined as any;
+    }
+  );
+
+  const result = jest.fn();
+  const forward: ExchangeIO = ops$ =>
+    pipe(
+      ops$,
+      delay(1),
+      map(response)
+    );
+
+  pipe(
+    cacheExchange({
+      // eslint-disable-next-line
+      schema: require('./test-utils/simple_schema.json'),
+    })({ forward, client })(ops$),
+    tap(result),
+    publish
+  );
+
+  next(queryOperation);
+  jest.runAllTimers();
+  expect(response).toHaveBeenCalledTimes(1);
+  expect(result).toHaveBeenCalledTimes(1);
+  expect(reexec).toHaveBeenCalledTimes(1);
+  expect(result.mock.calls[0][0].data).toEqual({
+    __typename: 'Query',
+    todos: [
+      {
+        __typename: 'Todo',
+        id: '123',
+        text: 'Learn',
+      },
+      {
+        __typename: 'Todo',
+        id: '456',
+        text: 'Teach',
+      },
+    ],
+  });
+});
