@@ -244,7 +244,6 @@ const readSelection = (
     ) {
       // The field is uncached but we have a schema that says it's nullable
       // Set the field to null and continue
-      hasFields = true;
       data[fieldAlias] = null;
       ctx.partial = true;
     } else if (dataFieldValue === undefined) {
