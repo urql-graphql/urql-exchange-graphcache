@@ -53,8 +53,11 @@ export class SchemaPredicates {
     return isNullableType(field.type);
   }
 
-  isInterfaceOfType(typeCondition: string, typename: string | void): boolean {
-    if (typename === undefined) return false;
+  isInterfaceOfType(
+    typeCondition: null | string,
+    typename: string | void
+  ): boolean {
+    if (!typename || !typeCondition) return false;
     if (typename === typeCondition) return true;
 
     const abstractType = this.schema.getType(typeCondition);
