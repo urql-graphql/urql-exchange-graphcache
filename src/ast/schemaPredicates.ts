@@ -78,10 +78,8 @@ const parseSchema = schema => parse(printSchema(buildClientSchema(schema)));
 const getFragmentTypes = types => {
   const mapping = {};
   types.forEach(type => {
-    if (
-      type.kind === Kind.UNION_TYPE_DEFINITION ||
-      type.kind === Kind.INTERFACE_TYPE_DEFINITION
-    ) {
+    // TODO: find the possibleTypes on the parsed schema.
+    if (type.kind === 'UNION' || type.kind === 'INTERFACE') {
       mapping[type.name] = type.possibleTypes.map(({ name }) => name);
     }
   });
