@@ -75,10 +75,11 @@ export const read = (
     schemaPredicates: store.schemaPredicates,
   };
 
-  const data =
-    input !== undefined
-      ? readRoot(ctx, rootKey, rootSelect, input)
-      : readSelection(ctx, rootKey, rootSelect, Object.create(null));
+  let data = input || Object.create(null);
+  data =
+    rootKey !== 'Query'
+      ? readRoot(ctx, rootKey, rootSelect, data)
+      : readSelection(ctx, rootKey, rootSelect, data);
 
   return {
     dependencies: getCurrentDependencies(),
