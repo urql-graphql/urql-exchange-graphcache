@@ -49,3 +49,5 @@ const cache = cacheExchange({ schema });
 This should do the trick, it's also possible to just open your playground
 and manually execute the introspection with the query found [here](./introspectionQuery.js)
 this one is the smallest representation.
+
+> Note that our query can be unsuited for your case, it's best to resort to the one offered from graphql itself in that case

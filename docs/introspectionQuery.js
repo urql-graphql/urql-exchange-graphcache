@@ -2,6 +2,7 @@
 // - defaultValues for inputs
 // - deprecationReasons and isDeprecated
 // - descriptions
+// - directives
 //
 // This results in a 10-15% size decrease, this could be more
 // but then buildClientSchema won't execute
