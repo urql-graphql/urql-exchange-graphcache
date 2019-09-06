@@ -1,6 +1,5 @@
 import invariant from 'invariant';
-import warning from 'warning';
-
+import { warning } from '../helpers/warning';
 import {
   buildClientSchema,
   isNullableType,
@@ -12,8 +11,6 @@ import {
   GraphQLInterfaceType,
   GraphQLUnionType,
 } from 'graphql';
-
-const warnings: { [key: string]: boolean } = {};
 
 export class SchemaPredicates {
   schema: GraphQLSchema;
@@ -68,13 +65,13 @@ const getField = (
   const object = type as GraphQLObjectType;
   if (object === undefined) {
     warning(
-      false || warnings[typename],
-      'Invalid type: The type `%s` is not a type in the defined schema, ' +
+      false,
+      'Invalid type: The type `' +
+        typename +
+        '` is not a type in the defined schema, ' +
         'but the GraphQL document expects it to exist.\n' +
-        'Traversal will continue, however this may lead to undefined behavior!',
-      typename
+        'Traversal will continue, however this may lead to undefined behavior!'
     );
-    warnings[typename] = true;
 
     return undefined;
   }
@@ -82,14 +79,15 @@ const getField = (
   const field = object.getFields()[fieldName];
   if (field === undefined) {
     warning(
-      false || warnings[`${typename}.${fieldName}`],
-      'Invalid field: The field `%s` does not exist on `%s`, ' +
+      false,
+      'Invalid field: The field `' +
+        fieldName +
+        '` does not exist on `' +
+        typename +
+        '`, ' +
         'but the GraphQL document expects it to exist.\n' +
-        'Traversal will continue, however this may lead to undefined behavior!',
-      fieldName,
-      typename
+        'Traversal will continue, however this may lead to undefined behavior!'
     );
-    warnings[`${typename}.${fieldName}`] = true;
 
     return undefined;
   }

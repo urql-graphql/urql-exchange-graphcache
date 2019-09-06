@@ -1,5 +1,4 @@
-import warning from 'warning';
-
+import { warning } from '../helpers/warning';
 import {
   getFragments,
   getMainOperation,
@@ -330,10 +329,11 @@ const resolveResolverResult = (
 
   warning(
     false,
-    'Invalid resolver value: The resolver at `%s` returned a scalar (number, boolean, etc)' +
+    'Invalid resolver value: The resolver at `' +
+      key +
+      '` returned a scalar (number, boolean, etc)' +
       ', but the GraphQL query expects a selection set for this field.\n' +
-      'If necessary, use Cache.resolve() to resolve a link or entity from the cache.',
-    key
+      'If necessary, use Cache.resolve() to resolve a link or entity from the cache.'
   );
 
   return undefined;
