@@ -45,7 +45,7 @@ describe('Query', () => {
         ],
       }
     );
-    spy.console = jest.spyOn(console, 'error');
+    spy.console = jest.spyOn(console, 'warn');
   });
 
   it('should warn once for invalid fields on an entity', () => {
@@ -71,7 +71,7 @@ describe('Query', () => {
         },
       }
     );
-    expect(console.error).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledTimes(1);
     write(
       store,
       { query: INVALID_TODO_QUERY },
@@ -85,8 +85,8 @@ describe('Query', () => {
         },
       }
     );
-    expect(console.error).toHaveBeenCalledTimes(1);
-    expect((console.error as any).mock.calls[0][0]).toMatch(/incomplete/);
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    expect((console.warn as any).mock.calls[0][0]).toMatch(/incomplete/);
   });
 
   it('should warn once for invalid fields on an entity', () => {
@@ -117,7 +117,7 @@ describe('Query', () => {
       }
     );
     // Because of us indicating Todo:Writer as a scalar
-    expect(console.error).toHaveBeenCalledTimes(2);
+    expect(console.warn).toHaveBeenCalledTimes(2);
     write(
       store,
       { query: INVALID_TODO_QUERY },
@@ -134,7 +134,7 @@ describe('Query', () => {
       }
     );
 
-    expect(console.error).toHaveBeenCalledTimes(2);
-    expect((console.error as any).mock.calls[0][0]).toMatch(/writer/);
+    expect(console.warn).toHaveBeenCalledTimes(2);
+    expect((console.warn as any).mock.calls[0][0]).toMatch(/writer/);
   });
 });

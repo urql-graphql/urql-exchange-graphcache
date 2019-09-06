@@ -46,7 +46,7 @@ describe('Query', () => {
         ],
       }
     );
-    spy.console = jest.spyOn(console, 'error');
+    spy.console = jest.spyOn(console, 'warn');
   });
 
   it('test partial results', () => {
@@ -84,10 +84,10 @@ describe('Query', () => {
       }
     `;
     query(store, { query: INVALID_TODO_QUERY });
-    expect(console.error).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledTimes(1);
     query(store, { query: INVALID_TODO_QUERY });
-    expect(console.error).toHaveBeenCalledTimes(1);
-    expect((console.error as any).mock.calls[0][0]).toMatch(/incomplete/);
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    expect((console.warn as any).mock.calls[0][0]).toMatch(/incomplete/);
   });
 
   it('should warn once for invalid sub-entities on an entity', () => {
@@ -103,9 +103,9 @@ describe('Query', () => {
       }
     `;
     query(store, { query: INVALID_TODO_QUERY });
-    expect(console.error).toHaveBeenCalledTimes(1);
+    expect(console.warn).toHaveBeenCalledTimes(1);
     query(store, { query: INVALID_TODO_QUERY });
-    expect(console.error).toHaveBeenCalledTimes(1);
-    expect((console.error as any).mock.calls[0][0]).toMatch(/writer/);
+    expect(console.warn).toHaveBeenCalledTimes(1);
+    expect((console.warn as any).mock.calls[0][0]).toMatch(/writer/);
   });
 });
