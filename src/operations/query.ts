@@ -184,6 +184,10 @@ const readSelection = (
 
     if (isQuery) addDependency(fieldKey);
 
+    if (process.env.NODE_ENV !== 'production' && schemaPredicates) {
+      schemaPredicates.isFieldAvailableOnType(typename, fieldName);
+    }
+
     // We temporarily store the data field in here, but undefined
     // means that the value is missing from the cache
     let dataFieldValue: void | DataField;

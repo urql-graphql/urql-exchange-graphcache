@@ -13,6 +13,8 @@ import {
   GraphQLUnionType,
 } from 'graphql';
 
+const warnings: { [key: string]: boolean } = {};
+
 export class SchemaPredicates {
   schema: GraphQLSchema;
 
@@ -31,6 +33,10 @@ export class SchemaPredicates {
     if (field === undefined) return false;
     const ofType = isNonNullType(field.type) ? field.type.ofType : field.type;
     return isListType(ofType) && isNullableType(ofType.ofType);
+  }
+
+  isFieldAvailableOnType(typename: string, fieldname: string): boolean {
+    return !!getField(this.schema, typename, fieldname);
   }
 
   isInterfaceOfType(
@@ -62,12 +68,13 @@ const getField = (
   const object = type as GraphQLObjectType;
   if (object === undefined) {
     warning(
-      false,
+      false || warnings[typename],
       'Invalid type: The type `%s` is not a type in the defined schema, ' +
         'but the GraphQL document expects it to exist.\n' +
         'Traversal will continue, however this may lead to undefined behavior!',
       typename
     );
+    warnings[typename] = true;
 
     return undefined;
   }
@@ -75,13 +82,14 @@ const getField = (
   const field = object.getFields()[fieldName];
   if (field === undefined) {
     warning(
-      false,
+      false || warnings[`${typename}.${fieldName}`],
       'Invalid field: The field `%s` does not exist on `%s`, ' +
         'but the GraphQL document expects it to exist.\n' +
         'Traversal will continue, however this may lead to undefined behavior!',
       fieldName,
       typename
     );
+    warnings[`${typename}.${fieldName}`] = true;
 
     return undefined;
   }
