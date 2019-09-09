@@ -125,10 +125,10 @@ describe('Query', () => {
     let { data } = query(store, { query: VALID_QUERY });
     expect(data).toEqual(null);
 
-    // @ts-ignore
     write(
       store,
       { query: VALID_QUERY },
+      // @ts-ignore
       {
         // Removing typename here would formerly crash this.
         todos: [{ __typename: 'Todo', id: '0', text: 'Solve bug' }],
