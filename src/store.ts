@@ -257,7 +257,7 @@ export class Store {
     updater: (data: Data | null) => null | Data
   ): void {
     const request = createRequest(input.query, input.variables);
-    const output = updater(read(this, request).data);
+    const output = updater(this.readQuery(input));
     if (output !== null) {
       startWrite(this, request, output);
     }
