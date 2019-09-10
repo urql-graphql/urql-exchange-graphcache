@@ -16,7 +16,7 @@ import {
 } from './types';
 
 import { joinKeys, keyOfField } from './helpers';
-import { read } from './operations/query';
+import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';
 import { SchemaPredicates } from './ast/schemaPredicates';
@@ -274,7 +274,7 @@ export class Store {
     writeFragment(this, dataFragment, data);
   }
 
-  readFragment(dataFragment: DocumentNode): Data | null {
-    return null;
+  readFragment(dataFragment: DocumentNode, id: string): Data | null {
+    return readFragment(this, dataFragment, id) || null;
   }
 }

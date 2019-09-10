@@ -7,6 +7,7 @@ import {
   getName,
   getFieldArguments,
   getFieldAlias,
+  getFragmentTypeName,
 } from '../ast';
 
 import {
@@ -31,6 +32,7 @@ import {
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';
+import { DocumentNode, FragmentDefinitionNode } from 'graphql';
 
 export interface QueryResult {
   dependencies: Set<string>;
@@ -147,6 +149,47 @@ const readRootField = (
     const typename = originalData.__typename;
     return readRoot(ctx, typename, select, originalData);
   }
+};
+
+export const readFragment = (
+  store: Store,
+  query: DocumentNode,
+  id: string
+): Data | null | void => {
+  const fragments = getFragments(query);
+  const names = Object.keys(fragments);
+  const fragment = fragments[names[0]] as FragmentDefinitionNode;
+  if (fragment === undefined) {
+    return warning(
+      false,
+      'readFragment (...) was called with an empty fragment.\n' +
+        'You have to call it with at least one fragment in your GraphQL document.'
+    );
+  }
+
+  const select = getSelectionSet(fragment);
+  const typeName = getFragmentTypeName(fragment);
+  const entityKey = store.keyOfEntity({ __typename: typeName, id }) as string;
+
+  if (!entityKey) {
+    return warning(
+      false,
+      "Can't generate a key for readFragment (...).\n" +
+        'You have to pass an `id` or create a custom `keys` config for `' +
+        typeName +
+        '`.'
+    );
+  }
+
+  const ctx: Context = {
+    variables: {}, // TODO: Should we support variables?
+    fragments,
+    partial: false,
+    store,
+    schemaPredicates: store.schemaPredicates,
+  };
+
+  return readSelection(ctx, entityKey, select, Object.create(null));
 };
 
 const readSelection = (
