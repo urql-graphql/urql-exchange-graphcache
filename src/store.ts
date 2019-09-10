@@ -263,7 +263,18 @@ export class Store {
     }
   }
 
-  writeFragment(dataFragment: DocumentNode, data: Data): void {
+  readQuery(input: {
+    query: string | DocumentNode;
+    variables?: Variables;
+  }): Data | null {
+    return read(this, createRequest(input.query, input.variables)).data;
+  }
+
+  updateFragment(dataFragment: DocumentNode, data: Data): void {
     writeFragment(this, dataFragment, data);
+  }
+
+  readFragment(dataFragment: DocumentNode): Data | null {
+    return null;
   }
 }
