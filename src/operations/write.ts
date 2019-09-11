@@ -161,9 +161,9 @@ export const writeFragment = (
   const writeData = { ...data, __typename: typeName } as Data;
 
   const entityKey = store.keyOfEntity(writeData) as string;
-  if (!entityKey && !store.keys[typeName]) {
+  if (!entityKey) {
     return warning(
-      false,
+      store.keys[typeName],
       "Can't generate a key for writeFragment(...) data.\n" +
         'You have to pass an `id` or `_id` field or create a custom `keys` config for `' +
         typeName +

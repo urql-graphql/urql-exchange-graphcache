@@ -171,9 +171,9 @@ export const readFragment = (
   const typeName = getFragmentTypeName(fragment);
   const entityKey = store.keyOfEntity({ __typename: typeName, id }) as string;
 
-  if (!entityKey && !store.keys[typeName]) {
+  if (!entityKey) {
     return warning(
-      false,
+      store.keys[typeName],
       "Can't generate a key for readFragment (...).\n" +
         'You have to pass an `id` or create a custom `keys` config for `' +
         typeName +
