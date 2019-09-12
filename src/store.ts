@@ -74,6 +74,11 @@ const mapRemove = <T>(map: Pessimism.Map<T>, key: string) => {
 
 type RootField = 'query' | 'mutation' | 'subscription';
 
+interface QueryInput {
+  query: string | DocumentNode;
+  variables?: Variables;
+}
+
 export class Store {
   records: Pessimism.Map<EntityField>;
   links: Pessimism.Map<Link>;
@@ -257,18 +262,13 @@ export class Store {
     updater: (data: Data | null) => null | Data
   ): void {
     const request = createRequest(input.query, input.variables);
-    const output = updater(
-      this.readQuery({ query: request.query, variables: input.variables })
-    );
+    const output = updater(this.readQuery(request as QueryInput));
     if (output !== null) {
       startWrite(this, request, output);
     }
   }
 
-  readQuery(input: {
-    query: string | DocumentNode;
-    variables?: Variables;
-  }): Data | null {
+  readQuery(input: QueryInput): Data | null {
     return read(this, createRequest(input.query, input.variables)).data;
   }
 
