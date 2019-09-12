@@ -12,6 +12,10 @@ _The format is based on [Keep a Changelog](http://keepachangelog.com/)._
 
 - ⚠ rename `writeFragment` to `updateFragment` and introduce `readQuery` and `readFragment` (see [#73](https://github.com/FormidableLabs/urql-exchange-graphcache/pull/73))
 
+## [v1.0.0-rc.7](https://github.com/FormidableLabs/urql-exchange-graphcache/compare/v1.0.0-rc.6...v1.0.0-rc.7)
+
+- ⚠ Fix reexecuted operations due to dependencies not using `cache-first` (see [0bd58f6](https://github.com/FormidableLabs/urql-exchange-graphcache/commit/0bd58f6))
+
 ## [v1.0.0-rc.6](https://github.com/FormidableLabs/urql-exchange-graphcache/compare/v1.0.0-rc.5...v1.0.0-rc.6)
 
 - ⚠ Fix concurrency issue where a single operation is reexecuted multiple times (see [#70](https://github.com/FormidableLabs/urql-exchange-graphcache/pull/70))
