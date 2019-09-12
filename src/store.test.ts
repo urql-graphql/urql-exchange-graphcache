@@ -181,9 +181,10 @@ describe('Store with OptimisticMutationConfig', () => {
     expect(store.getRecord('Appointment:1.info')).toBe(undefined);
   });
 
-  it('should be able to update a fragment', () => {
+  it('should be able to write a fragment', () => {
     initStoreState(0);
-    store.updateFragment(
+
+    store.writeFragment(
       gql`
         fragment _ on Todo {
           id
@@ -228,7 +229,7 @@ describe('Store with OptimisticMutationConfig', () => {
           complete
         }
       `,
-      '0'
+      { id: '0' }
     );
 
     const deps = getCurrentDependencies();
@@ -240,6 +241,7 @@ describe('Store with OptimisticMutationConfig', () => {
       complete: false,
       __typename: 'Todo',
     });
+
     clearStoreState();
   });
 

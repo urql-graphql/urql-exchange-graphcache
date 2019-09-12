@@ -272,11 +272,11 @@ export class Store {
     return read(this, createRequest(input.query, input.variables)).data;
   }
 
-  updateFragment(dataFragment: DocumentNode, data: Data): void {
-    writeFragment(this, dataFragment, data);
+  readFragment(dataFragment: DocumentNode, entity: string | Data): Data | null {
+    return readFragment(this, dataFragment, entity);
   }
 
-  readFragment(dataFragment: DocumentNode, id: string): Data | null {
-    return readFragment(this, dataFragment, id) || null;
+  writeFragment(dataFragment: DocumentNode, data: Data): void {
+    writeFragment(this, dataFragment, data);
   }
 }
