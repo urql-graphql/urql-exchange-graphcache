@@ -4331,9 +4331,9 @@ performance-now@^2.1.0:
   integrity sha1-Ywn04OX6kT7BxpMHrjZLSzd8nns=
 
 pessimism@^1.1.1:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/pessimism/-/pessimism-1.1.1.tgz#29938c99416798d79a08b310546ccaf726765638"
-  integrity sha512-6+g9htw1Z1MlO4oh8jKGzLq8BZ+1EADzYiN1hCiDny4kLRMl2f02220aQoFY5sDjcV8M8UpIE90d8EkFTgsZFg==
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/pessimism/-/pessimism-1.1.2.tgz#6b8a4c2d4994afee38244f7829f9ef2f4102d00f"
+  integrity sha512-ccrxHUKgfzpR6oW7N5XLpUXo4Fx3IQKMnyx01nPoyW9BYP/dc+EdzSYyfQ4/n+7IqBc8N6mxIZ3j1q6DNdAbTg==
 
 picomatch@^2.0.5:
   version "2.0.7"
