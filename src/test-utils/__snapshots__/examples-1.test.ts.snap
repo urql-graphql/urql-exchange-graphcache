@@ -22,7 +22,7 @@ Object {
           "node": Object {
             "__typename": "Item",
             "id": "2",
-            "name": "Offline",
+            "name": "Online",
           },
         },
       ],

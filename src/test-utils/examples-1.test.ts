@@ -305,18 +305,17 @@ it('correctly resolves optimistic updates on Relay schemas', () => {
     },
   };
 
-  /*
   const mutationData = {
+    __typename: 'Mutation',
     updateItem: {
       __typename: 'UpdateItemPayload',
       item: {
         __typename: 'Item',
         id: '2',
-        name: 'Online'
-      }
-    }
+        name: 'Online',
+      },
+    },
   };
-  */
 
   const getRoot = gql`
     query GetRoot {
@@ -357,8 +356,12 @@ it('correctly resolves optimistic updates on Relay schemas', () => {
   // Optimistic mutation write:
   writeOptimistic(store, { query: updateItem, variables: { id: '2' } }, 1);
 
+  // This does seem to trigger the bug! Hooray!
+  // Remove optimistic write again:
+  store.clearOptimistic(1);
+
   // Server data write:
-  // write(store, { query: updateItem, variables: { id: '2' } }, mutationData);
+  write(store, { query: updateItem, variables: { id: '2' } }, mutationData);
 
   // Query from cache:
   const queryRes = query(store, { query: getRoot });
