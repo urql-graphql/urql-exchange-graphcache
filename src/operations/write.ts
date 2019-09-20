@@ -143,7 +143,8 @@ export const writeOptimistic = (
 export const writeFragment = (
   store: Store,
   query: DocumentNode,
-  data: Data
+  data: Data,
+  variables?: Variables
 ) => {
   const fragments = getFragments(query);
   const names = Object.keys(fragments);
@@ -171,7 +172,7 @@ export const writeFragment = (
   }
 
   const ctx: Context = {
-    variables: {},
+    variables: variables || {},
     fragments,
     result: { dependencies: getCurrentDependencies() },
     store,

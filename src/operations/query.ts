@@ -154,7 +154,8 @@ const readRootField = (
 export const readFragment = (
   store: Store,
   query: DocumentNode,
-  entity: Data | string
+  entity: Data | string,
+  variables?: Variables
 ): Data | null => {
   const fragments = getFragments(query);
   const names = Object.keys(fragments);
@@ -193,7 +194,7 @@ export const readFragment = (
   }
 
   const ctx: Context = {
-    variables: {},
+    variables: variables || {},
     fragments,
     partial: false,
     store,
