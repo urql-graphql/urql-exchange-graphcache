@@ -95,10 +95,10 @@ const cache = cacheExchange({
 
 will do the trick.
 
-## `cache.readQuery`
+## `cache.readQuery`
 
 Another method the cache allows is to let you read a full query, this method
-accepts an object of `query` and optionally `variables`.
+accepts an object of `query` and optionally `variables`.
 
 ```js
 const data = cache.readQuery({ query: Todos, variables: { from: 0, limit: 10 } })`
@@ -106,10 +106,10 @@ const data = cache.readQuery({ query: Todos, variables: { from: 0, limit: 10 } }
 
 This way we'll get the stored data for the `TodosQuery` with given variables.
 
-## `cache.readFragment`
+## `cache.readFragment`
 
 The store allows the user to also read a fragment for a certain entity, this function
-accepts a `fragment` and an `id`. This looks like the following.
+accepts a `fragment` and an `id`. This looks like the following.
 
 ```js
 const data = cache.readFragment(gql`
