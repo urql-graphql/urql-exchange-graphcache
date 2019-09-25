@@ -288,6 +288,7 @@ const readSelection = (
           fieldName,
           fieldKey,
           fieldSelect,
+          fieldKey,
           prevData,
           resolverValue
         );
@@ -304,18 +305,15 @@ const readSelection = (
       dataFieldValue = fieldValue;
     } else {
       // We have a selection set which means that we'll be checking for links
-      const fieldSelect = getSelectionSet(node);
       const link = store.getLink(fieldKey);
-
       if (link !== undefined) {
-        const prevData = data[fieldAlias] as Data;
         dataFieldValue = resolveLink(
           ctx,
           link,
           typename,
           fieldName,
-          fieldSelect,
-          prevData
+          getSelectionSet(node),
+          data[fieldAlias] as Data
         );
       } else if (typeof fieldValue === 'object' && fieldValue !== null) {
         // The entity on the field was invalid but can still be recovered
@@ -351,19 +349,16 @@ const readSelection = (
 
 const readResolverResult = (
   ctx: Context,
-  entityKey: string,
+  key: string,
   select: SelectionSet,
   data: Data,
   result: Data
 ): Data | undefined => {
   const { store, variables, schemaPredicates } = ctx;
-  const key = store.keyOfEntity(result);
-  if (key !== null) {
-    return readSelection(ctx, key, select, data);
-  }
-
+  const entityKey = store.keyOfEntity(result) || key;
   const resolvedTypename = result.__typename;
   const typename = store.getField(entityKey, '__typename') || resolvedTypename;
+
   if (
     typeof typename !== 'string' ||
     (resolvedTypename && typename !== resolvedTypename)
@@ -393,7 +388,8 @@ const readResolverResult = (
     const fieldArgs = getFieldArguments(node, variables);
     const fieldAlias = getFieldAlias(node);
     const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
-    const fieldValue = result[fieldName];
+    const fieldValue = store.getRecord(fieldKey);
+    const resultValue = result[fieldName];
 
     if (process.env.NODE_ENV !== 'production' && schemaPredicates && typename) {
       schemaPredicates.isFieldAvailableOnType(typename, fieldName);
@@ -402,22 +398,40 @@ const readResolverResult = (
     // We temporarily store the data field in here, but undefined
     // means that the value is missing from the cache
     let dataFieldValue: void | DataField;
-    if (fieldValue === undefined || node.selectionSet === undefined) {
+    if (resultValue !== undefined && node.selectionSet === undefined) {
       // The field is a scalar and can be retrieved directly from the result
+      dataFieldValue = resultValue;
+    } else if (node.selectionSet === undefined) {
+      // The field is a scalar but isn't on the result, so it's retrieved from the cache
       dataFieldValue = fieldValue;
     } else {
-      const fieldSelect = getSelectionSet(node);
-      const prevData = data[fieldAlias] as Data;
+      const link = store.getLink(fieldKey);
 
-      dataFieldValue = resolveResolverResult(
-        ctx,
-        typename,
-        fieldName,
-        fieldKey,
-        fieldSelect,
-        prevData,
-        fieldValue
-      );
+      if (resultValue !== undefined) {
+        // We can keep walking the resolver result as usual
+        dataFieldValue = resolveResolverResult(
+          ctx,
+          typename,
+          fieldName,
+          fieldKey,
+          getSelectionSet(node),
+          store.getLink(fieldKey),
+          data[fieldAlias] as Data,
+          resultValue
+        );
+      } else if (link !== undefined) {
+        dataFieldValue = resolveLink(
+          ctx,
+          link,
+          typename,
+          fieldName,
+          getSelectionSet(node),
+          data[fieldAlias] as Data
+        );
+      } else if (typeof fieldValue === 'object' && fieldValue !== null) {
+        // The entity on the field was invalid but can still be recovered
+        dataFieldValue = fieldValue;
+      }
     }
 
     // Now that dataFieldValue has been retrieved it'll be set on data
@@ -452,6 +466,7 @@ const resolveResolverResult = (
   fieldName: string,
   key: string,
   select: SelectionSet,
+  link: void | Link,
   prevData: void | Data | Data[],
   result: void | DataField
 ): DataField | undefined => {
@@ -465,8 +480,6 @@ const resolveResolverResult = (
     const data = new Array(result.length);
     for (let i = 0, l = result.length; i < l; i++) {
       const innerResult = result[i];
-      // Append the current index to the parentFieldKey fallback
-      const indexKey = joinKeys(key, `${i}`);
       // Get the inner previous data from prevData
       const innerPrevData = prevData !== undefined ? prevData[i] : undefined;
       // Recursively read resolver result
@@ -474,8 +487,9 @@ const resolveResolverResult = (
         ctx,
         typename,
         fieldName,
-        indexKey,
+        joinKeys(key, `${i}`),
         select,
+        Array.isArray(link) ? link[i] : undefined,
         innerPrevData,
         innerResult
       );
@@ -492,9 +506,11 @@ const resolveResolverResult = (
     return null;
   } else if (isDataOrKey(result)) {
     const data = prevData === undefined ? Object.create(null) : prevData;
+    const innerKey = typeof link === 'string' ? link : key;
+
     return typeof result === 'string'
       ? readSelection(ctx, result, select, data)
-      : readResolverResult(ctx, key, select, data, result);
+      : readResolverResult(ctx, innerKey, select, data, result);
   } else {
     warning(
       false,

@@ -8,6 +8,7 @@ const Item = gql`
       __typename
       id
       complete
+      text
     }
   }
 `;
@@ -22,6 +23,7 @@ const Pagination = gql`
           __typename
           id
           complete
+          text
         }
       }
       pageInfo {
@@ -44,7 +46,8 @@ it('allows custom resolvers to resolve nested, unkeyed data', () => {
             node: {
               __typename: 'Todo',
               id: '1',
-              // This won't be the actual result:
+              // The `complete` field will be overwritten here, but we're
+              // leaving out the `text` field
               complete: true,
             },
           },
@@ -67,6 +70,7 @@ it('allows custom resolvers to resolve nested, unkeyed data', () => {
         __typename: 'Todo',
         id: '1',
         complete: false,
+        text: 'Example',
       },
     }
   );
@@ -85,8 +89,8 @@ it('allows custom resolvers to resolve nested, unkeyed data', () => {
           node: {
             __typename: 'Todo',
             id: '1',
-            // This is still false (see previous write):
-            complete: false,
+            complete: true, // This is now true and not false!
+            text: 'Example', // This is still present
           },
         },
       ],
@@ -129,6 +133,7 @@ it('allows custom resolvers to resolve nested, unkeyed data with embedded links'
         __typename: 'Todo',
         id: '1',
         complete: false,
+        text: 'Example',
       },
     }
   );
@@ -148,6 +153,7 @@ it('allows custom resolvers to resolve nested, unkeyed data with embedded links'
             __typename: 'Todo',
             id: '1',
             complete: false,
+            text: 'Example',
           },
         },
       ],
