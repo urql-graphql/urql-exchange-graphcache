@@ -1,4 +1,4 @@
-import invariant from 'invariant';
+import { warning } from '../helpers/warning';
 import { Resolver, NullArray, Variables } from '../types';
 
 interface ConnectionArgs {
@@ -14,25 +14,33 @@ export const relayPagination = (): Resolver => {
     const { parentKey: key, fieldName } = info;
     const { first, last } = args as ConnectionArgs;
 
-    invariant(
-      typeof first !== 'number' || typeof last !== 'number',
-      'relayPagination(...) was used with both a `first` and `last` argument,\n' +
-        'but it must not be used with both at the same time.'
-    );
+    if (typeof first === 'number' && typeof last === 'number') {
+      warning(
+        false,
+        'relayPagination(...) was used with both a `first` and `last` argument,\n' +
+          'but it must not be used with both at the same time.'
+      );
 
-    invariant(
-      typeof first === 'number' || typeof last === 'number',
-      'relayPagination(...) was used without a `first` and `last` argument,\n' +
-        'but it must not be used with at least one of them.'
-    );
+      return null;
+    } else if (typeof first !== 'number' && typeof last !== 'number') {
+      warning(
+        false,
+        'relayPagination(...) was used without a `first` and `last` argument,\n' +
+          'but it must not be used with at least one of them.'
+      );
+
+      return null;
+    }
 
     const isForwardPagination = typeof first === 'number';
     const size = (isForwardPagination ? first : last) || 0;
 
-    invariant(
-      size > 0,
-      'relayPagination(...) was used with a `first` or `last` argument that is less than zero.'
-    );
+    if (size <= 0) {
+      warning(
+        false,
+        'relayPagination(...) was used with a `first` or `last` argument that is less than zero.'
+      );
+    }
 
     const childArgs: Variables = {};
     if (typeof first === 'number') childArgs.first = first;
