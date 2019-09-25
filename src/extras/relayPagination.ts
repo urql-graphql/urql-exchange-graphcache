@@ -10,6 +10,8 @@ interface ConnectionArgs {
 
 export const relayPagination = (): Resolver => {
   return (_, args, cache, info) => {
+    // TODO: Add bailout if cursor was passed
+    const { parentKey: key, fieldName } = info;
     const { first, last } = args as ConnectionArgs;
 
     invariant(
@@ -38,11 +40,7 @@ export const relayPagination = (): Resolver => {
 
     const mergedEdges: NullArray<string> = [];
 
-    let dataKey = cache.resolve(
-      info.parentKey,
-      info.fieldName,
-      childArgs
-    ) as string;
+    let dataKey = cache.resolve(key, fieldName, childArgs) as string;
     let edgesKeys = cache.resolve(dataKey, 'edges') as string;
     let infoKey = cache.resolve(dataKey, 'pageInfo') as string;
     let prevInfoKey: string | null = null;
@@ -52,7 +50,7 @@ export const relayPagination = (): Resolver => {
       return undefined;
     }
 
-    while (Array.isArray(edgesKeys) && infoKey !== null) {
+    while (dataKey !== null && Array.isArray(edgesKeys)) {
       // Store the last valid info key
       prevInfoKey = infoKey;
 
@@ -65,7 +63,7 @@ export const relayPagination = (): Resolver => {
 
       // Stop traversing pages when no next page is expected
       const hasNextPage = cache.resolve(infoKey, 'hasNextPage');
-      if (hasNextPage === false) break;
+      if (hasNextPage === false || edgesKeys.length === 0) break;
 
       // Retrive the cursor from PageInfo
       let nextCursor = infoKey
@@ -76,17 +74,11 @@ export const relayPagination = (): Resolver => {
         : null;
 
       // If no cursor is on PageInfo then fall back to edges.cursor
-      const edge = isForwardPagination ? mergedEdges[size - 1] : mergedEdges[0];
-      const edgeCursor = edge ? cache.resolve(edge, 'cursor') : null;
-      if (!nextCursor && edgeCursor) nextCursor = edgeCursor;
-
-      invariant(
-        typeof nextCursor !== 'string',
-        'relayPagination(...) tried to receive the next cursor for the pagination, but ' +
-          'neither the `pageInfo.' +
-          (isForwardPagination ? 'endCursor' : 'startCursor') +
-          '` nor the `edges.cursor` fields were valid cursors.'
-      );
+      if (!nextCursor) {
+        const edge = isForwardPagination ? edgesKeys[size - 1] : edgesKeys[0];
+        nextCursor = edge ? cache.resolve(edge, 'cursor') : null;
+        if (!nextCursor) break;
+      }
 
       // Update the cursor on the child arguments
       if (isForwardPagination) {
@@ -96,11 +88,7 @@ export const relayPagination = (): Resolver => {
       }
 
       // Retrive the next page of data
-      dataKey = cache.resolve(
-        info.parentKey,
-        info.fieldName,
-        childArgs
-      ) as string;
+      dataKey = cache.resolve(key, fieldName, childArgs) as string;
       edgesKeys = cache.resolve(dataKey, 'edges') as string;
       infoKey = cache.resolve(dataKey, 'pageInfo') as string;
     }
@@ -108,7 +96,7 @@ export const relayPagination = (): Resolver => {
     return {
       __typename: connectionType,
       edges: mergedEdges,
-      pageInfo: prevInfoKey,
+      pageInfo: prevInfoKey || undefined,
     } as any;
   };
 };

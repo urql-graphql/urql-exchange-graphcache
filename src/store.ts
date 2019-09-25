@@ -234,8 +234,14 @@ export class Store {
     return link ? link : null;
   }
 
-  resolve(entity: Data | string, field: string, args?: Variables): DataField {
-    if (typeof entity === 'string') {
+  resolve(
+    entity: Data | string | null,
+    field: string,
+    args?: Variables
+  ): DataField {
+    if (entity === null) {
+      return null;
+    } else if (typeof entity === 'string') {
       addDependency(entity);
       return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
     } else {
