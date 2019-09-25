@@ -48,8 +48,13 @@ export interface OperationRequest {
 }
 
 export interface ResolveInfo {
+  parentTypeName: string;
+  parentKey: string;
+  fieldName: string;
   fragments: Fragments;
   variables: Variables;
+  partial?: boolean;
+  optimistic?: boolean;
 }
 
 // Cache resolvers are user-defined to overwrite an entity field result
