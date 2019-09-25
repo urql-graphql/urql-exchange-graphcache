@@ -13,6 +13,22 @@ const Item = gql`
   }
 `;
 
+const ItemDetailed = gql`
+  {
+    todo {
+      __typename
+      id
+      details {
+        __typename
+        authors {
+          __typename
+          id
+        }
+      }
+    }
+  }
+`;
+
 const Pagination = gql`
   query {
     todos {
@@ -139,9 +155,7 @@ it('allows custom resolvers to resolve nested, unkeyed data with embedded links'
   );
 
   const res = query(store, { query: Pagination });
-
   expect(res.partial).toBe(false);
-
   expect(res.data).toEqual({
     __typename: 'Query',
     todos: {
@@ -161,6 +175,60 @@ it('allows custom resolvers to resolve nested, unkeyed data with embedded links'
         __typename: 'PageInfo',
         hasNextPage: true,
         endCursor: '1',
+      },
+    },
+  });
+});
+
+it('allows custom resolvers to resolve mixed data (keyable and unkeyable)', () => {
+  const store = new Store(undefined, {
+    Query: {
+      todo: () => ({
+        __typename: 'Todo',
+        id: '1',
+        details: {
+          __typename: 'TodoDetails',
+        },
+      }),
+    },
+  });
+
+  write(
+    store,
+    { query: ItemDetailed },
+    {
+      __typename: 'Query',
+      todo: {
+        __typename: 'Todo',
+        id: '1',
+        details: {
+          __typename: 'TodoDetails',
+          authors: [
+            {
+              __typename: 'Author',
+              id: 'x',
+            },
+          ],
+        },
+      },
+    }
+  );
+
+  const res = query(store, { query: ItemDetailed });
+  expect(res.partial).toBe(false);
+  expect(res.data).toEqual({
+    __typename: 'Query',
+    todo: {
+      __typename: 'Todo',
+      id: '1',
+      details: {
+        __typename: 'TodoDetails',
+        authors: [
+          {
+            __typename: 'Author',
+            id: 'x',
+          },
+        ],
       },
     },
   });
