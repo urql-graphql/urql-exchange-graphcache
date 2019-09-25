@@ -42,6 +42,9 @@ export interface QueryResult {
 }
 
 interface Context {
+  parentTypeName: string;
+  parentKey: string;
+  fieldName: string;
   partial: boolean;
   store: Store;
   variables: Variables;
@@ -70,6 +73,9 @@ export const read = (
   const rootSelect = getSelectionSet(operation);
 
   const ctx: Context = {
+    parentTypeName: rootKey,
+    parentKey: rootKey,
+    fieldName: '',
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
     partial: false,
@@ -195,6 +201,9 @@ export const readFragment = (
   }
 
   const ctx: Context = {
+    parentTypeName: typename,
+    parentKey: entityKey,
+    fieldName: '',
     variables: variables || {},
     fragments,
     partial: false,
@@ -249,6 +258,12 @@ const readSelection = (
 
     const resolvers = store.resolvers[typename];
     if (resolvers !== undefined && typeof resolvers[fieldName] === 'function') {
+      // We have to update the information in context to reflect the info
+      // that the resolver will receive
+      ctx.parentTypeName = typename;
+      ctx.parentKey = entityKey;
+      ctx.fieldName = fieldName;
+
       // We have a resolver for this field.
       // Prepare the actual fieldValue, so that the resolver can use it
       if (fieldValue !== undefined) {
