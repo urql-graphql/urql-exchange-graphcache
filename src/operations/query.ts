@@ -288,7 +288,6 @@ const readSelection = (
           fieldName,
           fieldKey,
           fieldSelect,
-          fieldKey,
           prevData,
           resolverValue
         );
@@ -404,22 +403,21 @@ const readResolverResult = (
     } else if (node.selectionSet === undefined) {
       // The field is a scalar but isn't on the result, so it's retrieved from the cache
       dataFieldValue = fieldValue;
+    } else if (resultValue !== undefined) {
+      // We start walking the nested resolver result here
+      dataFieldValue = resolveResolverResult(
+        ctx,
+        typename,
+        fieldName,
+        fieldKey,
+        getSelectionSet(node),
+        data[fieldAlias] as Data,
+        resultValue
+      );
     } else {
+      // Otherwise we attempt to get the missing field from the cache
       const link = store.getLink(fieldKey);
-
-      if (resultValue !== undefined) {
-        // We can keep walking the resolver result as usual
-        dataFieldValue = resolveResolverResult(
-          ctx,
-          typename,
-          fieldName,
-          fieldKey,
-          getSelectionSet(node),
-          store.getLink(fieldKey),
-          data[fieldAlias] as Data,
-          resultValue
-        );
-      } else if (link !== undefined) {
+      if (link !== undefined) {
         dataFieldValue = resolveLink(
           ctx,
           link,
@@ -466,7 +464,6 @@ const resolveResolverResult = (
   fieldName: string,
   key: string,
   select: SelectionSet,
-  link: void | Link,
   prevData: void | Data | Data[],
   result: void | DataField
 ): DataField | undefined => {
@@ -489,7 +486,6 @@ const resolveResolverResult = (
         fieldName,
         joinKeys(key, `${i}`),
         select,
-        Array.isArray(link) ? link[i] : undefined,
         innerPrevData,
         innerResult
       );
@@ -506,11 +502,9 @@ const resolveResolverResult = (
     return null;
   } else if (isDataOrKey(result)) {
     const data = prevData === undefined ? Object.create(null) : prevData;
-    const innerKey = typeof link === 'string' ? link : key;
-
     return typeof result === 'string'
       ? readSelection(ctx, result, select, data)
-      : readResolverResult(ctx, innerKey, select, data, result);
+      : readResolverResult(ctx, key, select, data, result);
   } else {
     warning(
       false,
