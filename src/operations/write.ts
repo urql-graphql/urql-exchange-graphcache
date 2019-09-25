@@ -312,7 +312,9 @@ const writeField = (
     const typename = data.__typename;
 
     warning(
-      typename.endsWith('Connection') || typename.endsWith('Edge'),
+      typename.endsWith('Connection') ||
+        typename.endsWith('Edge') ||
+        typename === 'PageInfo',
       'Invalid key: The GraphQL query at the field at `' +
         parentFieldKey +
         '` has a selection set, ' +
