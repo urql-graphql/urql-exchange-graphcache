@@ -10,7 +10,6 @@ interface ConnectionArgs {
 
 export const relayPagination = (): Resolver => {
   return (_, args, cache, info) => {
-    // TODO: Add bailout if cursor was passed
     const { parentKey: key, fieldName } = info;
     const { first, last } = args as ConnectionArgs;
 
