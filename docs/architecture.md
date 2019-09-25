@@ -61,3 +61,8 @@ When we get a `query` response we just write this to the cache, nothing more.
 
 Internally we keep track of dependant queries so we can notify them that their data was updated, this way our
 React components can decide to rerender.
+
+## Concluding
+
+This does not only limit the amount of requests and so on, it also allows the application user to
+have a better experience. Nobody likes to have a series of loading Spinners because data got invalidated.
