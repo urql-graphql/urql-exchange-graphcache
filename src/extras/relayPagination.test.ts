@@ -101,7 +101,7 @@ it('works with backwards pagination', () => {
         }
         pageInfo {
           __typename
-          hasNextPage
+          hasPreviousPage
           startCursor
         }
       }
@@ -129,7 +129,7 @@ it('works with backwards pagination', () => {
       ],
       pageInfo: {
         __typename: 'PageInfo',
-        hasNextPage: true,
+        hasPreviousPage: true,
         startCursor: '2',
       },
     },
@@ -150,7 +150,7 @@ it('works with backwards pagination', () => {
       ],
       pageInfo: {
         __typename: 'PageInfo',
-        hasNextPage: false,
+        hasPreviousPage: false,
         startCursor: null,
       },
     },
@@ -167,78 +167,6 @@ it('works with backwards pagination', () => {
     items: {
       ...pageTwo.items,
       edges: [pageTwo.items.edges[0], pageOne.items.edges[0]],
-    },
-  });
-});
-
-it('falls back to cursor field instead of PageInfo cursors', () => {
-  const Pagination = gql`
-    query($cursor: String) {
-      items(first: 1, after: $cursor) {
-        __typename
-        edges {
-          __typename
-          cursor
-          node {
-            __typename
-            id
-          }
-        }
-      }
-    }
-  `;
-
-  const store = new Store(undefined, {
-    Query: {
-      items: relayPagination(),
-    },
-  });
-
-  const pageOne = {
-    __typename: 'Query',
-    items: {
-      __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          cursor: '1',
-          node: {
-            __typename: 'Item',
-            id: '1',
-          },
-        },
-      ],
-    },
-  };
-
-  const pageTwo = {
-    __typename: 'Query',
-    items: {
-      __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          cursor: '2',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-      ],
-    },
-  };
-
-  write(store, { query: Pagination, variables: { cursor: null } }, pageOne);
-  write(store, { query: Pagination, variables: { cursor: '1' } }, pageTwo);
-
-  const res = query(store, { query: Pagination });
-
-  expect(res.partial).toBe(false);
-  expect(res.data).toEqual({
-    ...pageTwo,
-    items: {
-      ...pageTwo.items,
-      edges: [pageOne.items.edges[0], pageTwo.items.edges[0]],
     },
   });
 });
