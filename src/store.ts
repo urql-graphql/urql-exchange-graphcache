@@ -6,6 +6,7 @@ import * as Pessimism from 'pessimism';
 import {
   EntityField,
   Link,
+  Connection,
   ResolverConfig,
   DataField,
   Variables,
@@ -81,6 +82,7 @@ interface QueryInput {
 
 export class Store {
   records: Pessimism.Map<EntityField>;
+  connections: Pessimism.Map<Connection[]>;
   links: Pessimism.Map<Link>;
 
   resolvers: ResolverConfig;
@@ -100,7 +102,9 @@ export class Store {
     keys?: KeyingConfig
   ) {
     this.records = Pessimism.asMutable(Pessimism.make());
+    this.connections = Pessimism.asMutable(Pessimism.make());
     this.links = Pessimism.asMutable(Pessimism.make());
+
     this.resolvers = resolvers || {};
     this.optimisticMutations = optimisticMutations || {};
     this.keys = keys || {};
@@ -177,6 +181,10 @@ export class Store {
 
   clearOptimistic(optimisticKey: number) {
     this.records = Pessimism.clearOptimistic(this.records, optimisticKey);
+    this.connections = Pessimism.clearOptimistic(
+      this.connections,
+      optimisticKey
+    );
     this.links = Pessimism.clearOptimistic(this.links, optimisticKey);
   }
 
@@ -221,6 +229,23 @@ export class Store {
 
   writeLink(link: Link, key: string) {
     return (this.links = mapSet(this.links, key, link));
+  }
+
+  writeConnection(key: string, linkKey: string, args: Variables | null) {
+    if (args === null) return this.connections;
+
+    let connections = Pessimism.get(this.connections, key);
+    const connection: Connection = [args, linkKey];
+    if (connections === undefined) {
+      connections = [connection];
+    } else {
+      for (let i = 0, l = connections.length; i < l; i++)
+        if (connections[i][1] === linkKey) return this.connections;
+      connections = connections.slice();
+      connections.push(connection);
+    }
+
+    return (this.connections = mapSet(this.connections, key, connections));
   }
 
   resolveValueOrLink(fieldKey: string): DataField {
