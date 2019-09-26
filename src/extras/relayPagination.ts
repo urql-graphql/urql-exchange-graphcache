@@ -69,8 +69,11 @@ export const relayPagination = (): Resolver => {
       }
 
       // Stop traversing pages when no next page is expected
-      const hasNextPage = cache.resolve(infoKey, 'hasNextPage');
-      if (hasNextPage === false || edgesKeys.length === 0) break;
+      const hasMore = cache.resolve(
+        infoKey,
+        isForwardPagination ? 'hasNextPage' : 'hasPreviousPage'
+      );
+      if (hasMore === false || edgesKeys.length === 0) break;
 
       // Retrive the cursor from PageInfo
       let nextCursor = infoKey
