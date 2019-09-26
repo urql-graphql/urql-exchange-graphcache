@@ -1,5 +1,6 @@
 import { Store } from '../store';
 import { Resolver, NullArray } from '../types';
+import { joinKeys, keyOfField } from '../helpers';
 
 interface PageInfo {
   endCursor: null | string;
@@ -59,13 +60,20 @@ const getPage = (cache: Store, linkKey: string): Page | null => {
 };
 
 export const relayPagination = (): Resolver => {
-  return (_parent, _args, cache, info) => {
+  return (_parent, args, cache, info) => {
     const { parentKey: key, fieldName } = info;
     const connections = cache.resolveConnections(key, fieldName);
     if (connections.length === 0) return undefined;
+    let connection;
+    const fieldKey = joinKeys(info.parentKey, keyOfField(info.fieldName, args));
 
-    // TODO
-    const page = getPage(cache, connections[0][1]);
+    // Use find so we can short-circuit early if needed.
+    connections.find(con => {
+      if (fieldKey === con[1]) return (connection = con[1]);
+    });
+
+    if (!connection) return undefined;
+    const page = getPage(cache, connection);
     return page ? (page as any) : undefined;
   };
 };
