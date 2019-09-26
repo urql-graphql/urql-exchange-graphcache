@@ -1,6 +1,5 @@
 import { Store } from '../store';
 import { Resolver, NullArray } from '../types';
-import { joinKeys, keyOfField } from '../helpers';
 
 export type MergeMode = 'outwards' | 'inwards';
 
@@ -107,20 +106,11 @@ export const relayPagination = (params: PaginationParams = {}): Resolver => {
 
   return (_parent, args, cache, info) => {
     const { parentKey: key, fieldName } = info;
-    const fieldKey = joinKeys(key, keyOfField(fieldName, args));
+
     const connections = cache.resolveConnections(key, fieldName);
     const size = connections.length;
-
-    let hasCachedConnection = false;
-    for (let i = 0; i < size; i++) {
-      if (connections[i][1] === fieldKey) {
-        hasCachedConnection = true;
-        break;
-      }
-    }
-
-    const entityKey = cache.resolveValueOrLink(fieldKey);
-    if (!hasCachedConnection || typeof entityKey !== 'string') {
+    const entityKey = ensureKey(cache.resolve(key, fieldName, args));
+    if (size === 0 || !entityKey) {
       return undefined;
     }
 
