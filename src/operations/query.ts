@@ -355,6 +355,8 @@ const readResolverResult = (
 ): Data | undefined => {
   const { store, variables, schemaPredicates } = ctx;
   const entityKey = store.keyOfEntity(result) || key;
+  addDependency(entityKey);
+
   const resolvedTypename = result.__typename;
   const typename = store.getField(entityKey, '__typename') || resolvedTypename;
 
