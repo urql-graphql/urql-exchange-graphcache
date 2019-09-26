@@ -2,6 +2,12 @@ import { Store } from '../store';
 import { Resolver, NullArray } from '../types';
 import { joinKeys, keyOfField } from '../helpers';
 
+export type MergeMode = 'outwards' | 'inwards';
+
+export interface PaginationParams {
+  mergeMode?: MergeMode;
+}
+
 interface PageInfo {
   endCursor: null | string;
   startCursor: null | string;
@@ -96,7 +102,9 @@ const getPage = (cache: Store, linkKey: string): Page | null => {
   return page;
 };
 
-export const relayPagination = (): Resolver => {
+export const relayPagination = (params: PaginationParams = {}): Resolver => {
+  const mergeMode = params.mergeMode || 'inwards';
+
   return (_parent, args, cache, info) => {
     const { parentKey: key, fieldName } = info;
     const fieldKey = joinKeys(key, keyOfField(fieldName, args));
@@ -124,7 +132,8 @@ export const relayPagination = (): Resolver => {
       return undefined;
     }
 
-    let edges: NullArray<string> = [];
+    let startEdges: NullArray<string> = [];
+    let endEdges: NullArray<string> = [];
     let pageInfo: PageInfo = { ...defaultPageInfo };
 
     for (let i = 0; i < size; i++) {
@@ -133,22 +142,28 @@ export const relayPagination = (): Resolver => {
       if (page === null) {
         continue;
       } else if (args.after) {
-        edges = concatEdges(cache, edges, page.edges);
+        startEdges = concatEdges(cache, startEdges, page.edges);
         pageInfo.endCursor = page.pageInfo.endCursor;
         pageInfo.hasNextPage = page.pageInfo.hasNextPage;
       } else if (args.before) {
-        edges = concatEdges(cache, page.edges, edges);
+        endEdges = concatEdges(cache, page.edges, endEdges);
         pageInfo.startCursor = page.pageInfo.startCursor;
         pageInfo.hasPreviousPage = page.pageInfo.hasPreviousPage;
-      } else if (!args.before && !args.after) {
-        edges = concatEdges(cache, edges, page.edges);
+      } else if (typeof args.last === 'number') {
+        endEdges = concatEdges(cache, endEdges, page.edges);
+        pageInfo = page.pageInfo;
+      } else {
+        startEdges = concatEdges(cache, startEdges, page.edges);
         pageInfo = page.pageInfo;
       }
     }
 
     return {
       __typename: typename,
-      edges,
+      edges:
+        mergeMode === 'inwards'
+          ? concatEdges(cache, startEdges, endEdges)
+          : concatEdges(cache, endEdges, startEdges),
       pageInfo: {
         __typename: pageInfoTypename,
         endCursor: pageInfo.endCursor,
