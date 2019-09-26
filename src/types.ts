@@ -33,13 +33,14 @@ export interface DataFields {
   [fieldName: string]: DataField;
 }
 
-export type Data = SystemFields & DataFields;
-export type Link<Key = string> = null | Key | NullArray<Key>;
-export type ResolvedLink = Link<Data>;
-
 export interface Variables {
   [name: string]: Scalar | Scalar[] | Variables | NullArray<Variables>;
 }
+
+export type Data = SystemFields & DataFields;
+export type Link<Key = string> = null | Key | NullArray<Key>;
+export type ResolvedLink = Link<Data>;
+export type Connection = [Variables, string];
 
 // This is an input operation
 export interface OperationRequest {
