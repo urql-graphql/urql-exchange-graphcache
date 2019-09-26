@@ -287,7 +287,9 @@ it('works with simultaneous forward and backward pagination', () => {
         }
         pageInfo {
           __typename
+          hasPreviousPage
           hasNextPage
+          startCursor
           endCursor
         }
       }
@@ -355,7 +357,7 @@ it('works with simultaneous forward and backward pagination', () => {
           __typename: 'ItemEdge',
           node: {
             __typename: 'Item',
-            id: '3',
+            id: '-1',
           },
         },
       ],
@@ -363,8 +365,8 @@ it('works with simultaneous forward and backward pagination', () => {
         __typename: 'PageInfo',
         hasNextPage: false,
         hasPreviousPage: true,
+        startCursor: '-1',
         endCursor: null,
-        startCursor: '3',
       },
     },
   };
@@ -372,54 +374,41 @@ it('works with simultaneous forward and backward pagination', () => {
   write(
     store,
     { query: Pagination, variables: { after: '1', first: 1 } },
-    pageTwo
+    pageOne
   );
   write(
     store,
     { query: Pagination, variables: { after: '2', first: 1 } },
-    pageThree
+    pageTwo
   );
   write(
     store,
     { query: Pagination, variables: { before: '1', last: 1 } },
-    pageOne
+    pageThree
   );
 
-  const firstRes = query(store, {
+  const res = query(store, {
     query: Pagination,
     variables: { before: '1', last: 1 },
   });
-  const secondRes = query(store, {
-    query: Pagination,
-    variables: { first: 1, after: '1' },
-  });
-  const thirdRes = query(store, {
-    query: Pagination,
-    variables: { first: 1, after: '2' },
-  });
 
-  expect(firstRes.partial).toBe(false);
-  expect(secondRes.partial).toBe(false);
-  expect(thirdRes.partial).toBe(false);
-  expect(firstRes.data).toEqual({
-    ...pageOne,
-    items: {
-      ...pageOne.items,
-      edges: [pageOne.items.edges[0]],
-    },
-  });
-  expect(secondRes.data).toEqual({
-    ...pageTwo,
-    items: {
-      ...pageTwo.items,
-      edges: [pageTwo.items.edges[0]],
-    },
-  });
-  expect(thirdRes.data).toEqual({
+  expect(res.partial).toBe(false);
+  expect(res.data).toEqual({
     ...pageThree,
     items: {
       ...pageThree.items,
-      edges: [pageThree.items.edges[0]],
+      edges: [
+        pageThree.items.edges[0],
+        pageOne.items.edges[0],
+        pageTwo.items.edges[0],
+      ],
+      pageInfo: {
+        ...pageThree.items.pageInfo,
+        hasPreviousPage: true,
+        hasNextPage: true,
+        startCursor: '-1',
+        endCursor: '2',
+      },
     },
   });
 });
