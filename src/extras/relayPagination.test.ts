@@ -355,18 +355,41 @@ it('works with simultaneous forward and backward pagination', () => {
     pageOne
   );
 
-  const res = query(store, { query: Pagination, variables: { first: 3 } });
+  const firstRes = query(store, {
+    query: Pagination,
+    variables: { before: '1', last: 1 },
+  });
+  const secondRes = query(store, {
+    query: Pagination,
+    variables: { first: 1, after: '1' },
+  });
+  const thirdRes = query(store, {
+    query: Pagination,
+    variables: { first: 1, after: '2' },
+  });
 
-  expect(res.partial).toBe(false);
-  expect(res.data).toEqual({
+  expect(firstRes.partial).toBe(false);
+  expect(secondRes.partial).toBe(false);
+  expect(thirdRes.partial).toBe(false);
+  expect(firstRes.data).toEqual({
     ...pageOne,
     items: {
       ...pageOne.items,
-      edges: [
-        pageOne.items.edges[0],
-        pageTwo.items.edges[0],
-        pageThree.items.edges[0],
-      ],
+      edges: [pageOne.items.edges[0]],
+    },
+  });
+  expect(secondRes.data).toEqual({
+    ...pageTwo,
+    items: {
+      ...pageTwo.items,
+      edges: [pageTwo.items.edges[0]],
+    },
+  });
+  expect(thirdRes.data).toEqual({
+    ...pageThree,
+    items: {
+      ...pageThree.items,
+      edges: [pageThree.items.edges[0]],
     },
   });
 });
