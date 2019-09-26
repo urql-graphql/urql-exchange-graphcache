@@ -355,7 +355,7 @@ it('works with simultaneous forward and backward pagination', () => {
     pageOne
   );
 
-  const res = query(store, { query: Pagination });
+  const res = query(store, { query: Pagination, variables: { first: 3 } });
 
   expect(res.partial).toBe(false);
   expect(res.data).toEqual({
