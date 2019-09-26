@@ -23,6 +23,31 @@ const defaultPageInfo: PageInfo = {
 
 const ensureKey = (x: any): string | null => (typeof x === 'string' ? x : null);
 
+const concatEdges = (
+  cache: Store,
+  leftEdges: NullArray<string>,
+  rightEdges: NullArray<string>
+) => {
+  const ids = new Set<string>();
+  for (let i = 0, l = leftEdges.length; i < l; i++) {
+    const edge = leftEdges[i];
+    const node = cache.resolve(edge, 'node');
+    if (typeof node === 'string') ids.add(node);
+  }
+
+  const newEdges = leftEdges.slice();
+  for (let i = 0, l = rightEdges.length; i < l; i++) {
+    const edge = rightEdges[i];
+    const node = cache.resolve(edge, 'node');
+    if (typeof node === 'string' && !ids.has(node)) {
+      ids.add(node);
+      newEdges.push(edge);
+    }
+  }
+
+  return newEdges;
+};
+
 const getPage = (cache: Store, linkKey: string): Page | null => {
   const link = cache.getLink(linkKey);
   if (!link || Array.isArray(link)) return null;
@@ -108,15 +133,15 @@ export const relayPagination = (): Resolver => {
       if (page === null) {
         continue;
       } else if (args.after) {
-        edges = edges.concat(page.edges);
+        edges = concatEdges(cache, edges, page.edges);
         pageInfo.endCursor = page.pageInfo.endCursor;
         pageInfo.hasNextPage = page.pageInfo.hasNextPage;
       } else if (args.before) {
-        edges = page.edges.concat(edges);
+        edges = concatEdges(cache, page.edges, edges);
         pageInfo.startCursor = page.pageInfo.startCursor;
         pageInfo.hasPreviousPage = page.pageInfo.hasPreviousPage;
       } else if (!args.before && !args.after) {
-        edges = edges.concat(page.edges);
+        edges = concatEdges(cache, edges, page.edges);
         pageInfo = page.pageInfo;
       }
     }
