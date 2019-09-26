@@ -1,112 +1,136 @@
-import { warning } from '../helpers/warning';
-import { Resolver, NullArray, Variables } from '../types';
+import { Store } from '../store';
+import { Resolver, NullArray } from '../types';
+import { joinKeys, keyOfField } from '../helpers';
 
-interface ConnectionArgs {
-  first?: number;
-  last?: number;
-  before?: string;
-  after?: string;
+interface PageInfo {
+  endCursor: null | string;
+  startCursor: null | string;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
+interface Page {
+  edges: NullArray<string>;
+  pageInfo: PageInfo;
+}
+
+const defaultPageInfo: PageInfo = {
+  endCursor: null,
+  startCursor: null,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
+
+const ensureKey = (x: any): string | null => (typeof x === 'string' ? x : null);
+
+const getPage = (cache: Store, linkKey: string): Page | null => {
+  const link = cache.getLink(linkKey);
+  if (!link || Array.isArray(link)) return null;
+
+  const edges = cache.resolve(link, 'edges') as NullArray<string>;
+  if (
+    !Array.isArray(edges) ||
+    !edges.every(x => x === null || typeof x === 'string')
+  ) {
+    return null;
+  }
+
+  const page: Page = { edges, pageInfo: defaultPageInfo };
+  const pageInfoKey = cache.resolve(link, 'pageInfo');
+  if (typeof pageInfoKey === 'string') {
+    const endCursor = ensureKey(cache.resolve(pageInfoKey, 'endCursor'));
+    const startCursor = ensureKey(cache.resolve(pageInfoKey, 'startCursor'));
+    const hasNextPage = cache.resolve(pageInfoKey, 'hasNextPage');
+    const hasPreviousPage = cache.resolve(pageInfoKey, 'hasPreviousPage');
+
+    const pageInfo: PageInfo = (page.pageInfo = {
+      hasNextPage: typeof hasNextPage === 'boolean' ? hasNextPage : !!endCursor,
+      hasPreviousPage:
+        typeof hasPreviousPage === 'boolean' ? hasPreviousPage : !!startCursor,
+      endCursor,
+      startCursor,
+    });
+
+    if (pageInfo.endCursor === null) {
+      const edge = edges[edges.length - 1];
+      if (edge) {
+        const endCursor = cache.resolve(edge, 'cursor');
+        pageInfo.endCursor = ensureKey(endCursor);
+      }
+    }
+
+    if (pageInfo.startCursor === null) {
+      const edge = edges[0];
+      if (edge) {
+        const startCursor = cache.resolve(edge, 'cursor');
+        pageInfo.startCursor = ensureKey(startCursor);
+      }
+    }
+  }
+
+  return page;
+};
+
 export const relayPagination = (): Resolver => {
-  return (_, args, cache, info) => {
+  return (_parent, args, cache, info) => {
     const { parentKey: key, fieldName } = info;
-    const { first, last } = args as ConnectionArgs;
+    const fieldKey = joinKeys(key, keyOfField(fieldName, args));
+    const connections = cache.resolveConnections(key, fieldName);
+    const size = connections.length;
 
-    if (typeof first === 'number' && typeof last === 'number') {
-      warning(
-        false,
-        'relayPagination(...) was used with both a `first` and `last` argument,\n' +
-          'but it must not be used with both at the same time.'
-      );
-
-      return null;
-    } else if (typeof first !== 'number' && typeof last !== 'number') {
-      warning(
-        false,
-        'relayPagination(...) was used without a `first` and `last` argument,\n' +
-          'but it must not be used with at least one of them.'
-      );
-
-      return null;
+    let hasCachedConnection = false;
+    for (let i = 0; i < size; i++) {
+      if (connections[i][1] === fieldKey) {
+        hasCachedConnection = true;
+        break;
+      }
     }
 
-    const isForwardPagination = typeof first === 'number';
-    const size = (isForwardPagination ? first : last) || 0;
-
-    if (size <= 0) {
-      warning(
-        false,
-        'relayPagination(...) was used with a `first` or `last` argument that is less than zero.'
-      );
-    }
-
-    const childArgs: Variables = {};
-    if (typeof first === 'number') childArgs.first = first;
-    if (typeof last === 'number') childArgs.last = last;
-
-    const mergedEdges: NullArray<string> = [];
-
-    let dataKey = cache.resolve(key, fieldName, childArgs) as string;
-    let edgesKeys = cache.resolve(dataKey, 'edges') as string;
-    let infoKey = cache.resolve(dataKey, 'pageInfo') as string;
-    let prevInfoKey: string | null = null;
-
-    const connectionType = cache.resolve(dataKey, '__typename');
-    if (!connectionType) {
+    const entityKey = cache.resolveValueOrLink(fieldKey);
+    if (!hasCachedConnection || typeof entityKey !== 'string') {
       return undefined;
     }
 
-    while (dataKey !== null && Array.isArray(edgesKeys)) {
-      // Store the last valid info key
-      prevInfoKey = infoKey;
+    const typename = cache.resolve(entityKey, '__typename');
 
-      // Add the receives nodes to the list of nodes
-      if (isForwardPagination) {
-        for (let i = 0; i < size; i++) mergedEdges.push(edgesKeys[i]);
-      } else {
-        for (let i = size - 1; i >= 0; i--) mergedEdges.unshift(edgesKeys[i]);
+    const pageInfoKey = ensureKey(cache.resolve(entityKey, 'pageInfo'));
+    const pageInfoTypename = cache.resolve(pageInfoKey, '__typename');
+    if (typeof typename !== 'string' || typeof pageInfoTypename !== 'string') {
+      return undefined;
+    }
+
+    let edges: NullArray<string> = [];
+    let pageInfo: PageInfo = { ...defaultPageInfo };
+
+    for (let i = 0; i < size; i++) {
+      const [args, linkKey] = connections[i];
+      const page = getPage(cache, linkKey);
+      if (page === null) {
+        continue;
+      } else if (args.after) {
+        edges = edges.concat(page.edges);
+        pageInfo.endCursor = page.pageInfo.endCursor;
+        pageInfo.hasNextPage = page.pageInfo.hasNextPage;
+      } else if (args.before) {
+        edges = page.edges.concat(edges);
+        pageInfo.startCursor = page.pageInfo.startCursor;
+        pageInfo.hasPreviousPage = page.pageInfo.hasPreviousPage;
+      } else if (!args.before && !args.after) {
+        edges = edges.concat(page.edges);
+        pageInfo = page.pageInfo;
       }
-
-      // Stop traversing pages when no next page is expected
-      const hasMore = cache.resolve(
-        infoKey,
-        isForwardPagination ? 'hasNextPage' : 'hasPreviousPage'
-      );
-      if (hasMore === false || edgesKeys.length === 0) break;
-
-      // Retrive the cursor from PageInfo
-      let nextCursor = infoKey
-        ? cache.resolve(
-            infoKey,
-            isForwardPagination ? 'endCursor' : 'startCursor'
-          )
-        : null;
-
-      // If no cursor is on PageInfo then fall back to edges.cursor
-      if (!nextCursor) {
-        const edge = isForwardPagination ? edgesKeys[size - 1] : edgesKeys[0];
-        nextCursor = edge ? cache.resolve(edge, 'cursor') : null;
-        if (!nextCursor) break;
-      }
-
-      // Update the cursor on the child arguments
-      if (isForwardPagination) {
-        childArgs.after = nextCursor || null;
-      } else {
-        childArgs.before = nextCursor || null;
-      }
-
-      // Retrive the next page of data
-      dataKey = cache.resolve(key, fieldName, childArgs) as string;
-      edgesKeys = cache.resolve(dataKey, 'edges') as string;
-      infoKey = cache.resolve(dataKey, 'pageInfo') as string;
     }
 
     return {
-      __typename: connectionType,
-      edges: mergedEdges,
-      pageInfo: prevInfoKey || undefined,
-    } as any;
+      __typename: typename,
+      edges,
+      pageInfo: {
+        __typename: pageInfoTypename,
+        endCursor: pageInfo.endCursor,
+        startCursor: pageInfo.startCursor,
+        hasNextPage: pageInfo.hasNextPage,
+        hasPreviousPage: pageInfo.hasPreviousPage,
+      },
+    };
   };
 };
