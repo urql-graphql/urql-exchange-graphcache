@@ -4,6 +4,7 @@ import { createRequest } from 'urql';
 import * as Pessimism from 'pessimism';
 
 import {
+  Cache,
   EntityField,
   Link,
   Connection,
@@ -11,6 +12,7 @@ import {
   DataField,
   Variables,
   Data,
+  QueryInput,
   UpdatesConfig,
   OptimisticMutationConfig,
   KeyingConfig,
@@ -75,12 +77,7 @@ const mapRemove = <T>(map: Pessimism.Map<T>, key: string) => {
 
 type RootField = 'query' | 'mutation' | 'subscription';
 
-interface QueryInput {
-  query: string | DocumentNode;
-  variables?: Variables;
-}
-
-export class Store {
+export class Store implements Cache {
   records: Pessimism.Map<EntityField>;
   connections: Pessimism.Map<Connection[]>;
   links: Pessimism.Map<Link>;
@@ -300,8 +297,8 @@ export class Store {
     return connections !== undefined ? connections : [];
   }
 
-  invalidateQuery(dataQuery: DocumentNode, variables: Variables) {
-    invalidate(this, { query: dataQuery, variables });
+  invalidateQuery(query: string | DocumentNode, variables?: Variables) {
+    invalidate(this, createRequest(query, variables));
   }
 
   hasField(key: string): boolean {
@@ -309,8 +306,8 @@ export class Store {
   }
 
   updateQuery(
-    input: { query: string | DocumentNode; variables?: Variables },
-    updater: (data: Data | null) => null | Data
+    input: QueryInput,
+    updater: (data: Data | null) => Data | null
   ): void {
     const request = createRequest(input.query, input.variables);
     const output = updater(this.readQuery(request as QueryInput));

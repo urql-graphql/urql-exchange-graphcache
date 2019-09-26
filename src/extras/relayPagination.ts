@@ -1,5 +1,4 @@
-import { Store } from '../store';
-import { Resolver, NullArray } from '../types';
+import { Cache, Resolver, NullArray } from '../types';
 
 export type MergeMode = 'outwards' | 'inwards';
 
@@ -29,7 +28,7 @@ const defaultPageInfo: PageInfo = {
 const ensureKey = (x: any): string | null => (typeof x === 'string' ? x : null);
 
 const concatEdges = (
-  cache: Store,
+  cache: Cache,
   leftEdges: NullArray<string>,
   rightEdges: NullArray<string>
 ) => {
@@ -53,9 +52,9 @@ const concatEdges = (
   return newEdges;
 };
 
-const getPage = (cache: Store, linkKey: string): Page | null => {
-  const link = cache.getLink(linkKey);
-  if (!link || Array.isArray(link)) return null;
+const getPage = (cache: Cache, linkKey: string): Page | null => {
+  const link = ensureKey(cache.resolveValueOrLink(linkKey));
+  if (!link) return null;
 
   const edges = cache.resolve(link, 'edges') as NullArray<string>;
   if (
