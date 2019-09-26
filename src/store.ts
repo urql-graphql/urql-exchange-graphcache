@@ -270,7 +270,6 @@ export class Store {
       addDependency(entity);
       return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
     } else {
-      // This gives us __typename:key
       const entityKey = this.keyOfEntity(entity);
       if (entityKey === null) return null;
       addDependency(entityKey);
@@ -278,6 +277,27 @@ export class Store {
         joinKeys(entityKey, keyOfField(field, args))
       );
     }
+  }
+
+  resolveConnections(
+    entity: Data | string | null,
+    field: string
+  ): Connection[] {
+    let connections: undefined | Connection[];
+    if (typeof entity === 'string') {
+      connections = Pessimism.get(this.connections, joinKeys(entity, field));
+    } else if (entity !== null) {
+      const entityKey = this.keyOfEntity(entity);
+      if (entityKey !== null) {
+        addDependency(entityKey);
+        connections = Pessimism.get(
+          this.connections,
+          joinKeys(entityKey, field)
+        );
+      }
+    }
+
+    return connections !== undefined ? connections : [];
   }
 
   invalidateQuery(dataQuery: DocumentNode, variables: Variables) {
