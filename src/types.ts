@@ -51,6 +51,7 @@ export interface OperationRequest {
 export interface ResolveInfo {
   parentTypeName: string;
   parentKey: string;
+  parentFieldKey: string;
   fieldName: string;
   fragments: Fragments;
   variables: Variables;

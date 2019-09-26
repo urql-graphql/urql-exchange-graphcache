@@ -42,6 +42,7 @@ export interface WriteResult {
 interface Context {
   parentTypeName: string;
   parentKey: string;
+  parentFieldKey: string;
   fieldName: string;
   result: WriteResult;
   store: Store;
@@ -77,6 +78,7 @@ export const startWrite = (
   const ctx: Context = {
     parentTypeName: operationName,
     parentKey: operationName,
+    parentFieldKey: '',
     fieldName: '',
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
@@ -115,6 +117,7 @@ export const writeOptimistic = (
   const ctx: Context = {
     parentTypeName: mutationRootKey,
     parentKey: mutationRootKey,
+    parentFieldKey: '',
     fieldName: '',
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
@@ -192,6 +195,7 @@ export const writeFragment = (
   const ctx: Context = {
     parentTypeName: typename,
     parentKey: entityKey,
+    parentFieldKey: '',
     fieldName: '',
     variables: variables || {},
     fragments,
@@ -366,9 +370,11 @@ const writeRoot = (
     }
 
     if (isRootField) {
+      const fieldKey = joinKeys(typename, keyOfField(fieldName, fieldArgs));
       // We have to update the context to reflect up-to-date ResolveInfo
       ctx.parentTypeName = typename;
       ctx.parentKey = typename;
+      ctx.parentFieldKey = fieldKey;
       ctx.fieldName = fieldName;
 
       // We run side-effect updates after the default, normalized updates

@@ -44,6 +44,7 @@ export interface QueryResult {
 interface Context {
   parentTypeName: string;
   parentKey: string;
+  parentFieldKey: string;
   fieldName: string;
   partial: boolean;
   store: Store;
@@ -75,6 +76,7 @@ export const read = (
   const ctx: Context = {
     parentTypeName: rootKey,
     parentKey: rootKey,
+    parentFieldKey: '',
     fieldName: '',
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
@@ -203,6 +205,7 @@ export const readFragment = (
   const ctx: Context = {
     parentTypeName: typename,
     parentKey: entityKey,
+    parentFieldKey: '',
     fieldName: '',
     variables: variables || {},
     fragments,
@@ -262,6 +265,7 @@ const readSelection = (
       // that the resolver will receive
       ctx.parentTypeName = typename;
       ctx.parentKey = entityKey;
+      ctx.parentFieldKey = fieldKey;
       ctx.fieldName = fieldName;
 
       // We have a resolver for this field.
