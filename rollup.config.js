@@ -23,8 +23,6 @@ if (pkgInfo.dependencies) {
   external.push(...Object.keys(dependencies));
 }
 
-external = external.filter(x => x !== 'tiny-invariant');
-
 const externalPredicate = new RegExp(`^(${external.join('|')})($|/)`);
 const externalTest = id => {
   if (id === 'babel-plugin-transform-async-to-promises/helpers') {

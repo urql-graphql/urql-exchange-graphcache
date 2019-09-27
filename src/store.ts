@@ -1,4 +1,4 @@
-import invariant from 'invariant';
+import { invariant } from '../helpers/invariant';
 import { DocumentNode } from 'graphql';
 import { createRequest } from 'urql';
 import * as Pessimism from 'pessimism';

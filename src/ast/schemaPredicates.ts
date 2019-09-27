@@ -1,5 +1,6 @@
-import invariant from 'invariant';
+import { invariant } from '../helpers/invariant';
 import { warning } from '../helpers/warning';
+
 import {
   buildClientSchema,
   isNullableType,
