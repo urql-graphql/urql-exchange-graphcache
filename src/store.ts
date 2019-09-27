@@ -18,7 +18,7 @@ import {
 } from './types';
 
 import { joinKeys, keyOfField } from './helpers';
-import { invariant } from './helpers/invariant';
+import { invariant } from './helpers/help';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';

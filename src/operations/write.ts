@@ -1,5 +1,3 @@
-import { invariant } from '../helpers/invariant';
-import { warning } from '../helpers/warning';
 import { DocumentNode, FragmentDefinitionNode } from 'graphql';
 
 import {
@@ -31,6 +29,7 @@ import {
   clearStoreState,
 } from '../store';
 
+import { invariant, warning } from '../helpers/help';
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';

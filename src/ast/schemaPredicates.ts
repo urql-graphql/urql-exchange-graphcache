@@ -1,6 +1,3 @@
-import { invariant } from '../helpers/invariant';
-import { warning } from '../helpers/warning';
-
 import {
   buildClientSchema,
   isNullableType,
@@ -12,6 +9,8 @@ import {
   GraphQLInterfaceType,
   GraphQLUnionType,
 } from 'graphql';
+
+import { invariant, warning } from '../helpers/help';
 
 export class SchemaPredicates {
   schema: GraphQLSchema;

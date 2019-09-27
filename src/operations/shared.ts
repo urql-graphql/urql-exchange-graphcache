@@ -1,8 +1,8 @@
-import { warning } from '../helpers/warning';
 import { FieldNode, InlineFragmentNode, FragmentDefinitionNode } from 'graphql';
 import { Fragments, Variables, SelectionSet, Scalar } from '../types';
 import { Store } from '../store';
 import { joinKeys, keyOfField } from '../helpers';
+import { warning } from '../helpers/help';
 
 import {
   getTypeCondition,

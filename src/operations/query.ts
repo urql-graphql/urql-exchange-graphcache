@@ -1,5 +1,3 @@
-import { warning } from '../helpers/warning';
-
 import {
   getFragments,
   getMainOperation,
@@ -30,6 +28,7 @@ import {
   clearStoreState,
 } from '../store';
 
+import { warning } from '../helpers/help';
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';

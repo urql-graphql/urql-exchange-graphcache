@@ -1,5 +1,3 @@
-import { invariant } from '../helpers/invariant';
-
 import {
   SelectionNode,
   DefinitionNode,
@@ -10,6 +8,7 @@ import {
   Kind,
 } from 'graphql';
 
+import { invariant } from '../helpers/help';
 import { getName } from './node';
 import { Fragments, Variables } from '../types';
 
