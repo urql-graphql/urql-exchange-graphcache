@@ -7,7 +7,9 @@ import buble from 'rollup-plugin-buble';
 import babel from 'rollup-plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import replace from 'rollup-plugin-replace';
-import transfromInvariantWarning from './scripts/transform-invariant-warning';
+
+import transformPipe from './scripts/transform-pipe';
+import transformInvariantWarning from './scripts/transform-invariant-warning';
 
 const pkgInfo = require('./package.json');
 const { main, peerDependencies, dependencies } = pkgInfo;
@@ -120,7 +122,8 @@ const makePlugins = (isProduction = false) => [
     exclude: 'node_modules/**',
     presets: [],
     plugins: [
-      transfromInvariantWarning,
+      transformPipe,
+      transformInvariantWarning,
       ['babel-plugin-closure-elimination', {}],
       ['@babel/plugin-transform-object-assign', {}],
       [
