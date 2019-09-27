@@ -1,4 +1,3 @@
-import { invariant } from '../helpers/invariant';
 import { DocumentNode } from 'graphql';
 import { createRequest } from 'urql';
 import * as Pessimism from 'pessimism';
@@ -19,6 +18,7 @@ import {
 } from './types';
 
 import { joinKeys, keyOfField } from './helpers';
+import { invariant } from './helpers/invariant';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';

@@ -1,9 +1,7 @@
-export const error = (message: string) => {
-  const error = new Error(message);
-  error.name = 'Graphcache Error';
-  return error;
-};
-
-export const invariant = (clause: any, msg: string) => {
-  if (!clause) throw error(msg);
+export const invariant = (clause: any, message: string) => {
+  if (!clause) {
+    const error = new Error(message);
+    error.name = 'Graphcache Error';
+    throw error;
+  }
 };
