@@ -163,7 +163,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       if (!ops.has(op.key)) {
         ops.set(
           op.key,
-          op.context.requestPolicy === 'network-only'
+          getRequestPolicy(op) === 'network-only'
             ? toRequestPolicy(op, 'cache-and-network')
             : op
         );
