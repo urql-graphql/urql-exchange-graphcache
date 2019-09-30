@@ -35,7 +35,11 @@ const plugin = ({ template, types: t }) => {
               t.stringLiteral('production')
             ),
             formerNode,
-            t.stringLiteral('')
+            t.binaryExpression(
+              '+',
+              t.stringLiteral('Minified error #'),
+              path.node.arguments[2]
+            )
           )
         }
       }
