@@ -125,6 +125,9 @@ The value that you returns needs to contain a `__typename` field and this field 
 match the `__typename` field that exists in the cache, if any. This is because it's not
 possible to return a different type for a single field.
 
+Please check your schema for the type that your resolver has to return, then add a
+`__typename` field to your returned resolver value that matches this type.
+
 ## (9) Invalid resolver value <a id="9"></a>
 
 > Invalid resolver value: The field at `???` is a scalar (number, boolean, etc),
