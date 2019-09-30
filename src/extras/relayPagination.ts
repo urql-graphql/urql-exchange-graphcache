@@ -159,6 +159,15 @@ export const relayPagination = (params: PaginationParams = {}): Resolver => {
       return undefined;
     }
 
+    const hasCurrentPage = !!cache.resolve(entityKey, '__typename');
+    if (!hasCurrentPage) {
+      if ((info as any).schemaPredicates === undefined) {
+        return undefined;
+      } else {
+        info.partial = true;
+      }
+    }
+
     return {
       __typename: typename,
       edges:
