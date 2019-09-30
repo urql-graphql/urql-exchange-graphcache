@@ -97,8 +97,8 @@ document that doesn't contain a main fragment.
 This error occurs when no main fragment can be found, because the `DocumentNode`
 is maybe empty or does not contain fragments.
 
-When you're calling a fragment method, please ensure that you're only passing one
-or more fragments in your GraphQL document.
+When you're calling a fragment method, please ensure that you're only passing fragments
+in your GraphQL document. The first fragment will be used to start writing data.
 
 ## (7) Can't generate a key for readFragment(...) <a id="7"></a>
 
@@ -158,8 +158,8 @@ document that doesn't contain a main fragment.
 This error occurs when no main fragment can be found, because the `DocumentNode`
 is maybe empty or does not contain fragments.
 
-When you're calling a fragment method, please ensure that you're only passing one
-or more fragments in your GraphQL document.
+When you're calling a fragment method, please ensure that you're only passing fragments
+in your GraphQL document. The first fragment will be used to start writing data.
 
 ## (12) Can't generate a key for writeFragment(...) <a id="12"></a>
 
