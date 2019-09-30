@@ -59,22 +59,8 @@ const getField = (
   typename: string,
   fieldName: string
 ) => {
-  const type = schema.getType(typename);
-  expectObjectType(type, typename);
-
-  const object = type as GraphQLObjectType;
-  if (object === undefined) {
-    warning(
-      false,
-      'Invalid type: The type `' +
-        typename +
-        '` is not a type in the defined schema, ' +
-        'but the GraphQL document expects it to exist.\n' +
-        'Traversal will continue, however this may lead to undefined behavior!'
-    );
-
-    return undefined;
-  }
+  const object = schema.getType(typename) as GraphQLObjectType;
+  expectObjectType(object, typename);
 
   const field = object.getFields()[fieldName];
   if (field === undefined) {
@@ -86,7 +72,8 @@ const getField = (
         typename +
         '`, ' +
         'but the GraphQL document expects it to exist.\n' +
-        'Traversal will continue, however this may lead to undefined behavior!'
+        'Traversal will continue, however this may lead to undefined behavior!',
+      4
     );
 
     return undefined;
@@ -98,19 +85,21 @@ const getField = (
 const expectObjectType = (type: any, typename: string) => {
   invariant(
     type instanceof GraphQLObjectType,
-    'Invalid type: The type `' +
+    'Invalid Object type: The type `' +
       typename +
       '` is not an object in the defined schema, ' +
-      'but the GraphQL document is traversing it.'
+      'but the GraphQL document is traversing it.',
+    3
   );
 };
 
 const expectAbstractType = (type: any, typename: string) => {
   invariant(
     type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType,
-    'Invalid type: The type `' +
+    'Invalid Abstract type: The type `' +
       typename +
       '` is not an Interface or Union type in the defined schema, ' +
-      'but a fragment in the GraphQL document is using it as a type condition.'
+      'but a fragment in the GraphQL document is using it as a type condition.',
+    5
   );
 };

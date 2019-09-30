@@ -29,7 +29,8 @@ export const getMainOperation = (
   invariant(
     !!operation,
     'Invalid GraphQL document: All GraphQL documents must contain an OperationDefinition' +
-      'node for a query, subscription, or mutation.'
+      'node for a query, subscription, or mutation.',
+    1
   );
 
   return operation;

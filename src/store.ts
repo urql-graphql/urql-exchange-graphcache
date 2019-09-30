@@ -37,7 +37,8 @@ const refValue = <T>(ref: Ref<T>): T => {
     ref.current !== null,
     'Invalid Cache call: The cache may only be accessed or mutated during' +
       'operations like write or query, or as part of its resolvers, updaters, ' +
-      'or optimistic configs.'
+      'or optimistic configs.',
+    2
   );
 
   return ref.current as T;

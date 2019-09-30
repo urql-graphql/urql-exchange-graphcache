@@ -110,7 +110,8 @@ export const writeOptimistic = (
   invariant(
     operationName === mutationRootKey,
     'writeOptimistic(...) was called with an operation that is not a mutation.\n' +
-      'This case is unsupported and should never occur.'
+      'This case is unsupported and should never occur.',
+    10
   );
 
   const ctx: Context = {
@@ -173,7 +174,8 @@ export const writeFragment = (
     return warning(
       false,
       'writeFragment(...) was called with an empty fragment.\n' +
-        'You have to call it with at least one fragment in your GraphQL document.'
+        'You have to call it with at least one fragment in your GraphQL document.',
+      11
     );
   }
 
@@ -187,7 +189,8 @@ export const writeFragment = (
       "Can't generate a key for writeFragment(...) data.\n" +
         'You have to pass an `id` or `_id` field or create a custom `keys` config for `' +
         typename +
-        '`.'
+        '`.',
+      12
     );
   }
 
@@ -243,12 +246,13 @@ const writeSelection = (
 
         warning(
           false,
-          'Invalid value: The field at `' +
+          'Invalid undefined: The field at `' +
             fieldKey +
             '` is `undefined`, but the GraphQL query expects a ' +
             expected +
             ' for this field.' +
-            advice
+            advice,
+          13
         );
 
         continue; // Skip this field
@@ -275,7 +279,8 @@ const writeSelection = (
           fieldKey +
           '` is a scalar (number, boolean, etc)' +
           ', but the GraphQL query expects a selection set for this field.\n' +
-          'The value will still be cached, however this may lead to undefined behavior!'
+          'The value will still be cached, however this may lead to undefined behavior!',
+        14
       );
 
       // This is a rare case for invalid entities
@@ -331,7 +336,8 @@ const writeField = (
         'Entities without keys will be embedded directly on the parent entity. ' +
         'If this is intentional, create a `keys` config for `' +
         typename +
-        '` that always returns null.'
+        '` that always returns null.',
+      15
     );
   }
 

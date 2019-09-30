@@ -43,7 +43,8 @@ const isFragmentHeuristicallyMatching = (
       typeCondition +
       '` may be an' +
       'interface.\nA schema needs to be defined for this match to be deterministic, ' +
-      'otherwise the fragment will be matched heuristically!'
+      'otherwise the fragment will be matched heuristically!',
+    16
   );
 
   return !getSelectionSet(node).some(node => {
