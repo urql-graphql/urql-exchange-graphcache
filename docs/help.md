@@ -139,7 +139,7 @@ received a number, boolean, or another scalar from your resolver.
 Please check that your resolvers return scalars where there's no selection set,
 and entities where there is one.
 
-## (10) writeOptimistic(...) was called with sth that isn't a mutation <a id="10"></a>
+## (10) writeOptimistic(...) was called with an operation that isn't a mutation <a id="10"></a>
 
 > writeOptimistic(...) was called with an operation that is not a mutation.
 > This case is unsupported and should never occur.
