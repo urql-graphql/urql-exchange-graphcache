@@ -60,14 +60,12 @@ const isMutationOperation = (op: Operation): boolean =>
 
 // Returns whether an operation can potentially be read from cache
 const isCacheableQuery = (op: Operation): boolean => {
-  const policy = getRequestPolicy(op);
-  return isQueryOperation(op) && policy !== 'network-only';
+  return isQueryOperation(op) && getRequestPolicy(op) !== 'network-only';
 };
 
 // Returns whether an operation potentially triggers an optimistic update
 const isOptimisticMutation = (op: Operation): boolean => {
-  const policy = getRequestPolicy(op);
-  return isMutationOperation(op) && policy !== 'network-only';
+  return isMutationOperation(op) && getRequestPolicy(op) !== 'network-only';
 };
 
 // Copy an operation and change the requestPolicy to skip the cache
