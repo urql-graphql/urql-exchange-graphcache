@@ -8,6 +8,7 @@ import babel from 'rollup-plugin-babel';
 import { terser } from 'rollup-plugin-terser';
 import replace from 'rollup-plugin-replace';
 import transfromInvariantWarning from './scripts/transform-invariant-warning';
+import transformPipe from './scripts/transform-pipe';
 
 const pkgInfo = require('./package.json');
 const { main, peerDependencies, dependencies } = pkgInfo;
@@ -123,6 +124,7 @@ const makePlugins = (isProduction = false) => [
     presets: [],
     plugins: [
       transfromInvariantWarning,
+      transformPipe,
       ['babel-plugin-closure-elimination', {}],
       ['@babel/plugin-transform-object-assign', {}],
       [
