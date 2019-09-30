@@ -29,9 +29,11 @@ is maybe empty or only contains fragments.
 > or optimistic configs.
 
 If you're somehow accessing the `Cache` (an instance of `Store`) outside of any
-of the usual operations then this error will be thrown. Typically you'd only
-use the cache inside resolvers that you pass to the `cacheExchange` as a
-config.
+of the usual operations then this error will be thrown.
+
+Please make sure that you're only calling methods on the `cache` as part of
+configs that you pass to your `cacheExchange`. Outside of these functions the cache
+must not be changed.
 
 However when you're not using the `cacheExchange` and are trying to use the
 `Store` on its own, then you may run into issues where its global state wasn't
