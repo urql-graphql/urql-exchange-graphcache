@@ -230,8 +230,9 @@ export class Store implements Cache {
   }
 
   writeConnection(key: string, linkKey: string, args: Variables | null) {
-    if (this.getLink(linkKey) === undefined || args === null)
+    if (this.getLink(linkKey) !== undefined || args === null) {
       return this.connections;
+    }
 
     let connections = Pessimism.get(this.connections, key);
     const connection: Connection = [args, linkKey];
