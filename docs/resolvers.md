@@ -146,4 +146,18 @@ const cache = cacheExchange({
 });
 ```
 
+`relayPagination` accepts an object of options, for now we are offering one
+option and that is the `mergeMode`. This defaults to `inwards` and can otherwise
+be set to `outwards`. This will determine how your edges are merged, from right to left
+or from left to right.
+
+So for example consider a scenario where we have queried:
+
+- before: 1 --> id 1
+- before: 2 --> id 2
+- after: 2 --> id 3
+
+With `outwards` when we would query `before: 1` again we would get `[3 2 1]` and with `inwards`
+we would receive `[1 2 3]`.
+
 [Back](../README.md)
