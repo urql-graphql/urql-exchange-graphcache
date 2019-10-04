@@ -123,4 +123,27 @@ const data = cache.readFragment(gql`
 This way we'll get the Todo with id 1 and the relevant data we are askng for in the
 fragment.
 
+## Pagination
+
+Given you have a [relay-compatible schema](https://facebook.github.io/relay/graphql/connections.htm)
+on your backend we offer the possibility of endless data resolving.
+This means that when you fetch the next page in your data
+received in `useQuery` you'll see the previous pages as well. This is usefull for
+endless scrolling.
+
+You can achieve this by importing `relayPagination` from `@urql/exchange-graphcache/extras`.
+
+```js
+import { cacheExchange } from '@urql/exchange-graphcache';
+import { relayPagination } from '@urql/exchange-graphcache/extras';
+
+const cache = cacheExchange({
+  resolvers: {
+    Query: {
+      todos: relayPagination(),
+    },
+  },
+});
+```
+
 [Back](../README.md)
