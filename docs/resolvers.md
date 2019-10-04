@@ -148,16 +148,24 @@ const cache = cacheExchange({
 
 `relayPagination` accepts an object of options, for now we are offering one
 option and that is the `mergeMode`. This defaults to `inwards` and can otherwise
-be set to `outwards`. This will determine how your edges are merged, from right to left
-or from left to right.
+be set to `outwards`. This will handle how pages are merged when you paginate
+forwards and backwards at the same time. outwards pagination assumes that pages
+that come in last should be merged before the first pages, so that the list
+grows outwards in both directions. The default inwards pagination assumes that
+pagination last pages is part of the same list and come after first pages.
+Hence it merges pages so that they converge in the middle.
 
-So for example consider a scenario where we have queried:
+Example series of requets:
 
-- before: 1 --> id 1
-- before: 2 --> id 2
-- after: 2 --> id 3
+```
+first: 1 => node 1, endCursor: a
+first: 1, after: 1 => node 2, endCursor: b
+...
+last: 1 => node 99, startCursor: c
+last: 1, before: c => node 89, startCursor: d
+```
 
-With `outwards` when we would query `before: 1` again we would get `[3 2 1]` and with `inwards`
-we would receive `[1 2 3]`.
+With inwards merging the nodes will be in this order: `[1, 2, ..., 89, 99]`
+And with outwards merging: `[..., 89, 99, 1, 2, ...]`
 
 [Back](../README.md)
