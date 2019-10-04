@@ -155,7 +155,7 @@ grows outwards in both directions. The default inwards pagination assumes that
 pagination last pages is part of the same list and come after first pages.
 Hence it merges pages so that they converge in the middle.
 
-Example series of requets:
+Example series of requests:
 
 ```
 first: 1 => node 1, endCursor: a
