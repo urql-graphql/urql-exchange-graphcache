@@ -45,14 +45,20 @@ const refValue = <T>(ref: Ref<T | null>): T => {
 export const initStoreState = (optimisticKey: null | number) => {
   currentDependencies.current = new Set();
   currentOptimisticKey.current = optimisticKey;
-  currentDebugStack.current = [];
+
+  if (process.env.NODE_ENV !== 'production') {
+    currentDebugStack.current = [];
+  }
 };
 
 // Finalise a store run by clearing its internal state
 export const clearStoreState = () => {
   currentDependencies.current = null;
   currentOptimisticKey.current = null;
-  currentDebugStack.current = [];
+
+  if (process.env.NODE_ENV !== 'production') {
+    currentDebugStack.current = [];
+  }
 };
 
 export const getCurrentDependencies = () => refValue(currentDependencies);
