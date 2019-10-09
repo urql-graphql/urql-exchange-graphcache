@@ -2,7 +2,7 @@ import { FieldNode, InlineFragmentNode, FragmentDefinitionNode } from 'graphql';
 import { Fragments, Variables, SelectionSet, Scalar } from '../types';
 import { Store } from '../store';
 import { joinKeys, keyOfField } from '../helpers';
-import { warning } from '../helpers/help';
+import { warn } from '../helpers/help';
 
 import {
   getTypeCondition,
@@ -32,8 +32,7 @@ const isFragmentHeuristicallyMatching = (
   const typeCondition = getTypeCondition(node);
   if (typename === typeCondition) return true;
 
-  warning(
-    false,
+  warn(
     'Heuristic Fragment Matching: A fragment is trying to match against the `' +
       typename +
       '` type, ' +

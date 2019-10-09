@@ -17,8 +17,8 @@ export const invariant = (clause: any, message: string, code: number) => {
   }
 };
 
-export const warning = (clause: any, message: string, code: number) => {
-  if (!clause && !cache.has(message)) {
+export const warn = (message: string, code: number) => {
+  if (!cache.has(message)) {
     console.warn(message + helpUrl + code);
     cache.add(message);
   }
