@@ -28,7 +28,7 @@ import {
   clearStoreState,
 } from '../store';
 
-import { warn } from '../helpers/help';
+import { warn, pushDebugNode } from '../helpers/help';
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';
@@ -83,6 +83,10 @@ export const read = (
     store,
     schemaPredicates: store.schemaPredicates,
   };
+
+  if (process.env.NODE_ENV !== 'production') {
+    pushDebugNode(rootKey, operation);
+  }
 
   let data = input || Object.create(null);
   data =
@@ -201,6 +205,10 @@ export const readFragment = (
     );
 
     return null;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    pushDebugNode(typename, fragment);
   }
 
   const ctx: Context = {

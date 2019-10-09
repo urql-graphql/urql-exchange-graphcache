@@ -29,7 +29,7 @@ import {
   clearStoreState,
 } from '../store';
 
-import { invariant, warn } from '../helpers/help';
+import { invariant, warn, pushDebugNode } from '../helpers/help';
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';
@@ -86,6 +86,10 @@ export const startWrite = (
     schemaPredicates: store.schemaPredicates,
   };
 
+  if (process.env.NODE_ENV !== 'production') {
+    pushDebugNode(operationName, operation);
+  }
+
   if (operationName === ctx.store.getRootKey('query')) {
     writeSelection(ctx, operationName, select, data);
   } else {
@@ -113,6 +117,10 @@ export const writeOptimistic = (
       'This case is unsupported and should never occur.',
     10
   );
+
+  if (process.env.NODE_ENV !== 'production') {
+    pushDebugNode(operationName, operation);
+  }
 
   const ctx: Context = {
     parentTypeName: mutationRootKey,
@@ -197,6 +205,10 @@ export const writeFragment = (
         '`.',
       12
     );
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+    pushDebugNode(typename, fragment);
   }
 
   const ctx: Context = {

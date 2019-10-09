@@ -2,7 +2,8 @@ import { FieldNode, InlineFragmentNode, FragmentDefinitionNode } from 'graphql';
 import { Fragments, Variables, SelectionSet, Scalar } from '../types';
 import { Store } from '../store';
 import { joinKeys, keyOfField } from '../helpers';
-import { warn } from '../helpers/help';
+import { warn, pushDebugNode } from '../helpers/help';
+import { SchemaPredicates } from '../ast/schemaPredicates';
 
 import {
   getTypeCondition,
@@ -13,7 +14,6 @@ import {
   getSelectionSet,
   getName,
 } from '../ast';
-import { SchemaPredicates } from '../ast/schemaPredicates';
 
 interface Context {
   store: Store;
@@ -95,6 +95,10 @@ export class SelectionIterator {
             : node;
 
           if (fragmentNode !== undefined) {
+            if (process.env.NODE_ENV !== 'production') {
+              pushDebugNode(this.typename, fragmentNode);
+            }
+
             const isMatching =
               this.context.schemaPredicates !== undefined
                 ? this.context.schemaPredicates.isInterfaceOfType(
