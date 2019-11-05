@@ -642,3 +642,43 @@ it('prevents overlapping of pagination on different arguments', () => {
     items: null,
   });
 });
+
+it('returns an empty array of edges when the cache has zero edges stored', () => {
+  const Pagination = gql`
+    query {
+      items(first: 1) {
+        __typename
+        edges {
+          __typename
+        }
+      }
+    }
+  `;
+
+  const store = new Store(undefined, {
+    Query: {
+      items: relayPagination(),
+    },
+  });
+
+  write(
+    store,
+    { query: Pagination },
+    {
+      __typename: 'Query',
+      items: {
+        __typename: 'ItemsConnection',
+        edges: [],
+      },
+    }
+  );
+
+  const res = query(store, {
+    query: Pagination,
+  });
+
+  expect(res.data).toHaveProperty('items', {
+    __typename: 'ItemsConnection',
+    edges: [],
+  });
+});
