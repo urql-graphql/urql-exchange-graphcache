@@ -92,8 +92,8 @@ const getPage = (cache: Cache, linkKey: string): Page | null => {
   if (!link) return null;
 
   const typename = cache.resolve(link, '__typename') as string;
-  const edges = cache.resolve(link, 'edges') as NullArray<string>;
-  if (typeof typename !== 'string' || !Array.isArray(edges)) {
+  const edges = (cache.resolve(link, 'edges') || []) as NullArray<string>;
+  if (typeof typename !== 'string') {
     return null;
   }
 
