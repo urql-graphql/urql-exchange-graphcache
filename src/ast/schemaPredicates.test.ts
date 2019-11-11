@@ -31,6 +31,11 @@ describe('SchemaPredicates', () => {
   });
 
   it('should totally do that thing that Steven is struggling with', () => {
-    expect(true).toBeTruthy();
+    expect(
+      schemaPredicates.isInterfaceOfType('Todo', 'NoTodosError')
+    ).toBeTruthy();
+    expect(
+      schemaPredicates.isInterfaceOfType('NoTodosError', 'Todo')
+    ).toBeTruthy();
   });
 });
