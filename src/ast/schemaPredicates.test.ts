@@ -30,12 +30,12 @@ describe('SchemaPredicates', () => {
     expect(schemaPredicates.isFieldNullable('Todo', 'author')).toBeTruthy();
   });
 
-  it('should totally do that thing that Steven is struggling with', () => {
+  it('should handle unions of objects', () => {
     expect(
-      schemaPredicates.isInterfaceOfType('Todo', 'NoTodosError')
+      schemaPredicates.isInterfaceOfType('LatestTodoResult', 'Todo')
     ).toBeTruthy();
     expect(
-      schemaPredicates.isInterfaceOfType('NoTodosError', 'Todo')
+      schemaPredicates.isInterfaceOfType('LatestTodoResult', 'NoTodosError')
     ).toBeTruthy();
   });
 });
