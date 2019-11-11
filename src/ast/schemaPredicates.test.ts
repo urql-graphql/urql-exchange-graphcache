@@ -29,4 +29,8 @@ describe('SchemaPredicates', () => {
     expect(schemaPredicates.isFieldNullable('Todo', 'complete')).toBeTruthy();
     expect(schemaPredicates.isFieldNullable('Todo', 'author')).toBeTruthy();
   });
+
+  it('should totally do that thing that Steven is struggling with', () => {
+    expect(true).toBeTruthy();
+  });
 });
