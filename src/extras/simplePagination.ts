@@ -6,12 +6,6 @@ export interface PaginationParams {
   limitName?: string;
 }
 
-interface Base {
-  id?: any;
-  _id?: any;
-  __typename: any;
-}
-
 export const simplePagination = (params?: PaginationParams): Resolver => {
   const from = (params && params.fromName) || 'from';
   const limit = (params && params.limitName) || 'limit';
@@ -46,7 +40,7 @@ export const simplePagination = (params?: PaginationParams): Resolver => {
     const { parentKey: key, fieldName } = info;
     const connections = cache.resolveConnections(key, fieldName);
     const size = connections.length;
-    const result: Base[] = [];
+    const result: string[] = [];
     const visited = new Set();
     if (size === 0) return undefined;
 
@@ -56,17 +50,10 @@ export const simplePagination = (params?: PaginationParams): Resolver => {
       const links = cache.resolveValueOrLink(linkKey) as string[];
       if (links.length === 0) return undefined;
       result.push(
-        ...links.reduce<Base[]>((acc, lk) => {
-          if (!visited.has(lk)) {
-            acc.push({
-              id: cache.resolveValueOrLink(`${lk}.id`),
-              _id: cache.resolveValueOrLink(`${lk}._id`),
-              __typename: cache.resolveValueOrLink(`${lk}.__typename`),
-            });
-            visited.add(lk);
-            return acc;
-          }
-          return acc;
+        ...links.reduce<string[]>((acc, lk) => {
+          if (visited.has(lk)) return acc;
+          visited.add(lk);
+          return [...acc, lk];
         }, [])
       );
     }
