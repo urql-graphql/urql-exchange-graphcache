@@ -52,6 +52,6 @@ it('works with simple pagination', () => {
   const result = query(store, { query: Pagination });
   expect(result.data).toEqual({
     __typename: 'Query',
-    persons: [...pageOne.persons, pageTwo.persons],
+    persons: [...pageOne.persons, ...pageTwo.persons],
   });
 });
