@@ -2,14 +2,18 @@ import { Resolver } from '../types';
 
 export type MergeMode = 'outwards' | 'inwards';
 export interface PaginationParams {
-  mergeMode?: MergeMode;
+  fromName?: string;
+  limitName?: string;
 }
 
 interface Base {
   __typename: any;
 }
 
-export const simplePagination = (): Resolver => {
+export const simplePagination = (_params?: PaginationParams): Resolver => {
+  //const _from = params && params.fromName || 'from';
+  //const _limit = params && params.limitName || 'limit';
+
   return (_parent, _fieldArgs, cache, info) => {
     const { parentKey: key, fieldName } = info;
     const connections = cache.resolveConnections(key, fieldName);

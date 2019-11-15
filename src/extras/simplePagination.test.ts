@@ -69,7 +69,7 @@ it('handles duplicates', () => {
 
   const store = new Store(undefined, {
     Query: {
-      items: simplePagination(),
+      persons: simplePagination(),
     },
   });
 
@@ -122,7 +122,7 @@ it('prevents overlapping of pagination on different arguments', () => {
 
   const store = new Store(undefined, {
     Query: {
-      items: simplePagination(),
+      persons: simplePagination(),
     },
   });
 
@@ -162,8 +162,5 @@ it('prevents overlapping of pagination on different arguments', () => {
   expect(resTwo.data).toHaveProperty(['persons', 0, 'id'], 'two');
   expect(resTwo.data).toHaveProperty('persons.length', 1);
 
-  expect(resThree.data).toEqual({
-    __typename: 'Query',
-    persons: null,
-  });
+  expect(resThree.data).toEqual(null);
 });
