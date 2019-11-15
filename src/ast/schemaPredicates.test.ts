@@ -37,5 +37,8 @@ describe('SchemaPredicates', () => {
     expect(
       schemaPredicates.isInterfaceOfType('LatestTodoResult', 'NoTodosError')
     ).toBeTruthy();
+    expect(
+      schemaPredicates.isInterfaceOfType('Todo', 'NoTodosError')
+    ).toBeFalsy();
   });
 });
