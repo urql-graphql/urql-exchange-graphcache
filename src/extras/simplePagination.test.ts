@@ -162,5 +162,5 @@ it('prevents overlapping of pagination on different arguments', () => {
   expect(resTwo.data).toHaveProperty(['persons', 0, 'id'], 'two');
   expect(resTwo.data).toHaveProperty('persons.length', 1);
 
-  expect(resThree.data).toEqual(null);
+  expect(resThree.data).toEqual({ __typename: 'Query', persons: [] });
 });
