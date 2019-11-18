@@ -147,7 +147,7 @@ const cache = cacheExchange({
 
 This form of pagination accepts an object as an argument, you can specify two
 options in here `limitArgument` and `offsetArgument` these will default to `limit`
-and `from` respectively. This way you can use the keywords that you are using in
+and `skip` respectively. This way you can use the keywords that you are using in
 your queries.
 
 ### Relay

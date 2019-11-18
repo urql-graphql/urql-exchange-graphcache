@@ -7,7 +7,7 @@ export interface PaginationParams {
 }
 
 export const simplePagination = ({
-  offsetArgument = 'from',
+  offsetArgument = 'skip',
   limitArgument = 'limit',
 }: PaginationParams = {}): Resolver => {
   const compareArgs = (

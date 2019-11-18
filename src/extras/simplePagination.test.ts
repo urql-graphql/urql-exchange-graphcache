@@ -5,8 +5,8 @@ import { simplePagination } from './simplePagination';
 
 it('works with simple pagination', () => {
   const Pagination = gql`
-    query($from: Number, $limit: Number) {
-      persons(from: $from, limit: $limit) {
+    query($skip: Number, $limit: Number) {
+      persons(skip: $skip, limit: $limit) {
         __typename
         id
         name
@@ -40,12 +40,12 @@ it('works with simple pagination', () => {
 
   write(
     store,
-    { query: Pagination, variables: { from: 0, limit: 3 } },
+    { query: Pagination, variables: { skip: 0, limit: 3 } },
     pageOne
   );
   write(
     store,
-    { query: Pagination, variables: { from: 3, limit: 3 } },
+    { query: Pagination, variables: { skip: 3, limit: 3 } },
     pageTwo
   );
 
@@ -58,8 +58,8 @@ it('works with simple pagination', () => {
 
 it('handles duplicates', () => {
   const Pagination = gql`
-    query($from: Number, $limit: Number) {
-      persons(from: $from, limit: $limit) {
+    query($skip: Number, $limit: Number) {
+      persons(skip: $skip, limit: $limit) {
         __typename
         id
         name
@@ -93,12 +93,12 @@ it('handles duplicates', () => {
 
   write(
     store,
-    { query: Pagination, variables: { from: 0, limit: 3 } },
+    { query: Pagination, variables: { skip: 0, limit: 3 } },
     pageOne
   );
   write(
     store,
-    { query: Pagination, variables: { from: 2, limit: 3 } },
+    { query: Pagination, variables: { skip: 2, limit: 3 } },
     pageTwo
   );
 
@@ -111,8 +111,8 @@ it('handles duplicates', () => {
 
 it('should preserve the correct order', () => {
   const Pagination = gql`
-    query($from: Number, $limit: Number) {
-      persons(from: $from, limit: $limit) {
+    query($skip: Number, $limit: Number) {
+      persons(skip: $skip, limit: $limit) {
         __typename
         id
         name
@@ -146,12 +146,12 @@ it('should preserve the correct order', () => {
 
   write(
     store,
-    { query: Pagination, variables: { from: 3, limit: 3 } },
+    { query: Pagination, variables: { skip: 3, limit: 3 } },
     pageTwo
   );
   write(
     store,
-    { query: Pagination, variables: { from: 0, limit: 3 } },
+    { query: Pagination, variables: { skip: 0, limit: 3 } },
     pageOne
   );
 
@@ -164,8 +164,8 @@ it('should preserve the correct order', () => {
 
 it('prevents overlapping of pagination on different arguments', () => {
   const Pagination = gql`
-    query($from: Number, $limit: Number, $filter: string) {
-      persons(from: $from, limit: $limit, filter: $filter) {
+    query($skip: Number, $limit: Number, $filter: string) {
+      persons(skip: $skip, limit: $limit, filter: $filter) {
         __typename
         id
         name
@@ -186,27 +186,27 @@ it('prevents overlapping of pagination on different arguments', () => {
 
   write(
     store,
-    { query: Pagination, variables: { filter: 'one' } },
+    { query: Pagination, variables: { filter: 'one', skip: 0, limit: 1 } },
     page('one')
   );
 
   write(
     store,
-    { query: Pagination, variables: { filter: 'two' } },
+    { query: Pagination, variables: { filter: 'two', skip: 1, limit: 1 } },
     page('two')
   );
 
   const resOne = query(store, {
     query: Pagination,
-    variables: { filter: 'one' },
+    variables: { filter: 'one', skip: 0, limit: 1 },
   });
   const resTwo = query(store, {
     query: Pagination,
-    variables: { filter: 'two' },
+    variables: { filter: 'two', skip: 1, limit: 1 },
   });
   const resThree = query(store, {
     query: Pagination,
-    variables: { filter: 'three' },
+    variables: { filter: 'three', skip: 2, limit: 1 },
   });
 
   expect(resOne.data).toHaveProperty(['persons', 0, 'id'], 'one');
