@@ -49,7 +49,7 @@ export const simplePagination = ({
       const [args, linkKey] = connections[i];
       if (!compareArgs(fieldArgs, args)) continue;
       const links = cache.resolveValueOrLink(linkKey) as string[];
-      const currentOffset = (args as any)[offsetArgument];
+      const currentOffset = args[offsetArgument];
       if (
         links === null ||
         links.length === 0 ||
