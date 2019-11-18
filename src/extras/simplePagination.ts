@@ -49,9 +49,15 @@ export const simplePagination = ({
       const [args, linkKey] = connections[i];
       if (!compareArgs(fieldArgs, args)) continue;
       const links = cache.resolveValueOrLink(linkKey) as string[];
-      if (links === null || links.length === 0) continue;
+      const currentOffset = (args as any)[offsetArgument];
+      if (
+        links === null ||
+        links.length === 0 ||
+        typeof currentOffset !== 'number'
+      )
+        continue;
 
-      if (!prevOffset || (args as any)[offsetArgument] > prevOffset) {
+      if (!prevOffset || currentOffset > prevOffset) {
         for (let j = 0; j < links.length; j++) {
           const link = links[j];
           if (visited.has(link)) continue;
@@ -69,7 +75,7 @@ export const simplePagination = ({
         result = [...tempResult, ...result];
       }
 
-      prevOffset = (args as any)[offsetArgument];
+      prevOffset = currentOffset;
     }
 
     return result;
