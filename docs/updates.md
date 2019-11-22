@@ -126,4 +126,20 @@ const cache = cacheExchange({
 
 Next time we hit the query for agendas this will be refetched.
 
+In case you need to invalidate everything we offer the `clear` method
+
+```js
+const cache = cacheExchange({
+  updates: {
+    Mutation: {
+      logout: (result, args, cache) => {
+        cache.clear();
+      },
+    },
+  },
+});
+```
+
+After the logout method is executed your cache will be fully cleared!
+
 [Back](../README.md)

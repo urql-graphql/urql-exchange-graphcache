@@ -335,4 +335,10 @@ export class Store implements Cache {
   ): void {
     writeFragment(this, dataFragment, data, variables);
   }
+
+  clear() {
+    this.records = KVMap.make();
+    this.connections = KVMap.make();
+    this.links = KVMap.make();
+  }
 }
