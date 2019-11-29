@@ -9,8 +9,7 @@ import {
 } from 'graphql';
 import gql from 'graphql-tag';
 import { fromValue, pipe, fromArray, toArray } from 'wonka';
-import { Operation } from 'src/types';
-import { Client } from 'src/client';
+import { Client, Operation } from 'urql';
 
 const schemaDef = `
   interface Node {

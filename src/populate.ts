@@ -1,5 +1,5 @@
 import { pipe, tap, map } from 'wonka';
-import { Exchange, Operation } from '../types';
+import { Exchange, Operation } from 'urql';
 import {
   DocumentNode,
   buildClientSchema,
@@ -17,9 +17,8 @@ import {
   isInterfaceType,
   isCompositeType,
   isAbstractType,
-  print,
+  visit,
 } from 'graphql';
-import { visit } from 'graphql';
 
 interface ExchangeArgs {
   schema: IntrospectionQuery;
