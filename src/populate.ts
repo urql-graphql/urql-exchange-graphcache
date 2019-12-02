@@ -19,6 +19,7 @@ import {
   isAbstractType,
   visit,
 } from 'graphql';
+import { invariant, warn } from './helpers/help';
 
 interface ExchangeArgs {
   schema: IntrospectionQuery;
@@ -309,8 +310,9 @@ const getTypes = (schema: GraphQLSchema, typeInfo: TypeInfo) => {
       : typeInfoType;
 
   if (!isCompositeType(type)) {
-    console.warn(
-      `PopulateExchange: Unsupported type "${type}" at populate decorator.`
+    warn(
+      `PopulateExchange: Unsupported type "${type}" at populate decorator.`,
+      1
     );
     return [];
   }
@@ -331,8 +333,10 @@ const getTypeName = (t: TypeInfo) => {
       : typeInfoType;
 
   if (isAbstractType(type)) {
-    throw Error(
-      'PopulateExchange: "getTypeName" does not expect to receive an abstract type.'
+    invariant(
+      'PopulateExchange',
+      'Invalid TypeInfo state. "getTypeName" does not expect to receive an abstract type.',
+      1
     );
   }
 
