@@ -1,5 +1,3 @@
-import { pipe, tap, map } from 'wonka';
-import { Exchange, Operation } from 'urql';
 import {
   DocumentNode,
   buildClientSchema,
@@ -19,6 +17,11 @@ import {
   isAbstractType,
   visit,
 } from 'graphql';
+
+import { pipe, tap, map } from 'wonka';
+import { Exchange, Operation } from 'urql';
+
+import { getName, getSelectionSet } from './ast';
 import { invariant, warn } from './helpers/help';
 
 interface ExchangeArgs {
@@ -71,7 +74,6 @@ export const populateExchange = ({
     }
 
     activeOperations.add(key);
-
     if (parsedOperations.has(key)) {
       return;
     }
@@ -86,13 +88,10 @@ export const populateExchange = ({
       query,
     });
 
-    userFragments = newFragments.reduce(
-      (state, fragment) => ({
-        ...state,
-        [fragment.name.value]: fragment,
-      }),
-      userFragments
-    );
+    userFragments = newFragments.reduce((state, fragment) => {
+      state[getName(fragment)] = fragment;
+      return state;
+    }, userFragments);
 
     typeFragments = newSelections.reduce((state, { selections, type }) => {
       const current = state[type] || [];
@@ -115,19 +114,17 @@ export const populateExchange = ({
         },
         type,
       };
-      return {
-        ...state,
-        [type]: [...current, entry],
-      };
+
+      current.push(entry);
+      state[type] = current;
+      return state;
     }, typeFragments);
   };
 
   const handleIncomingTeardown = ({ key, operationName }: Operation) => {
-    if (operationName !== 'teardown') {
-      return;
+    if (operationName === 'teardown') {
+      activeOperations.delete(key);
     }
-
-    activeOperations.delete(key);
   };
 
   return ops$ => {
@@ -167,23 +164,21 @@ export const extractSelectionsFromQuery = ({
   schema,
   query,
 }: MakeFragmentsFromQueryArg) => {
-  let selections: { selections: SelectionSetNode; type: string }[] = [];
-  let fragments: FragmentDefinitionNode[] = [];
+  const selections: { selections: SelectionSetNode; type: string }[] = [];
+  const fragments: FragmentDefinitionNode[] = [];
   const typeInfo = new TypeInfo(schema);
 
   visit(
     query,
     visitWithTypeInfo(typeInfo, {
       Field: node => {
-        if (!node.selectionSet) {
-          return undefined;
+        if (node.selectionSet) {
+          const type = getTypeName(typeInfo);
+          selections.push({ selections: node.selectionSet, type });
         }
-
-        const type = getTypeName(typeInfo);
-        selections = [...selections, { selections: node.selectionSet, type }];
       },
       FragmentDefinition: node => {
-        fragments = [...fragments, node];
+        fragments.push(node);
       },
     })
   );
@@ -207,23 +202,26 @@ export const addFragmentsToQuery = ({
 }: AddFragmentsToQuery) => {
   const typeInfo = new TypeInfo(schema);
   const requiredUserFragments = new Set<FragmentDefinitionNode>();
-  let additionalFragments: Record<string, FragmentDefinitionNode> = {};
+  const additionalFragments: Record<
+    string,
+    FragmentDefinitionNode
+  > = Object.create(null);
 
   return visit(
     query,
     visitWithTypeInfo(typeInfo, {
       Field: {
         enter: node => {
-          if (
-            !node.directives ||
-            !node.directives.find(d => d.name.value === 'populate')
-          ) {
+          if (!node.directives) {
             return;
           }
 
           const directives = node.directives.filter(
-            d => d.name.value !== 'populate'
+            d => getName(d) !== 'populate'
           );
+          if (directives.length === node.directives.length) {
+            return;
+          }
 
           const types = getTypes(schema, typeInfo);
           const newSelections = types.reduce((p, t) => {
@@ -235,30 +233,29 @@ export const addFragmentsToQuery = ({
             return [
               ...p,
               ...typeFragments[t.name].map(({ fragment }) => {
+                const fragmentName = getName(fragment);
+                const usedFragments = getUsedFragments(fragment);
+
                 // Add used fragment for insertion at Document node
-                getUsedFragments(fragment).forEach(f =>
-                  requiredUserFragments.add(userFragments[f])
-                );
+                for (let i = 0, l = usedFragments.length; i < l; i++) {
+                  requiredUserFragments.add(userFragments[usedFragments[i]]);
+                }
 
                 // Add fragment for insertion at Document node
-                additionalFragments = {
-                  ...additionalFragments,
-                  [fragment.name.value]: fragment,
-                };
+                additionalFragments[fragmentName] = fragment;
 
                 return {
                   kind: 'FragmentSpread',
                   name: {
                     kind: 'Name',
-                    value: fragment.name.value,
+                    value: fragmentName,
                   },
                 } as const;
               }),
             ];
           }, [] as FragmentSpreadNode[]);
 
-          const existingSelections =
-            (node.selectionSet && node.selectionSet.selections) || [];
+          const existingSelections = getSelectionSet(node);
 
           const selections =
             existingSelections.length + newSelections.length !== 0
@@ -317,11 +314,9 @@ const getTypes = (schema: GraphQLSchema, typeInfo: TypeInfo) => {
     return [];
   }
 
-  if (isInterfaceType(type) || isUnionType(type)) {
-    return schema.getPossibleTypes(type);
-  }
-
-  return [type];
+  return isInterfaceType(type) || isUnionType(type)
+    ? schema.getPossibleTypes(type)
+    : [type];
 };
 
 /** Get name of non-abstract type for adding to 'typeFragments'. */
@@ -343,11 +338,11 @@ const getTypeName = (t: TypeInfo) => {
 
 /** Get fragment names referenced by node. */
 const getUsedFragments = (node: ASTNode) => {
-  let names: string[] = [];
+  const names: string[] = [];
 
   visit(node, {
     FragmentSpread: f => {
-      names = [...names, f.name.value];
+      names.push(getName(f));
     },
   });
 
