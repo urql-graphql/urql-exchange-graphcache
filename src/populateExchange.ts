@@ -333,7 +333,7 @@ const getTypeName = (t: TypeInfo) => {
       : typeInfoType;
 
   invariant(
-    isAbstractType(type),
+    !isAbstractType(type),
     'Invalid TypeInfo state: Found an abstract type when none was expected.',
     18
   );
