@@ -201,7 +201,12 @@ export const addFragmentsToQuery = ({
   userFragments,
 }: AddFragmentsToQuery) => {
   const typeInfo = new TypeInfo(schema);
-  const requiredUserFragments = new Set<FragmentDefinitionNode>();
+
+  const requiredUserFragments: Record<
+    string,
+    FragmentDefinitionNode
+  > = Object.create(null);
+
   const additionalFragments: Record<
     string,
     FragmentDefinitionNode
@@ -238,7 +243,8 @@ export const addFragmentsToQuery = ({
 
                 // Add used fragment for insertion at Document node
                 for (let i = 0, l = usedFragments.length; i < l; i++) {
-                  requiredUserFragments.add(userFragments[usedFragments[i]]);
+                  const name = usedFragments[i];
+                  requiredUserFragments[name] = userFragments[name];
                 }
 
                 // Add fragment for insertion at Document node
@@ -282,16 +288,12 @@ export const addFragmentsToQuery = ({
       },
       Document: {
         leave: node => {
-          return {
-            ...node,
-            definitions: [
-              ...node.definitions,
-              ...Object.keys(additionalFragments).map(
-                k => additionalFragments[k]
-              ), // Object.values
-              ...Array.from(requiredUserFragments),
-            ],
-          };
+          const definitions = [...node.definitions];
+          for (const key in additionalFragments)
+            definitions.push(additionalFragments[key]);
+          for (const key in requiredUserFragments)
+            definitions.push(requiredUserFragments[key]);
+          return { ...node, definitions };
         },
       },
     })
