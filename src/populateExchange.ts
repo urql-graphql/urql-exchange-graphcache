@@ -23,14 +23,14 @@ import { Exchange, Operation } from 'urql';
 import { getName, getSelectionSet, unwrapType } from './ast';
 import { invariant, warn } from './helpers/help';
 
-interface ExchangeArgs {
+interface PopulateExchangeOpts {
   schema: IntrospectionQuery;
 }
 
 /** An exchange for auto-populating mutations with a required response body. */
 export const populateExchange = ({
   schema: ogSchema,
-}: ExchangeArgs): Exchange => ({ forward }) => {
+}: PopulateExchangeOpts): Exchange => ({ forward }) => {
   const schema = buildClientSchema(ogSchema);
   /** List of operation keys that have already been parsed. */
   const parsedOperations = new Set<number>();
