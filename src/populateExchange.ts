@@ -235,8 +235,7 @@ export const addFragmentsToQuery = ({
               return p;
             }
 
-            return [
-              ...p,
+            p.push(
               ...typeFragments[t.name].map(({ fragment }) => {
                 const fragmentName = getName(fragment);
                 const usedFragments = getUsedFragments(fragment);
@@ -257,8 +256,10 @@ export const addFragmentsToQuery = ({
                     value: fragmentName,
                   },
                 } as const;
-              }),
-            ];
+              })
+            );
+
+            return p;
           }, [] as FragmentSpreadNode[]);
 
           const existingSelections = getSelectionSet(node);
