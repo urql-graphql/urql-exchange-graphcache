@@ -8,11 +8,13 @@ import {
   GraphQLSchema,
   IntrospectionQuery,
   FragmentSpreadNode,
+  NameNode,
   ASTNode,
   isUnionType,
   isInterfaceType,
   isCompositeType,
   isAbstractType,
+  Kind,
   visit,
 } from 'graphql';
 
@@ -96,18 +98,12 @@ export const populateExchange = ({
       const entry: TypeFragment = {
         key,
         fragment: {
-          kind: 'FragmentDefinition',
+          kind: Kind.FRAGMENT_DEFINITION,
           typeCondition: {
-            kind: 'NamedType',
-            name: {
-              kind: 'Name',
-              value: type,
-            },
+            kind: Kind.NAMED_TYPE,
+            name: nameNode(type),
           },
-          name: {
-            kind: 'Name',
-            value: `${type}_PopulateFragment_${current.length}`,
-          },
+          name: nameNode(`${type}_PopulateFragment_${current.length}`),
           selectionSet: selections,
         },
         type,
@@ -249,11 +245,8 @@ export const addFragmentsToQuery = ({
               additionalFragments[fragmentName] = fragment;
 
               p.push({
-                kind: 'FragmentSpread',
-                name: {
-                  kind: 'Name',
-                  value: fragmentName,
-                },
+                kind: Kind.FRAGMENT_SPREAD,
+                name: nameNode(fragmentName),
               });
             }
 
@@ -267,11 +260,8 @@ export const addFragmentsToQuery = ({
               ? [...newSelections, ...existingSelections]
               : [
                   {
-                    kind: 'Field',
-                    name: {
-                      kind: 'Name',
-                      value: '__typename',
-                    },
+                    kind: Kind.FIELD,
+                    name: nameNode('__typename'),
                   },
                 ];
 
@@ -279,7 +269,7 @@ export const addFragmentsToQuery = ({
             ...node,
             directives,
             selectionSet: {
-              kind: 'SelectionSet',
+              kind: Kind.SELECTION_SET,
               selections,
             },
           };
@@ -298,6 +288,11 @@ export const addFragmentsToQuery = ({
     })
   );
 };
+
+const nameNode = (value: string): NameNode => ({
+  kind: Kind.NAME,
+  value,
+});
 
 /** Get all possible types for node with TypeInfo. */
 const getTypes = (schema: GraphQLSchema, typeInfo: TypeInfo) => {
