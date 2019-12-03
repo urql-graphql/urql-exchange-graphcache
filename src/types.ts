@@ -1,4 +1,13 @@
-import { DocumentNode, FragmentDefinitionNode, SelectionNode } from 'graphql';
+import {
+  DocumentNode,
+  FragmentDefinitionNode,
+  SelectionNode,
+  GraphQLScalarType,
+  GraphQLObjectType,
+  GraphQLInterfaceType,
+  GraphQLUnionType,
+  GraphQLEnumType,
+} from 'graphql';
 
 // Helper types
 export type NullArray<T> = Array<null | T>;
@@ -9,6 +18,12 @@ export interface Ref<T> {
 
 // GraphQL helper types
 export type SelectionSet = ReadonlyArray<SelectionNode>;
+export type GraphQLFlatType =
+  | GraphQLScalarType
+  | GraphQLObjectType
+  | GraphQLInterfaceType
+  | GraphQLUnionType
+  | GraphQLEnumType;
 export interface Fragments {
   [fragmentName: string]: void | FragmentDefinitionNode;
 }

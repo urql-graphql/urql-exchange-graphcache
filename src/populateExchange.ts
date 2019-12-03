@@ -9,8 +9,6 @@ import {
   IntrospectionQuery,
   FragmentSpreadNode,
   ASTNode,
-  isNonNullType,
-  isListType,
   isUnionType,
   isInterfaceType,
   isCompositeType,
@@ -21,7 +19,7 @@ import {
 import { pipe, tap, map } from 'wonka';
 import { Exchange, Operation } from 'urql';
 
-import { getName, getSelectionSet } from './ast';
+import { getName, getSelectionSet, unwrapType } from './ast';
 import { invariant, warn } from './helpers/help';
 
 interface ExchangeArgs {
@@ -303,12 +301,7 @@ export const addFragmentsToQuery = ({
 
 /** Get all possible types for node with TypeInfo. */
 const getTypes = (schema: GraphQLSchema, typeInfo: TypeInfo) => {
-  const typeInfoType = typeInfo.getType();
-  const type =
-    isListType(typeInfoType) || isNonNullType(typeInfoType)
-      ? typeInfoType.ofType
-      : typeInfoType;
-
+  const type = unwrapType(typeInfo.getType());
   if (!isCompositeType(type)) {
     warn(
       'Invalid type: The type ` + type + ` is used with @populate but does not exist.',
@@ -323,16 +316,11 @@ const getTypes = (schema: GraphQLSchema, typeInfo: TypeInfo) => {
 };
 
 /** Get name of non-abstract type for adding to 'typeFragments'. */
-const getTypeName = (t: TypeInfo) => {
-  const typeInfoType = t.getType();
-  const type =
-    isListType(typeInfoType) || isNonNullType(typeInfoType)
-      ? typeInfoType.ofType
-      : typeInfoType;
-
+const getTypeName = (typeInfo: TypeInfo) => {
+  const type = unwrapType(typeInfo.getType());
   invariant(
-    !isAbstractType(type),
-    'Invalid TypeInfo state: Found an abstract type when none was expected.',
+    type && !isAbstractType(type),
+    'Invalid TypeInfo state: Found no flat schema type when one was expected.',
     18
   );
 
