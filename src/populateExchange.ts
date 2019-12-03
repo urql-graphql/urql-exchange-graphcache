@@ -36,9 +36,9 @@ export const populateExchange = ({
   /** List of operation keys that have not been torn down. */
   const activeOperations = new Set<number>();
   /** Collection of fragments used by the user. */
-  let userFragments: UserFragmentMap = Object.create(null);
+  const userFragments: UserFragmentMap = Object.create(null);
   /** Collection of type fragments. */
-  let typeFragments: TypeFragmentMap = Object.create(null);
+  const typeFragments: TypeFragmentMap = Object.create(null);
 
   /** Handle mutation and inject selections + fragments. */
   const handleIncomingMutation = (op: Operation) => {
@@ -46,13 +46,12 @@ export const populateExchange = ({
       return op;
     }
 
-    const activeSelections = Object.keys(typeFragments).reduce(
-      (state, key) => ({
-        ...state,
-        [key]: state[key].filter(s => activeOperations.has(s.key)),
-      }),
-      typeFragments
-    );
+    const activeSelections: TypeFragmentMap = Object.create(null);
+    for (const name in typeFragments) {
+      activeSelections[name] = typeFragments[name].filter(s =>
+        activeOperations.has(s.key)
+      );
+    }
 
     return {
       ...op,
@@ -86,13 +85,14 @@ export const populateExchange = ({
       query,
     });
 
-    userFragments = newFragments.reduce((state, fragment) => {
-      state[getName(fragment)] = fragment;
-      return state;
-    }, userFragments);
+    for (let i = 0, l = newFragments.length; i < l; i++) {
+      const fragment = newFragments[i];
+      userFragments[getName(fragment)] = fragment;
+    }
 
-    typeFragments = newSelections.reduce((state, { selections, type }) => {
-      const current = state[type] || [];
+    for (let i = 0, l = newSelections.length; i < l; i++) {
+      const { selections, type } = newSelections[i];
+      const current = typeFragments[type] || [];
       const entry: TypeFragment = {
         key,
         fragment: {
@@ -113,10 +113,9 @@ export const populateExchange = ({
         type,
       };
 
+      typeFragments[type] = current;
       current.push(entry);
-      state[type] = current;
-      return state;
-    }, typeFragments);
+    }
   };
 
   const handleIncomingTeardown = ({ key, operationName }: Operation) => {
