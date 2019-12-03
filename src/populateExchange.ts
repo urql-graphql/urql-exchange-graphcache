@@ -4,7 +4,6 @@ import {
   visitWithTypeInfo,
   TypeInfo,
   FragmentDefinitionNode,
-  SelectionSetNode,
   GraphQLSchema,
   IntrospectionQuery,
   FragmentSpreadNode,
@@ -57,12 +56,12 @@ export const populateExchange = ({
 
     return {
       ...op,
-      query: addFragmentsToQuery({
+      query: addFragmentsToQuery(
         schema,
-        typeFragments: activeSelections,
-        userFragments: userFragments,
-        query: op.query,
-      }),
+        op.query,
+        activeSelections,
+        userFragments
+      ),
     };
   };
 
@@ -79,38 +78,23 @@ export const populateExchange = ({
 
     parsedOperations.add(key);
 
-    const {
-      fragments: newFragments,
-      selections: newSelections,
-    } = extractSelectionsFromQuery({
+    const [extractedFragments, newFragments] = extractSelectionsFromQuery(
       schema,
-      query,
-    });
+      query
+    );
 
-    for (let i = 0, l = newFragments.length; i < l; i++) {
-      const fragment = newFragments[i];
+    for (let i = 0, l = extractedFragments.length; i < l; i++) {
+      const fragment = extractedFragments[i];
       userFragments[getName(fragment)] = fragment;
     }
 
-    for (let i = 0, l = newSelections.length; i < l; i++) {
-      const { selections, type } = newSelections[i];
-      const current = typeFragments[type] || [];
-      const entry: TypeFragment = {
-        key,
-        fragment: {
-          kind: Kind.FRAGMENT_DEFINITION,
-          typeCondition: {
-            kind: Kind.NAMED_TYPE,
-            name: nameNode(type),
-          },
-          name: nameNode(`${type}_PopulateFragment_${current.length}`),
-          selectionSet: selections,
-        },
-        type,
-      };
+    for (let i = 0, l = newFragments.length; i < l; i++) {
+      const fragment = newFragments[i];
+      const type = getName(fragment.typeCondition);
+      const current = typeFragments[type] || (typeFragments[type] = []);
 
-      typeFragments[type] = current;
-      current.push(entry);
+      (fragment as any).name.value += current.length;
+      current.push({ key, fragment });
     }
   };
 
@@ -143,22 +127,15 @@ interface TypeFragment {
   key: number;
   /** Selection set. */
   fragment: FragmentDefinitionNode;
-  /** Type of selection. */
-  type: string;
-}
-
-interface MakeFragmentsFromQueryArg {
-  schema: GraphQLSchema;
-  query: DocumentNode;
 }
 
 /** Gets typed selection sets and fragments from query */
-export const extractSelectionsFromQuery = ({
-  schema,
-  query,
-}: MakeFragmentsFromQueryArg) => {
-  const selections: { selections: SelectionSetNode; type: string }[] = [];
-  const fragments: FragmentDefinitionNode[] = [];
+export const extractSelectionsFromQuery = (
+  schema: GraphQLSchema,
+  query: DocumentNode
+) => {
+  const extractedFragments: FragmentDefinitionNode[] = [];
+  const newFragments: FragmentDefinitionNode[] = [];
   const typeInfo = new TypeInfo(schema);
 
   visit(
@@ -166,35 +143,34 @@ export const extractSelectionsFromQuery = ({
     visitWithTypeInfo(typeInfo, {
       Field: node => {
         if (node.selectionSet) {
-          selections.push({
-            selections: node.selectionSet,
-            type: getTypeName(typeInfo),
+          const type = getTypeName(typeInfo);
+          newFragments.push({
+            kind: Kind.FRAGMENT_DEFINITION,
+            typeCondition: {
+              kind: Kind.NAMED_TYPE,
+              name: nameNode(type),
+            },
+            name: nameNode(`${type}_PopulateFragment_`),
+            selectionSet: node.selectionSet,
           });
         }
       },
       FragmentDefinition: node => {
-        fragments.push(node);
+        extractedFragments.push(node);
       },
     })
   );
 
-  return { selections, fragments };
+  return [extractedFragments, newFragments];
 };
 
-interface AddFragmentsToQuery {
-  schema: GraphQLSchema;
-  query: DocumentNode;
-  typeFragments: Record<string, Omit<TypeFragment, 'key'>[]>;
-  userFragments: UserFragmentMap;
-}
-
 /** Replaces populate decorator with fragment spreads + fragments. */
-export const addFragmentsToQuery = ({
-  schema,
-  query,
-  typeFragments,
-  userFragments,
-}: AddFragmentsToQuery) => {
+export const addFragmentsToQuery = (
+  schema: GraphQLSchema,
+  query: DocumentNode,
+  typeFragments: TypeFragmentMap,
+  userFragments: UserFragmentMap
+) => {
   const typeInfo = new TypeInfo(schema);
 
   const requiredUserFragments: Record<
