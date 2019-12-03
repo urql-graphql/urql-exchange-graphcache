@@ -170,8 +170,10 @@ export const extractSelectionsFromQuery = ({
     visitWithTypeInfo(typeInfo, {
       Field: node => {
         if (node.selectionSet) {
-          const type = getTypeName(typeInfo);
-          selections.push({ selections: node.selectionSet, type });
+          selections.push({
+            selections: node.selectionSet,
+            type: getTypeName(typeInfo),
+          });
         }
       },
       FragmentDefinition: node => {
@@ -232,29 +234,28 @@ export const addFragmentsToQuery = ({
               return p;
             }
 
-            p.push(
-              ...typeFragments[t.name].map(({ fragment }) => {
-                const fragmentName = getName(fragment);
-                const usedFragments = getUsedFragments(fragment);
+            for (let i = 0, l = typeFrags.length; i < l; i++) {
+              const { fragment } = typeFrags[i];
+              const fragmentName = getName(fragment);
+              const usedFragments = getUsedFragments(fragment);
 
-                // Add used fragment for insertion at Document node
-                for (let i = 0, l = usedFragments.length; i < l; i++) {
-                  const name = usedFragments[i];
-                  requiredUserFragments[name] = userFragments[name];
-                }
+              // Add used fragment for insertion at Document node
+              for (let j = 0, l = usedFragments.length; j < l; j++) {
+                const name = usedFragments[j];
+                requiredUserFragments[name] = userFragments[name];
+              }
 
-                // Add fragment for insertion at Document node
-                additionalFragments[fragmentName] = fragment;
+              // Add fragment for insertion at Document node
+              additionalFragments[fragmentName] = fragment;
 
-                return {
-                  kind: 'FragmentSpread',
-                  name: {
-                    kind: 'Name',
-                    value: fragmentName,
-                  },
-                } as const;
-              })
-            );
+              p.push({
+                kind: 'FragmentSpread',
+                name: {
+                  kind: 'Name',
+                  value: fragmentName,
+                },
+              });
+            }
 
             return p;
           }, [] as FragmentSpreadNode[]);
