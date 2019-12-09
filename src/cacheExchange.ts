@@ -122,7 +122,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     opts.keys
   );
 
-  let hydration;
+  let hydration: void | Promise<void>;
   if (opts.hydrate) {
     hydration = opts.hydrate().then(store.hydrateData);
   }
@@ -269,6 +269,8 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   return ops$ => {
     const sharedOps$ = pipe(ops$, share);
 
+    // Buffer operations while waiting on hydration to finish
+    // If no hydration takes place we replace this stream with an empty one
     const bufferedOps$ = hydration
       ? pipe(
           sharedOps$,
@@ -278,12 +280,15 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
         )
       : (empty as Source<Operation>);
 
+    // For each operation (buffered ones, then all others) add __typename fields
+    // Then attempt to execute optimistic updates
     const inputOps$ = pipe(
       concat([bufferedOps$, sharedOps$]),
       map(addTypeNames),
       tap(optimisticUpdate),
       share
     );
+
     // Filter by operations that are cacheable and attempt to query them from the cache
     const cache$ = pipe(
       inputOps$,
