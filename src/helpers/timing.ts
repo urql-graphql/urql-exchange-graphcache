@@ -1,4 +1,4 @@
 export const defer: (fn: () => void) => void =
-  typeof Promise !== 'undefined'
+  process.env.NODE_ENV === 'production' && typeof Promise !== 'undefined'
     ? Promise.prototype.then.bind(Promise.resolve())
-    : setTimeout;
+    : fn => setTimeout(fn, 0);

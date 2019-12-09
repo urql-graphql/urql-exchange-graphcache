@@ -7,7 +7,7 @@ import {
   getCurrentDependencies,
 } from './store';
 
-import { Data } from './types';
+import { Data, StorageAdapter } from './types';
 import { query } from './operations/query';
 import { write, writeOptimistic } from './operations/write';
 
@@ -402,5 +402,47 @@ describe('Store with OptimisticMutationConfig', () => {
       __typename: 'Query',
       todos: todosData.todos,
     });
+  });
+});
+
+describe('Store with storage', () => {
+  const todosData = {
+    __typename: 'Query',
+    todos: [
+      {
+        id: '0',
+        text: 'Go to the shops',
+        complete: false,
+        __typename: 'Todo',
+        author: { id: '0', name: 'Jovi', __typename: 'Author' },
+      },
+    ],
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  it('should be able to store and rehydrate data', () => {
+    const storage: StorageAdapter = { read: jest.fn(), write: jest.fn() };
+    let store = new Store();
+
+    store.hydrateData(Object.create(null), storage);
+
+    initStoreState(store, 0);
+    write(store, { query: Todos }, todosData);
+    clearStoreState();
+
+    expect(storage.write).not.toHaveBeenCalled();
+    jest.runAllTimers();
+    expect(storage.write).toHaveBeenCalled();
+
+    const serialisedStore = (storage.write as any).mock.calls[0][0];
+    expect(serialisedStore).toMatchSnapshot();
+
+    store = new Store();
+    store.hydrateData(serialisedStore, storage);
+    const { data } = query(store, { query: Todos });
+    expect(data).toEqual(todosData);
   });
 });

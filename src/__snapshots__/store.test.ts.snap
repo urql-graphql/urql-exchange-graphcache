@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Store with storage should be able to store and rehydrate data 1`] = `
+Object {
+  "l|Query.todos": Array [
+    "Todo:0",
+  ],
+  "l|Todo:0.author": "Author:0",
+  "r|Author:0.__typename": "Author",
+  "r|Author:0.id": "0",
+  "r|Author:0.name": "Jovi",
+  "r|Query.__typename": "Query",
+  "r|Query.todos": undefined,
+  "r|Todo:0.__typename": "Todo",
+  "r|Todo:0.author": undefined,
+  "r|Todo:0.complete": false,
+  "r|Todo:0.id": "0",
+  "r|Todo:0.text": "Go to the shops",
+}
+`;
