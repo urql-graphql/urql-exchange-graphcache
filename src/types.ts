@@ -163,6 +163,18 @@ export interface KeyingConfig {
   [typename: string]: KeyGenerator;
 }
 
+export interface SerializedStore {
+  records: {
+    [key: string]: EntityField;
+  };
+  connections: {
+    [key: string]: Connection[];
+  };
+  links: {
+    [key: string]: Link;
+  };
+}
+
 export type ErrorCode =
   | 1
   | 2

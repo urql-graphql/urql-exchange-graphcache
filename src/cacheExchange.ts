@@ -7,7 +7,6 @@ import {
   CacheOutcome,
 } from 'urql';
 
-import { IntrospectionQuery } from 'graphql';
 import {
   filter,
   map,
@@ -24,6 +23,9 @@ import {
   empty,
   Source,
 } from 'wonka';
+
+import { IntrospectionQuery } from 'graphql';
+
 import { query, write, writeOptimistic } from './operations';
 import { SchemaPredicates } from './ast/schemaPredicates';
 import { Store } from './store';
@@ -33,7 +35,7 @@ import {
   ResolverConfig,
   OptimisticMutationConfig,
   KeyingConfig,
-  EntityField,
+  SerializedStore,
 } from './types';
 
 type OperationResultWithMeta = OperationResult & {
@@ -103,11 +105,7 @@ export interface CacheExchangeOpts {
   optimistic?: OptimisticMutationConfig;
   keys?: KeyingConfig;
   schema?: IntrospectionQuery;
-  hydrate?: () => Promise<{
-    connections: { [key: string]: string };
-    entities: { [key: string]: EntityField };
-    links: { [key: string]: string | string[] };
-  }>;
+  hydrate?: () => Promise<SerializedStore>;
 }
 
 export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
