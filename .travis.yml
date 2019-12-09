@@ -5,6 +5,7 @@ branches:
   only:
     - master
     - develop
+    - offline
     - /^v\d+\.\d+\.\d+/
 
 language: node_js
