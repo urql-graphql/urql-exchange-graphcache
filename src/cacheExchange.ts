@@ -35,7 +35,7 @@ import {
   ResolverConfig,
   OptimisticMutationConfig,
   KeyingConfig,
-  SerializedStore,
+  StorageAdapter,
 } from './types';
 
 type OperationResultWithMeta = OperationResult & {
@@ -105,7 +105,7 @@ export interface CacheExchangeOpts {
   optimistic?: OptimisticMutationConfig;
   keys?: KeyingConfig;
   schema?: IntrospectionQuery;
-  hydrate?: () => Promise<SerializedStore>;
+  storage?: StorageAdapter;
 }
 
 export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
@@ -123,8 +123,11 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
   );
 
   let hydration: void | Promise<void>;
-  if (opts.hydrate) {
-    hydration = opts.hydrate().then(store.hydrateData);
+  if (opts.storage) {
+    const storage = opts.storage;
+    hydration = opts.storage.read().then(data => {
+      store.hydrateData(data, storage);
+    });
   }
 
   const optimisticKeys = new Set();

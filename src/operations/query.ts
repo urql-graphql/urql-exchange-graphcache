@@ -57,7 +57,7 @@ export const query = (
   request: OperationRequest,
   data?: Data
 ): QueryResult => {
-  initStoreState(0);
+  initStoreState(store, 0);
   const result = read(store, request, data);
   clearStoreState();
   return result;

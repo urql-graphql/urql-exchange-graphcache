@@ -163,22 +163,15 @@ export interface KeyingConfig {
   [typename: string]: KeyGenerator;
 }
 
-export interface SerializedStore {
-  records: {
-    [key: string]: EntityField;
-  };
-  connections: {
-    [key: string]: Connection[];
-  };
-  links: {
-    [key: string]: Link;
-  };
-}
-
 export type SerializedEntry = EntityField | Connection[] | Link;
 
 export interface SerializedEntries {
   [key: string]: SerializedEntry;
+}
+
+export interface StorageAdapter {
+  read(): Promise<SerializedEntries>;
+  write(data: SerializedEntries): Promise<void>;
 }
 
 export type ErrorCode =
