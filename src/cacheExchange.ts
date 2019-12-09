@@ -124,9 +124,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
 
   let hydration;
   if (opts.hydrate) {
-    hydration = opts.hydrate().then(({ connections, entities, links }) => {
-      Object.keys(entities).forEach(key => {
-        store.writeRecord(entities[key], key);
+    hydration = opts.hydrate().then(({ connections, records, links }) => {
+      Object.keys(records).forEach(key => {
+        store.writeRecord(records[key], key);
       });
 
       Object.keys(connections).forEach(key => {

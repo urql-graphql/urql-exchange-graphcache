@@ -14,10 +14,12 @@ import {
   UpdatesConfig,
   OptimisticMutationConfig,
   KeyingConfig,
+  SerializedEntry,
+  SerializedEntries,
 } from './types';
 
 import * as KVMap from './helpers/map';
-import { joinKeys, keyOfField } from './helpers';
+import { joinKeys, prefixKey, keyOfField } from './helpers';
 import { invariant, currentDebugStack } from './helpers/help';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
@@ -26,11 +28,13 @@ import { SchemaPredicates } from './ast/schemaPredicates';
 
 let currentDependencies: null | Set<string> = null;
 let currentOptimisticKey: null | number = null;
+let currentBatch: SerializedEntries;
 
 // Initialise a store run by resetting its internal state
 export const initStoreState = (optimisticKey: null | number) => {
   currentDependencies = new Set();
   currentOptimisticKey = optimisticKey;
+  currentBatch = Object.create(null);
 
   if (process.env.NODE_ENV !== 'production') {
     currentDebugStack.length = 0;
@@ -70,6 +74,7 @@ export class Store implements Cache {
   records: KVMap.KVMap<EntityField>;
   connections: KVMap.KVMap<Connection[]>;
   links: KVMap.KVMap<Link>;
+  adapter: boolean; // TODO: This will eventually be the storage
 
   resolvers: ResolverConfig;
   updates: UpdatesConfig;
@@ -90,6 +95,7 @@ export class Store implements Cache {
     this.records = KVMap.make();
     this.connections = KVMap.make();
     this.links = KVMap.make();
+    this.adapter = true;
 
     this.resolvers = resolvers || {};
     this.optimisticMutations = optimisticMutations || {};
@@ -169,11 +175,18 @@ export class Store implements Cache {
     KVMap.clear(this.links, optimisticKey);
   }
 
+  writeToBatch(owner: 'c' | 'l' | 'r', key: string, value: SerializedEntry) {
+    if (this.adapter && !currentOptimisticKey) {
+      currentBatch[prefixKey(owner, key)] = value;
+    }
+  }
+
   getRecord(fieldKey: string): EntityField {
     return KVMap.get(this.records, fieldKey);
   }
 
   writeRecord(field: EntityField, fieldKey: string) {
+    this.writeToBatch('r', fieldKey, field);
     return KVMap.set(this.records, fieldKey, field, currentOptimisticKey);
   }
 
@@ -202,6 +215,7 @@ export class Store implements Cache {
   }
 
   writeLink(link: undefined | Link, key: string) {
+    this.writeToBatch('l', key, link);
     return KVMap.set(this.links, key, link, currentOptimisticKey);
   }
 
@@ -221,6 +235,7 @@ export class Store implements Cache {
       connections.push(connection);
     }
 
+    this.writeToBatch('c', key, connections);
     return KVMap.set(this.connections, key, connections, currentOptimisticKey);
   }
 

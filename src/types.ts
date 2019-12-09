@@ -175,6 +175,12 @@ export interface SerializedStore {
   };
 }
 
+export type SerializedEntry = EntityField | Connection[] | Link;
+
+export interface SerializedEntries {
+  [key: string]: SerializedEntry;
+}
+
 export type ErrorCode =
   | 1
   | 2
