@@ -326,4 +326,20 @@ export class Store implements Cache {
   ): void {
     writeFragment(this, dataFragment, data, variables);
   }
+
+  hydrateData(data: object) {
+    for (const key in data) {
+      switch (key.charCodeAt(0)) {
+        case 99:
+          this.writeConnection(key.slice(2), data[key][1], data[key][0]);
+          break;
+        case 108:
+          this.writeLink(data[key], key.slice(2));
+          break;
+        case 114:
+          this.writeRecord(data[key], key.slice(2));
+          break;
+      }
+    }
+  }
 }

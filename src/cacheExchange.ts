@@ -124,19 +124,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
 
   let hydration;
   if (opts.hydrate) {
-    hydration = opts.hydrate().then(({ connections, records, links }) => {
-      Object.keys(records).forEach(key => {
-        store.writeRecord(records[key], key);
-      });
-
-      Object.keys(connections).forEach(key => {
-        store.writeRecord(connections[key], key);
-      });
-
-      Object.keys(links).forEach(key => {
-        store.writeLink(links[key], key);
-      });
-    });
+    hydration = opts.hydrate().then(store.hydrateData);
   }
 
   const optimisticKeys = new Set();
