@@ -342,13 +342,13 @@ export class Store implements Cache {
     for (const key in data) {
       switch (key.charCodeAt(0)) {
         case 99:
-          this.writeConnection(key.slice(2), data[key][1], data[key][0]);
+          KVMap.set(this.connections, key.slice(2), data[key], null);
           break;
         case 108:
-          this.writeLink(data[key], key.slice(2));
+          KVMap.set(this.links, key.slice(2), data[key], null);
           break;
         case 114:
-          this.writeRecord(data[key], key.slice(2));
+          KVMap.set(this.records, key.slice(2), data[key], null);
           break;
       }
     }
