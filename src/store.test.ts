@@ -406,17 +406,13 @@ describe('Store with OptimisticMutationConfig', () => {
 });
 
 describe('Store with storage', () => {
-  const todosData = {
+  const expectedData = {
     __typename: 'Query',
-    todos: [
-      {
-        id: '0',
-        text: 'Go to the shops',
-        complete: false,
-        __typename: 'Todo',
-        author: { id: '0', name: 'Jovi', __typename: 'Author' },
-      },
-    ],
+    appointment: {
+      __typename: 'Appointment',
+      id: '1',
+      info: 'urql meeting',
+    },
   };
 
   beforeEach(() => {
@@ -430,10 +426,19 @@ describe('Store with storage', () => {
     store.hydrateData(Object.create(null), storage);
 
     initStoreState(store, 0);
-    write(store, { query: Todos }, todosData);
-    clearStoreState();
 
+    write(
+      store,
+      {
+        query: Appointment,
+        variables: { id: '1' },
+      },
+      expectedData
+    );
+
+    clearStoreState();
     expect(storage.write).not.toHaveBeenCalled();
+
     jest.runAllTimers();
     expect(storage.write).toHaveBeenCalled();
 
@@ -442,7 +447,12 @@ describe('Store with storage', () => {
 
     store = new Store();
     store.hydrateData(serialisedStore, storage);
-    const { data } = query(store, { query: Todos });
-    expect(data).toEqual(todosData);
+
+    const { data } = query(store, {
+      query: Appointment,
+      variables: { id: '1' },
+    });
+
+    expect(data).toEqual(expectedData);
   });
 });

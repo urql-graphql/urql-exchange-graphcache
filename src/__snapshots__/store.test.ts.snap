@@ -2,19 +2,19 @@
 
 exports[`Store with storage should be able to store and rehydrate data 1`] = `
 Object {
-  "l|Query.todos": Array [
-    "Todo:0",
+  "c|Query.appointment": Array [
+    Array [
+      Object {
+        "id": "1",
+      },
+      "Query.appointment({\\"id\\":\\"1\\"})",
+    ],
   ],
-  "l|Todo:0.author": "Author:0",
-  "r|Author:0.__typename": "Author",
-  "r|Author:0.id": "0",
-  "r|Author:0.name": "Jovi",
+  "l|Query.appointment({\\"id\\":\\"1\\"})": "Appointment:1",
+  "r|Appointment:1.__typename": "Appointment",
+  "r|Appointment:1.id": "1",
+  "r|Appointment:1.info": "urql meeting",
   "r|Query.__typename": "Query",
-  "r|Query.todos": undefined,
-  "r|Todo:0.__typename": "Todo",
-  "r|Todo:0.author": undefined,
-  "r|Todo:0.complete": false,
-  "r|Todo:0.id": "0",
-  "r|Todo:0.text": "Go to the shops",
+  "r|Query.appointment({\\"id\\":\\"1\\"})": undefined,
 }
 `;
