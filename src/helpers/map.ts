@@ -1,3 +1,5 @@
+import { makeDict } from './dict';
+
 type Data<T> = Map<string, T>;
 type OptimisticData<T> = { [optimisticKey: number]: Data<T | undefined> };
 
@@ -8,7 +10,7 @@ export interface KVMap<T> {
 }
 
 export const make = <T>(): KVMap<T> => ({
-  optimistic: Object.create(null),
+  optimistic: makeDict(),
   base: new Map(),
   keys: [],
 });

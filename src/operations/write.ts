@@ -30,6 +30,7 @@ import {
 } from '../store';
 
 import { invariant, warn, pushDebugNode } from '../helpers/help';
+import { makeDict } from '../helpers/dict';
 import { SelectionIterator, isScalar } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';
@@ -135,7 +136,7 @@ export const writeOptimistic = (
     optimistic: true,
   };
 
-  const data = Object.create(null);
+  const data = makeDict();
   const iter = new SelectionIterator(
     operationName,
     operationName,
@@ -154,11 +155,7 @@ export const writeOptimistic = (
         ctx.fieldName = fieldName;
 
         const fieldArgs = getFieldArguments(node, ctx.variables);
-        const resolverValue = resolver(
-          fieldArgs || Object.create(null),
-          ctx.store,
-          ctx
-        );
+        const resolverValue = resolver(fieldArgs || makeDict(), ctx.store, ctx);
 
         if (!isScalar(resolverValue)) {
           writeRootField(ctx, resolverValue, getSelectionSet(node));
@@ -167,7 +164,7 @@ export const writeOptimistic = (
         data[fieldName] = resolverValue;
         const updater = ctx.store.updates[mutationRootKey][fieldName];
         if (updater !== undefined) {
-          updater(data, fieldArgs || Object.create(null), ctx.store, ctx);
+          updater(data, fieldArgs || makeDict(), ctx.store, ctx);
         }
       }
     }
@@ -401,7 +398,7 @@ const writeRoot = (
       // so that the data is already available in-store if necessary
       const updater = ctx.store.updates[typename][fieldName];
       if (updater !== undefined) {
-        updater(data, fieldArgs || Object.create(null), ctx.store, ctx);
+        updater(data, fieldArgs || makeDict(), ctx.store, ctx);
       }
     }
   }
