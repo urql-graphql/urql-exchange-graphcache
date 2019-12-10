@@ -2,6 +2,17 @@ import gql from 'graphql-tag';
 import { query, write } from '../operations';
 import { Store } from '../store';
 import { relayPagination } from './relayPagination';
+import { SchemaPredicates } from '../../src/ast/schemaPredicates';
+
+function itemEdge(numItem: number) {
+  return {
+    __typename: 'ItemEdge',
+    node: {
+      __typename: 'Item',
+      id: numItem + '',
+    },
+  };
+}
 
 it('works with forward pagination', () => {
   const Pagination = gql`
@@ -34,15 +45,7 @@ it('works with forward pagination', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '1',
-          },
-        },
-      ],
+      edges: [itemEdge(1)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: true,
@@ -55,15 +58,7 @@ it('works with forward pagination', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-      ],
+      edges: [itemEdge(2)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: false,
@@ -118,15 +113,7 @@ it('works with backwards pagination', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-      ],
+      edges: [itemEdge(2)],
       pageInfo: {
         __typename: 'PageInfo',
         hasPreviousPage: true,
@@ -139,15 +126,7 @@ it('works with backwards pagination', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '1',
-          },
-        },
-      ],
+      edges: [itemEdge(1)],
       pageInfo: {
         __typename: 'PageInfo',
         hasPreviousPage: false,
@@ -202,22 +181,7 @@ it('handles duplicate edges', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '1',
-          },
-        },
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-      ],
+      edges: [itemEdge(1), itemEdge(2)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: true,
@@ -230,22 +194,7 @@ it('handles duplicate edges', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '3',
-          },
-        },
-      ],
+      edges: [itemEdge(2), itemEdge(3)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: false,
@@ -306,15 +255,7 @@ it('works with simultaneous forward and backward pagination (outwards merging)',
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '1',
-          },
-        },
-      ],
+      edges: [itemEdge(1)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: true,
@@ -329,15 +270,7 @@ it('works with simultaneous forward and backward pagination (outwards merging)',
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-      ],
+      edges: [itemEdge(2)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: true,
@@ -352,15 +285,7 @@ it('works with simultaneous forward and backward pagination (outwards merging)',
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '-1',
-          },
-        },
-      ],
+      edges: [itemEdge(-1)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: false,
@@ -446,15 +371,7 @@ it('works with simultaneous forward and backward pagination (inwards merging)', 
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '1',
-          },
-        },
-      ],
+      edges: [itemEdge(1)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: true,
@@ -469,15 +386,7 @@ it('works with simultaneous forward and backward pagination (inwards merging)', 
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '2',
-          },
-        },
-      ],
+      edges: [itemEdge(2)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: true,
@@ -492,15 +401,7 @@ it('works with simultaneous forward and backward pagination (inwards merging)', 
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: '-1',
-          },
-        },
-      ],
+      edges: [itemEdge(-1)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: false,
@@ -584,15 +485,7 @@ it('prevents overlapping of pagination on different arguments', () => {
     __typename: 'Query',
     items: {
       __typename: 'ItemsConnection',
-      edges: [
-        {
-          __typename: 'ItemEdge',
-          node: {
-            __typename: 'Item',
-            id: `${withId}`,
-          },
-        },
-      ],
+      edges: [itemEdge(withId)],
       pageInfo: {
         __typename: 'PageInfo',
         hasNextPage: false,
