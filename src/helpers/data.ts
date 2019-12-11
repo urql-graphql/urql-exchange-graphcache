@@ -18,7 +18,7 @@ export interface InMemoryData {
   links: NodeMap<Link>;
 }
 
-const currentOptimisticKey: null | number = null;
+let currentOptimisticKey: null | number = null;
 const currentGCBatch: Set<string> = new Set();
 
 const makeDict = <T>(): Dict<T> => Object.create(null);
@@ -141,6 +141,14 @@ export const flushGCBatch = (data: InMemoryData) => {
       delete data.refCount[entityKey];
       data.records.base.delete(entityKey);
       data.gcBatch.delete(entityKey);
+
+      const linkNode = data.links.base.get(entityKey);
+      if (linkNode !== undefined) {
+        data.links.base.delete(entityKey);
+        for (const key in linkNode) {
+          updateRCForLink(data.refCount, linkNode[key], -1);
+        }
+      }
     }
   });
 };
