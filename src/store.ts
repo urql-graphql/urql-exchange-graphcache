@@ -5,7 +5,7 @@ import {
   Cache,
   EntityField,
   Link,
-  Connection,
+  FieldInfo,
   ResolverConfig,
   DataField,
   Variables,
@@ -206,13 +206,15 @@ export class Store implements Cache {
     return InMemoryData.writeLink(this.data, entityKey, fieldKey, link);
   }
 
-  resolveValueOrLink(entityKey: string, fieldKey: string): DataField {
+  resolveFieldByKey(entity: Data | string | null, fieldKey: string): DataField {
+    const entityKey =
+      entity !== null && typeof entity !== 'string'
+        ? this.keyOfEntity(entity)
+        : entity;
+    if (entityKey === null) return null;
+    addDependency(entityKey);
     const fieldValue = InMemoryData.readRecord(this.data, entityKey, fieldKey);
-    // Undefined implies a link OR incomplete data.
-    // A value will imply that we are just fetching a field like date.
     if (fieldValue !== undefined) return fieldValue;
-
-    // This can be an array OR a string OR undefined again
     const link = InMemoryData.readLink(this.data, entityKey, fieldKey);
     return link ? link : null;
   }
@@ -222,17 +224,7 @@ export class Store implements Cache {
     field: string,
     args?: Variables
   ): DataField {
-    if (entity === null) {
-      return null;
-    } else if (typeof entity === 'string') {
-      addDependency(entity);
-      return this.resolveValueOrLink(entity, keyOfField(field, args));
-    } else {
-      const entityKey = this.keyOfEntity(entity);
-      if (entityKey === null) return null;
-      addDependency(entityKey);
-      return this.resolveValueOrLink(entityKey, keyOfField(field, args));
-    }
+    return this.resolveFieldByKey(entity, keyOfField(field, args));
   }
 
   invalidateQuery(query: string | DocumentNode, variables?: Variables) {
@@ -246,11 +238,14 @@ export class Store implements Cache {
     );
   }
 
-  resolveConnections(
-    _entity: Data | string | null,
-    _fieldName: string
-  ): Connection[] {
-    return []; // TODO
+  inspectFields(entity: Data | string | null): FieldInfo[] {
+    const entityKey =
+      entity !== null && typeof entity !== 'string'
+        ? this.keyOfEntity(entity)
+        : entity;
+    return entityKey !== null
+      ? InMemoryData.inspectFields(this.data, entityKey)
+      : [];
   }
 
   updateQuery(

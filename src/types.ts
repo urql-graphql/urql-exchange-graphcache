@@ -93,14 +93,11 @@ export interface Cache {
     args?: Variables
   ): DataField;
 
-  /** resolveValueOrLink() returns a field's value on an entity, given that field's key */
-  resolveValueOrLink(entityKey: string, fieldKey: string): DataField;
+  /** resolveFieldByKey() returns a field's value on an entity, given that field's key */
+  resolveFieldByKey(entity: Data | string | null, fieldKey: string): DataField;
 
-  /** resolveConnections() retrieves all known connections (arguments and links) for a given field on an entity */
-  resolveConnections(
-    entity: Data | string | null,
-    fieldName: string
-  ): Connection[];
+  /** inspectFields() retrieves all known fields for a given entity */
+  inspectFields(entity: Data | string | null): FieldInfo[];
 
   /** invalidateQuery() invalidates all data of a given query */
   invalidateQuery(query: DocumentNode, variables?: Variables): void;
