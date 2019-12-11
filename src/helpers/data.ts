@@ -20,7 +20,6 @@ export interface InMemoryData {
 }
 
 let currentOptimisticKey: null | number = null;
-const currentGCBatch: Set<string> = new Set();
 
 const makeDict = <T>(): Dict<T> => Object.create(null);
 
@@ -98,6 +97,7 @@ const clearOptimisticNodes = <T>(map: NodeMap<T>, optimisticKey: number) => {
 };
 
 const updateRCForEntity = (
+  gcBatch: Set<string>,
   refCount: Dict<number>,
   entityKey: string,
   by: number
@@ -105,24 +105,25 @@ const updateRCForEntity = (
   const count = refCount[entityKey] !== undefined ? refCount[entityKey] : 0;
   const newCount = (refCount[entityKey] = (count + by) | 0);
   if (newCount <= 0) {
-    currentGCBatch.add(entityKey);
+    gcBatch.add(entityKey);
   } else if (count <= 0 && newCount > 0) {
-    currentGCBatch.delete(entityKey);
+    gcBatch.delete(entityKey);
   }
 };
 
 const updateRCForLink = (
+  gcBatch: Set<string>,
   refCount: Dict<number>,
   link: Link | undefined,
   by: number
 ) => {
   if (typeof link === 'string') {
-    updateRCForEntity(refCount, link, by);
+    updateRCForEntity(gcBatch, refCount, link, by);
   } else if (Array.isArray(link)) {
     for (let i = 0, l = link.length; i < l; i++) {
       const entityKey = link[i];
       if (entityKey) {
-        updateRCForEntity(refCount, entityKey, by);
+        updateRCForEntity(gcBatch, refCount, entityKey, by);
       }
     }
   }
@@ -176,7 +177,7 @@ export const gc = (data: InMemoryData) => {
       if (linkNode !== undefined) {
         data.links.base.delete(entityKey);
         for (const key in linkNode) {
-          updateRCForLink(data.refCount, linkNode[key], -1);
+          updateRCForLink(data.gcBatch, data.refCount, linkNode[key], -1);
         }
       }
     }
@@ -208,8 +209,6 @@ export const writeLink = (
   fieldKey: string,
   link: Link | undefined
 ) => {
-  setNode(data.links, entityKey, fieldKey, link);
-
   let refCount: Dict<number>;
   let links: KeyMap<Dict<Link | undefined>> | undefined;
   if (currentOptimisticKey) {
@@ -224,8 +223,10 @@ export const writeLink = (
 
   const prevLinkNode = links !== undefined ? links.get(entityKey) : undefined;
   const prevLink = prevLinkNode !== undefined ? prevLinkNode[fieldKey] : null;
-  updateRCForLink(refCount, prevLink, -1);
-  updateRCForLink(refCount, link, 1);
+
+  updateRCForLink(data.gcBatch, refCount, prevLink, -1);
+  setNode(data.links, entityKey, fieldKey, link);
+  updateRCForLink(data.gcBatch, refCount, link, 1);
 };
 
 export const clearOptimistic = (data: InMemoryData, optimisticKey: number) => {
