@@ -3,9 +3,7 @@ import { query, write } from '../operations';
 import { Store } from '../store';
 import { relayPagination } from './relayPagination';
 
-// TODO: Fix relayPagination
-
-it.skip('works with forward pagination', () => {
+it('works with forward pagination', () => {
   const Pagination = gql`
     query($cursor: String) {
       items(first: 1, after: $cursor) {
@@ -89,7 +87,7 @@ it.skip('works with forward pagination', () => {
   });
 });
 
-it.skip('works with backwards pagination', () => {
+it('works with backwards pagination', () => {
   const Pagination = gql`
     query($cursor: String) {
       items(last: 1, before: $cursor) {
@@ -173,7 +171,7 @@ it.skip('works with backwards pagination', () => {
   });
 });
 
-it.skip('handles duplicate edges', () => {
+it('handles duplicate edges', () => {
   const Pagination = gql`
     query($cursor: String) {
       items(first: 2, after: $cursor) {
@@ -275,7 +273,7 @@ it.skip('handles duplicate edges', () => {
   });
 });
 
-it.skip('works with simultaneous forward and backward pagination (outwards merging)', () => {
+it('works with simultaneous forward and backward pagination (outwards merging)', () => {
   const Pagination = gql`
     query($first: Int, $last: Int, $before: String, $after: String) {
       items(first: $first, last: $last, before: $before, after: $after) {
@@ -415,7 +413,7 @@ it.skip('works with simultaneous forward and backward pagination (outwards mergi
   });
 });
 
-it.skip('works with simultaneous forward and backward pagination (inwards merging)', () => {
+it('works with simultaneous forward and backward pagination (inwards merging)', () => {
   const Pagination = gql`
     query($first: Int, $last: Int, $before: String, $after: String) {
       items(first: $first, last: $last, before: $before, after: $after) {
@@ -555,7 +553,7 @@ it.skip('works with simultaneous forward and backward pagination (inwards mergin
   });
 });
 
-it.skip('prevents overlapping of pagination on different arguments', () => {
+it('prevents overlapping of pagination on different arguments', () => {
   const Pagination = gql`
     query($filter: String) {
       items(first: 1, filter: $filter) {
@@ -645,7 +643,7 @@ it.skip('prevents overlapping of pagination on different arguments', () => {
   });
 });
 
-it.skip('returns an empty array of edges when the cache has zero edges stored', () => {
+it('returns an empty array of edges when the cache has zero edges stored', () => {
   const Pagination = gql`
     query {
       items(first: 1) {
@@ -685,7 +683,7 @@ it.skip('returns an empty array of edges when the cache has zero edges stored', 
   });
 });
 
-it.skip('returns other fields on the same level as the edges', () => {
+it('returns other fields on the same level as the edges', () => {
   const Pagination = gql`
     query {
       items(first: 1) {
