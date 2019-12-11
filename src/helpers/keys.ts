@@ -5,12 +5,12 @@ export const keyOfField = (fieldName: string, args?: null | Variables) =>
   args ? `${fieldName}(${stringifyVariables(args)})` : fieldName;
 
 export const fieldInfoOfKey = (fieldKey: string): FieldInfo => {
-  const curlyIndex = fieldKey.indexOf('(');
-  if (curlyIndex > -1) {
+  const parenIndex = fieldKey.indexOf('(');
+  if (parenIndex > -1) {
     return {
       fieldKey,
-      fieldName: fieldKey.slice(0, curlyIndex),
-      arguments: JSON.parse(fieldKey.slice(curlyIndex + 1, -1)),
+      fieldName: fieldKey.slice(0, parenIndex),
+      arguments: JSON.parse(fieldKey.slice(parenIndex + 1, -1)),
     };
   } else {
     return {
