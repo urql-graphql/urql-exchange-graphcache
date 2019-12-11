@@ -3,9 +3,7 @@ import { query, write } from '../operations';
 import { Store } from '../store';
 import { simplePagination } from './simplePagination';
 
-// TODO: Fix simplePagination
-
-it.skip('works with simple pagination', () => {
+it('works with simple pagination', () => {
   const Pagination = gql`
     query($skip: Number, $limit: Number) {
       persons(skip: $skip, limit: $limit) {
@@ -58,7 +56,7 @@ it.skip('works with simple pagination', () => {
   });
 });
 
-it.skip('handles duplicates', () => {
+it('handles duplicates', () => {
   const Pagination = gql`
     query($skip: Number, $limit: Number) {
       persons(skip: $skip, limit: $limit) {
@@ -111,7 +109,7 @@ it.skip('handles duplicates', () => {
   });
 });
 
-it.skip('should preserve the correct order', () => {
+it('should preserve the correct order', () => {
   const Pagination = gql`
     query($skip: Number, $limit: Number) {
       persons(skip: $skip, limit: $limit) {
@@ -164,7 +162,7 @@ it.skip('should preserve the correct order', () => {
   });
 });
 
-it.skip('prevents overlapping of pagination on different arguments', () => {
+it('prevents overlapping of pagination on different arguments', () => {
   const Pagination = gql`
     query($skip: Number, $limit: Number, $filter: string) {
       persons(skip: $skip, limit: $limit, filter: $filter) {
