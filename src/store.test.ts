@@ -134,23 +134,21 @@ describe('Store with OptimisticMutationConfig', () => {
     clearStoreState();
   });
 
-  // TODO: Fix invalidateQuery tests
-
-  /*
   it('should be able to invalidate data (one relation key)', () => {
     let { data } = query(store, { query: Todos });
     expect((data as any).todos).toHaveLength(3);
-    expect(store.getRecord('Todo:0.text')).toBe('Go to the shops');
+    expect(store.getRecord('Todo:0', 'text')).toBe('Go to the shops');
+
     initStoreState(store, 0);
     store.invalidateQuery(Todos);
     clearStoreState();
+
     ({ data } = query(store, { query: Todos }));
     expect(data).toBe(null);
-    expect(store.getRecord('Todo:0.text')).toBe(undefined);
+    expect(store.getRecord('Todo:0', 'text')).toBe(undefined);
   });
 
   it('should be able to invalidate data with arguments', () => {
-    initStoreState(store, 0);
     write(
       store,
       {
@@ -166,14 +164,13 @@ describe('Store with OptimisticMutationConfig', () => {
         },
       }
     );
-    clearStoreState();
 
     let { data } = query(store, {
       query: Appointment,
       variables: { id: '1' },
     });
     expect((data as any).appointment.info).toBe('urql meeting');
-    expect(store.getRecord('Appointment:1.info')).toBe('urql meeting');
+    expect(store.getRecord('Appointment:1', 'info')).toBe('urql meeting');
     initStoreState(store, 0);
     store.invalidateQuery(Appointment, { id: '1' });
     clearStoreState();
@@ -182,9 +179,8 @@ describe('Store with OptimisticMutationConfig', () => {
       variables: { id: '1' },
     }));
     expect(data).toBe(null);
-    expect(store.getRecord('Appointment:1.info')).toBe(undefined);
+    expect(store.getRecord('Appointment:1', 'info')).toBe(undefined);
   });
-  */
 
   it('should be able to write a fragment', () => {
     initStoreState(store, 0);

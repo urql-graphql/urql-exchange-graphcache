@@ -1,3 +1,5 @@
+import { FieldNode } from 'graphql';
+
 import {
   getMainOperation,
   normalizeVariables,
@@ -15,14 +17,7 @@ import {
   SelectionSet,
 } from '../types';
 
-import {
-  Store,
-  addDependency,
-  initStoreState,
-  clearStoreState,
-} from '../store';
-
-import { FieldNode } from 'graphql';
+import { Store, addDependency } from '../store';
 import { SelectionIterator } from './shared';
 import { joinKeys, keyOfField } from '../helpers';
 import { SchemaPredicates } from '../ast/schemaPredicates';
@@ -35,7 +30,6 @@ interface Context {
 }
 
 export const invalidate = (store: Store, request: OperationRequest) => {
-  initStoreState(store, 0);
   const operation = getMainOperation(request.query);
 
   const ctx: Context = {
@@ -50,8 +44,6 @@ export const invalidate = (store: Store, request: OperationRequest) => {
     ctx.store.getRootKey('query'),
     getSelectionSet(operation)
   );
-
-  clearStoreState();
 };
 
 export const invalidateSelection = (
