@@ -18,17 +18,19 @@ import {
 
 import * as InMemoryData from './helpers/data';
 import { invariant, currentDebugStack } from './helpers/help';
-import { keyOfField } from './helpers';
+import { defer, keyOfField } from './helpers';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';
 import { SchemaPredicates } from './ast/schemaPredicates';
 
+let currentStore: null | Store = null;
 let currentDependencies: null | Set<string> = null;
 
 // Initialise a store run by resetting its internal state
-export const initStoreState = (optimisticKey: null | number) => {
+export const initStoreState = (store: Store, optimisticKey: null | number) => {
   InMemoryData.setCurrentOptimisticKey(optimisticKey);
+  currentStore = store;
   currentDependencies = new Set();
 
   if (process.env.NODE_ENV !== 'production') {
@@ -38,7 +40,9 @@ export const initStoreState = (optimisticKey: null | number) => {
 
 // Finalise a store run by clearing its internal state
 export const clearStoreState = () => {
+  defer((currentStore as Store).gc);
   InMemoryData.setCurrentOptimisticKey(null);
+  currentStore = null;
   currentDependencies = null;
 
   if (process.env.NODE_ENV !== 'production') {
@@ -134,6 +138,9 @@ export class Store implements Cache {
     }
   }
 
+  gc = () => InMemoryData.flushGCBatch(this.data);
+  keyOfField = keyOfField;
+
   getRootKey(name: RootField) {
     return this.rootFields[name];
   }
@@ -157,8 +164,6 @@ export class Store implements Cache {
 
     return key ? `${typename}:${key}` : null;
   }
-
-  keyOfField = keyOfField;
 
   clearOptimistic(optimisticKey: number) {
     InMemoryData.clearOptimistic(this.data, optimisticKey);
