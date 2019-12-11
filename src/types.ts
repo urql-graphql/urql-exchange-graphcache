@@ -48,6 +48,12 @@ export type Link<Key = string> = null | Key | NullArray<Key>;
 export type ResolvedLink = Link<Data>;
 export type Connection = [Variables, string];
 
+export interface FieldInfo {
+  fieldKey: string;
+  fieldName: string;
+  arguments: Variables | null;
+}
+
 // This is an input operation
 export interface OperationRequest {
   query: DocumentNode;

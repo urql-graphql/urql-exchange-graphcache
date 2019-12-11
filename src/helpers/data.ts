@@ -1,4 +1,5 @@
-import { Link, EntityField } from '../types';
+import { Link, EntityField, FieldInfo } from '../types';
+import { fieldInfoOfKey } from './keys';
 
 type Dict<T> = Record<string, T>;
 type KeyMap<T> = Map<string, T>;
@@ -127,7 +128,36 @@ const updateRCForLink = (
   }
 };
 
-export const flushGCBatch = (data: InMemoryData) => {
+const extractNodeFields = <T>(
+  fieldInfos: FieldInfo[],
+  seenFieldKeys: Set<string>,
+  node: Dict<T> | undefined
+) => {
+  if (node !== undefined) {
+    for (const fieldKey in node) {
+      if (!seenFieldKeys.has(fieldKey)) {
+        fieldInfos.push(fieldInfoOfKey(fieldKey));
+        seenFieldKeys.add(fieldKey);
+      }
+    }
+  }
+};
+
+const extractNodeMapFields = <T>(
+  fieldInfos: FieldInfo[],
+  seenFieldKeys: Set<string>,
+  entityKey: string,
+  map: NodeMap<T>
+) => {
+  extractNodeFields(fieldInfos, seenFieldKeys, map.base.get(entityKey));
+
+  for (let i = 0, l = map.keys.length; i < l; i++) {
+    const optimistic = map.optimistic[map.keys[i]];
+    extractNodeFields(fieldInfos, seenFieldKeys, optimistic.get(entityKey));
+  }
+};
+
+export const gc = (data: InMemoryData) => {
   data.gcBatch.forEach(entityKey => {
     const rc = data.refCount[entityKey] || 0;
     if (rc <= 0) {
@@ -202,4 +232,16 @@ export const clearOptimistic = (data: InMemoryData, optimisticKey: number) => {
   delete data.refLock[optimisticKey];
   clearOptimisticNodes(data.records, optimisticKey);
   clearOptimisticNodes(data.links, optimisticKey);
+};
+
+export const inspectFields = (
+  data: InMemoryData,
+  entityKey: string
+): FieldInfo[] => {
+  const { links, records } = data;
+  const fieldInfos: FieldInfo[] = [];
+  const seenFieldKeys: Set<string> = new Set();
+  extractNodeMapFields(fieldInfos, seenFieldKeys, entityKey, links);
+  extractNodeMapFields(fieldInfos, seenFieldKeys, entityKey, records);
+  return fieldInfos;
 };

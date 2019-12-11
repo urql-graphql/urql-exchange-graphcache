@@ -138,7 +138,7 @@ export class Store implements Cache {
     }
   }
 
-  gc = () => InMemoryData.flushGCBatch(this.data);
+  gc = () => InMemoryData.gc(this.data);
   keyOfField = keyOfField;
 
   getRootKey(name: RootField) {
