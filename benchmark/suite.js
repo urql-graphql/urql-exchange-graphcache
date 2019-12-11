@@ -1,6 +1,7 @@
 const gql = require('graphql-tag');
-const { InMemoryCache } = require('@apollo/client');
-const { Store, write, query } = require('../dist/urql-exchange-graphcache.min');
+const urqlNew = require('../dist/urql-exchange-graphcache.min.js');
+const urql122 = require('./urql-exchange-graphcache-1.2.2.min.js');
+const urql121 = require('./urql-exchange-graphcache-1.2.1.min.js');
 
 const countries = ['UK', 'BE', 'ES', 'US'];
 
@@ -31,122 +32,86 @@ const makeTodo = i => ({
   complete: Boolean(i % 2),
   __typename: 'Todo',
 });
-const hundredEntries = makeEntries(100, makeTodo);
 const thousandEntries = makeEntries(1000, makeTodo);
 const tenThousandEntries = makeEntries(10000, makeTodo);
 
-suite('100 entries write', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });
+suite('1,000 entries write', () => {
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  benchmark('apollo', () => {
-    return apolloCache.writeQuery({
-      query: TodosQuery,
-      data: { todos: hundredEntries }
-    })
+  benchmark('urql (current)', () => {
+    return urqlNew.write(urqlStoreNew, { query: TodosQuery }, { todos: thousandEntries });
   });
 
-  benchmark('urql', () => {
-    return write(urqlStore, { query: TodosQuery }, { todos: hundredEntries });
-  });
-});
-
-suite('1000 entries write', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
-
-  benchmark('apollo', () => {
-    return apolloCache.writeQuery({
-      query: TodosQuery,
-      data: { todos: thousandEntries },
-    });
+  benchmark('urql (1.2.2)', () => {
+    return urql122.write(urqlStore122, { query: TodosQuery }, { todos: thousandEntries });
   });
 
-  benchmark('urql', () => {
-    return write(urqlStore, { query: TodosQuery }, { todos: thousandEntries });
+  benchmark('urql (1.2.1)', () => {
+    return urql122.write(urqlStore122, { query: TodosQuery }, { todos: thousandEntries });
   });
 });
 
-suite('10000 entries write', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+suite('10,000 entries write', () => {
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  benchmark('apollo', () => {
-    return apolloCache.writeQuery({
-      query: TodosQuery,
-      data: { todos: tenThousandEntries },
-    });
+  benchmark('urql (current)', () => {
+    return urqlNew.write(urqlStoreNew, { query: TodosQuery }, { todos: tenThousandEntries });
   });
 
-  benchmark('urql', () => {
-    return write(
-      urqlStore,
-      { query: TodosQuery },
-      { todos: tenThousandEntries }
-    );
+  benchmark('urql (1.2.2)', () => {
+    return urql122.write(urqlStore122, { query: TodosQuery }, { todos: tenThousandEntries });
+  });
+
+  benchmark('urql (1.2.1)', () => {
+    return urql121.write(urqlStore121, { query: TodosQuery }, { todos: tenThousandEntries });
   });
 });
 
-suite('100 entries read', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+suite('1,000 entries read', () => {
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  write(urqlStore, { query: TodosQuery }, { todos: hundredEntries });
-  apolloCache.writeQuery({ query: TodosQuery, data: { todos: hundredEntries } })
+  urql121.write(urqlStore121, { query: TodosQuery }, { todos: thousandEntries });
+  urql122.write(urqlStore122, { query: TodosQuery }, { todos: thousandEntries });
+  urqlNew.write(urqlStoreNew, { query: TodosQuery }, { todos: thousandEntries });
 
-  benchmark('apollo', () => {
-    return apolloCache.readQuery({
-      query: TodosQuery,
-    });
+  benchmark('urql (current)', () => {
+    return urqlNew.query(urqlStoreNew, { query: TodosQuery });
   });
 
-  benchmark('urql', () => {
-    return query(urqlStore, { query: TodosQuery });
-  });
-});
-
-suite('1000 entries read', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
-
-  write(urqlStore, { query: TodosQuery }, { todos: thousandEntries });
-  apolloCache.writeQuery({
-    query: TodosQuery,
-    data: { todos: thousandEntries },
+  benchmark('urql (1.2.2)', () => {
+    return urql122.query(urqlStore122, { query: TodosQuery });
   });
 
-  benchmark('apollo', () => {
-    return apolloCache.readQuery({
-      query: TodosQuery,
-    });
-  });
-
-  benchmark('urql', () => {
-    return query(urqlStore, { query: TodosQuery });
+  benchmark('urql (1.2.1)', () => {
+    return urql121.query(urqlStore121, { query: TodosQuery });
   });
 });
 
-suite('10000 entries read', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+suite('10,000 entries read', () => {
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  write(urqlStore, { query: TodosQuery }, { todos: tenThousandEntries });
-  apolloCache.writeQuery({
-    query: TodosQuery,
-    data: { todos: tenThousandEntries },
+  urql121.write(urqlStore121, { query: TodosQuery }, { todos: tenThousandEntries });
+  urql122.write(urqlStore122, { query: TodosQuery }, { todos: tenThousandEntries });
+  urqlNew.write(urqlStoreNew, { query: TodosQuery }, { todos: tenThousandEntries });
+
+  benchmark('urql (current)', () => {
+    return urqlNew.query(urqlStoreNew, { query: TodosQuery });
   });
 
-  benchmark('apollo', () => {
-    return apolloCache.readQuery({
-      query: TodosQuery,
-    });
+  benchmark('urql (1.2.2)', () => {
+    return urql122.query(urqlStore122, { query: TodosQuery });
   });
 
-  benchmark('urql', () => {
-    return query(
-      urqlStore,
-      { query: TodosQuery },
-    );
+  benchmark('urql (1.2.1)', () => {
+    return urql121.query(urqlStore121, { query: TodosQuery });
   });
 });
 
@@ -196,7 +161,6 @@ const WritersQuery = gql`
     }
   }
 `;
-const hundredWriters = makeEntries(100, makeWriter);
 const thousandWriters= makeEntries(1000, makeWriter);
 const tenThousandWriters = makeEntries(10000, makeWriter);
 
@@ -213,7 +177,6 @@ const BooksQuery = gql`
     }
   }
 `;
-const hundredBooks = makeEntries(100, makeBook);
 const thousandBooks = makeEntries(1000, makeBook);
 const tenThousandBooks = makeEntries(10000, makeBook);
 
@@ -228,7 +191,7 @@ const StoresQuery = gql`
     }
   }
 `;
-const hundredStores = makeEntries(100, makeStore);
+
 const thousandStores = makeEntries(1000, makeStore);
 const tenThousandStores = makeEntries(10000, makeStore);
 
@@ -243,123 +206,91 @@ const EmployeesQuery = gql`
     }
   }
 `;
-const hundredEmployees = makeEntries(100, makeEmployee);
+
 const thousandEmployees = makeEntries(1000, makeEmployee);
 const tenThousandEmployees = makeEntries(10000, makeEmployee);
 
-suite('100 entries write five entities', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
-
-  benchmark('apollo', () => {
-    apolloCache.writeQuery({
-      query: BooksQuery,
-      data: { books: hundredBooks },
-    });
-    apolloCache.writeQuery({
-      query: EmployeesQuery,
-      data: { employees: hundredEmployees },
-    });
-    apolloCache.writeQuery({
-      query: StoresQuery,
-      data: { stores: hundredStores },
-    });
-    apolloCache.writeQuery({
-      query: WritersQuery,
-      data: { writers: hundredWriters },
-    });
-    return apolloCache.writeQuery({
-      query: TodosQuery,
-      data: { todos: hundredEntries },
-    });
-  });
-
-  benchmark('urql', () => {
-    write(urqlStore, { query: BooksQuery }, { books: hundredBooks });
-    write(urqlStore, { query: EmployeesQuery }, { employees: hundredEmployees });
-    write(urqlStore, { query: StoresQuery }, { stores: hundredStores });
-    write(urqlStore, { query: WritersQuery }, { writers: hundredWriters });
-    return write(urqlStore, { query: TodosQuery }, { todos: hundredEntries });
-  });
-});
-
 suite('1000 entries write five entities', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  benchmark('apollo', () => {
-    apolloCache.writeQuery({
-      query: BooksQuery,
-      data: { books: thousandBooks },
-    });
-    apolloCache.writeQuery({
-      query: EmployeesQuery,
-      data: { employees: thousandEmployees },
-    });
-    apolloCache.writeQuery({
-      query: StoresQuery,
-      data: { stores: thousandStores },
-    });
-    apolloCache.writeQuery({
-      query: WritersQuery,
-      data: { writers: thousandWriters },
-    });
-    return apolloCache.writeQuery({
-      query: TodosQuery,
-      data: { todos: thousandEntries },
-    });
-  });
-
-  benchmark('urql', () => {
-    write(urqlStore, { query: BooksQuery }, { books: thousandBooks });
-    write(
-      urqlStore,
+  benchmark('urql (current)', () => {
+    urqlNew.write(urqlStoreNew, { query: BooksQuery }, { books: thousandBooks });
+    urqlNew.write(
+      urqlStoreNew,
       { query: EmployeesQuery },
       { employees: thousandEmployees }
     );
-    write(urqlStore, { query: StoresQuery }, { stores: thousandStores });
-    write(urqlStore, { query: WritersQuery }, { writers: thousandWriters });
-    return write(urqlStore, { query: TodosQuery }, { todos: thousandEntries });
+    urqlNew.write(urqlStoreNew, { query: StoresQuery }, { stores: thousandStores });
+    urqlNew.write(urqlStoreNew, { query: WritersQuery }, { writers: thousandWriters });
+    urqlNew.write(urqlStoreNew, { query: TodosQuery }, { todos: thousandEntries });
+  });
+
+  benchmark('urql (1.2.2)', () => {
+    urql122.write(urqlStore122, { query: BooksQuery }, { books: thousandBooks });
+    urql122.write(
+      urqlStore122,
+      { query: EmployeesQuery },
+      { employees: thousandEmployees }
+    );
+    urql122.write(urqlStore122, { query: StoresQuery }, { stores: thousandStores });
+    urql122.write(urqlStore122, { query: WritersQuery }, { writers: thousandWriters });
+    urql122.write(urqlStore122, { query: TodosQuery }, { todos: thousandEntries });
+  });
+
+  benchmark('urql (1.2.1)', () => {
+    urql121.write(urqlStore121, { query: BooksQuery }, { books: thousandBooks });
+    urql121.write(
+      urqlStore121,
+      { query: EmployeesQuery },
+      { employees: thousandEmployees }
+    );
+    urql121.write(urqlStore121, { query: StoresQuery }, { stores: thousandStores });
+    urql121.write(urqlStore121, { query: WritersQuery }, { writers: thousandWriters });
+    urql121.write(urqlStore121, { query: TodosQuery }, { todos: thousandEntries });
   });
 });
 
 suite('10000 entries write five entities', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  benchmark('apollo', () => {
-    apolloCache.writeQuery({
-      query: BooksQuery,
-      data: { books: tenThousandBooks },
-    });
-    apolloCache.writeQuery({
-      query: EmployeesQuery,
-      data: { employees: tenThousandEmployees },
-    });
-    apolloCache.writeQuery({
-      query: StoresQuery,
-      data: { stores: tenThousandStores },
-    });
-    apolloCache.writeQuery({
-      query: WritersQuery,
-      data: { writers: tenThousandWriters },
-    });
-    return apolloCache.writeQuery({
-      query: TodosQuery,
-      data: { todos: tenThousandEntries },
-    });
-  });
-
-  benchmark('urql', () => {
-    write(urqlStore, { query: BooksQuery }, { books: tenThousandBooks });
-    write(
-      urqlStore,
+  benchmark('urql (current)', () => {
+    urqlNew.write(urqlStoreNew, { query: BooksQuery }, { books: tenThousandBooks });
+    urqlNew.write(
+      urqlStoreNew,
       { query: EmployeesQuery },
       { employees: tenThousandEmployees }
     );
-    write(urqlStore, { query: StoresQuery }, { stores: tenThousandStores });
-    write(urqlStore, { query: WritersQuery }, { writers: tenThousandWriters });
-    return write(urqlStore, { query: TodosQuery }, { todos: tenThousandEntries });
+    urqlNew.write(urqlStoreNew, { query: StoresQuery }, { stores: tenThousandStores });
+    urqlNew.write(urqlStoreNew, { query: WritersQuery }, { writers: tenThousandWriters });
+    urqlNew.write(urqlStoreNew, { query: TodosQuery }, { todos: tenThousandEntries });
+  });
+
+  benchmark('urql (1.2.2)', () => {
+    urql122.write(urqlStore122, { query: BooksQuery }, { books: tenThousandBooks });
+    urql122.write(
+      urqlStore122,
+      { query: EmployeesQuery },
+      { employees: tenThousandEmployees }
+    );
+    urql122.write(urqlStore122, { query: StoresQuery }, { stores: tenThousandStores });
+    urql122.write(urqlStore122, { query: WritersQuery }, { writers: tenThousandWriters });
+    urql122.write(urqlStore122, { query: TodosQuery }, { todos: tenThousandEntries });
+  });
+
+  benchmark('urql (1.2.1)', () => {
+    urql121.write(urqlStore121, { query: BooksQuery }, { books: tenThousandBooks });
+    urql121.write(
+      urqlStore121,
+      { query: EmployeesQuery },
+      { employees: tenThousandEmployees }
+    );
+    urql121.write(urqlStore121, { query: StoresQuery }, { stores: tenThousandStores });
+    urql121.write(urqlStore121, { query: WritersQuery }, { writers: tenThousandWriters });
+    urql121.write(urqlStore121, { query: TodosQuery }, { todos: tenThousandEntries });
   });
 });
 
@@ -417,56 +348,51 @@ const AuthorQuery = gql`
   }
 `;
 
-const hundredEntriesComplex = makeEntries(100, makeAuthor);
 const thousandEntriesComplex = makeEntries(1000, makeAuthor);
 const tenThousandEntriesComplex = makeEntries(10000, makeAuthor);
 
-suite('100 entries complex write', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+suite('1,000 entries complex write', () => {
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  benchmark('apollo', () => {
-    return apolloCache.writeQuery({
-      query: AuthorQuery,
-      data: { todos: hundredEntriesComplex },
-    });
+  benchmark('urql (current)', () => {
+    return urqlNew.write(urqlStoreNew, { query: AuthorQuery }, { todos: thousandEntriesComplex });
   });
 
-  benchmark('urql', () => {
-    return write(urqlStore, { query: AuthorQuery }, { todos: hundredEntriesComplex });
-  });
-});
-
-suite('1000 entries complex write', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
-
-  benchmark('apollo', () => {
-    return apolloCache.writeQuery({
-      query: AuthorQuery,
-      data: { todos: thousandEntriesComplex },
-    });
+  benchmark('urql (1.2.2)', () => {
+    return urql122.write(urqlStore122, { query: AuthorQuery }, { todos: thousandEntriesComplex });
   });
 
-  benchmark('urql', () => {
-    return write(urqlStore, { query: AuthorQuery }, { todos: thousandEntriesComplex });
+  benchmark('urql (1.2.1)', () => {
+    return urql121.write(urqlStore121, { query: AuthorQuery }, { todos: thousandEntriesComplex });
   });
 });
 
-suite('10000 entries complex write', () => {
-  const urqlStore = new Store();
-  const apolloCache = new InMemoryCache({ resultCaching: false });;
+suite('10,000 entries complex write', () => {
+  const urqlStore121 = new urql121.Store();
+  const urqlStore122 = new urql122.Store();
+  const urqlStoreNew = new urqlNew.Store();
 
-  benchmark('apollo', () => {
-    return apolloCache.writeQuery({
-      query: AuthorQuery,
-      data: { todos: tenThousandEntriesComplex },
-    });
+  benchmark('urql (current)', () => {
+    return urqlNew.write(
+      urqlStoreNew,
+      { query: AuthorQuery },
+      { todos: tenThousandEntriesComplex }
+    );
   });
 
-  benchmark('urql', () => {
-    return write(
-      urqlStore,
+  benchmark('urql (1.2.2)', () => {
+    return urql122.write(
+      urqlStore122,
+      { query: AuthorQuery },
+      { todos: tenThousandEntriesComplex }
+    );
+  });
+
+  benchmark('urql (1.2.1)', () => {
+    return urql121.write(
+      urqlStore121,
       { query: AuthorQuery },
       { todos: tenThousandEntriesComplex }
     );
