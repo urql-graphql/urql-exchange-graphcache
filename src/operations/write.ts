@@ -282,6 +282,7 @@ const writeSelection = (
       // Process the field and write links for the child entities that have been written
       const link = writeField(ctx, key, getSelectionSet(node), fieldValue);
       store.writeLink(link, entityKey, fieldKey);
+      store.writeRecord(undefined, entityKey, fieldKey);
     } else {
       warn(
         'Invalid value: The field at `' +
