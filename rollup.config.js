@@ -161,7 +161,6 @@ const config = {
 };
 
 export default [
-/*
   {
     ...config,
     input: './src/extras/index.ts',
@@ -185,7 +184,6 @@ export default [
       }
     ]
   },
-  */
   {
     ...config,
     plugins: makePlugins(false),
