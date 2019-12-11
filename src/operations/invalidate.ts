@@ -69,10 +69,7 @@ export const invalidateSelection = (
     if (typeof typename !== 'string') {
       return;
     } else {
-      store.writeRecord(
-        undefined,
-        joinKeys(entityKey, keyOfField('__typename'))
-      );
+      store.writeRecord(undefined, entityKey, keyOfField('__typename'));
     }
   } else {
     typename = entityKey;
@@ -83,10 +80,11 @@ export const invalidateSelection = (
   let node: FieldNode | void;
   while ((node = iter.next()) !== undefined) {
     const fieldName = getName(node);
-    const fieldKey = joinKeys(
-      entityKey,
-      keyOfField(fieldName, getFieldArguments(node, ctx.variables))
+    const fieldKey = keyOfField(
+      fieldName,
+      getFieldArguments(node, ctx.variables)
     );
+    const key = joinKeys(entityKey, fieldKey);
 
     if (
       process.env.NODE_ENV !== 'production' &&
@@ -96,27 +94,24 @@ export const invalidateSelection = (
       ctx.schemaPredicates.isFieldAvailableOnType(typename, fieldName);
     }
 
-    if (isQuery) addDependency(fieldKey);
+    if (isQuery) addDependency(key);
 
     if (node.selectionSet === undefined) {
-      store.writeRecord(undefined, fieldKey);
+      store.writeRecord(undefined, entityKey, fieldKey);
     } else {
       const fieldSelect = getSelectionSet(node);
-      const link = store.getLink(fieldKey);
-      store.writeLink(undefined, fieldKey);
+      const link = store.getLink(entityKey, fieldKey);
+      store.writeLink(undefined, entityKey, fieldKey);
+      store.writeRecord(undefined, entityKey, fieldKey);
 
-      if (link === undefined) {
-        if (store.getRecord(fieldKey) !== undefined) {
-          store.writeRecord(undefined, fieldKey);
-        }
-      } else if (Array.isArray(link)) {
+      if (Array.isArray(link)) {
         for (let i = 0, l = link.length; i < l; i++) {
           const childLink = link[i];
           if (childLink !== null) {
             invalidateSelection(ctx, childLink, fieldSelect);
           }
         }
-      } else if (link !== null) {
+      } else if (link) {
         invalidateSelection(ctx, link, fieldSelect);
       }
     }

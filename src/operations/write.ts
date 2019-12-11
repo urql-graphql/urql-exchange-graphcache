@@ -242,10 +242,11 @@ const writeSelection = (
   while ((node = iter.next()) !== undefined) {
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, ctx.variables);
-    const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
+    const fieldKey = keyOfField(fieldName, fieldArgs);
     const fieldValue = data[getFieldAlias(node)];
+    const key = joinKeys(entityKey, fieldKey);
 
-    if (isQuery) addDependency(fieldKey);
+    if (isQuery) addDependency(key);
 
     if (process.env.NODE_ENV !== 'production') {
       if (fieldValue === undefined) {
@@ -276,19 +277,11 @@ const writeSelection = (
 
     if (node.selectionSet === undefined) {
       // This is a leaf node, so we're setting the field's value directly
-      store.writeRecord(fieldValue, fieldKey);
+      store.writeRecord(fieldValue, entityKey, fieldKey);
     } else if (!isScalar(fieldValue)) {
       // Process the field and write links for the child entities that have been written
-      const link = writeField(ctx, fieldKey, getSelectionSet(node), fieldValue);
-
-      store.writeConnection(
-        joinKeys(entityKey, fieldName),
-        fieldKey,
-        fieldArgs
-      );
-
-      store.writeLink(link, fieldKey);
-      store.writeRecord(undefined, fieldKey);
+      const link = writeField(ctx, key, getSelectionSet(node), fieldValue);
+      store.writeLink(link, entityKey, fieldKey);
     } else {
       warn(
         'Invalid value: The field at `' +
@@ -300,7 +293,7 @@ const writeSelection = (
       );
 
       // This is a rare case for invalid entities
-      store.writeRecord(fieldValue, fieldKey);
+      store.writeRecord(fieldValue, entityKey, fieldKey);
     }
   }
 };

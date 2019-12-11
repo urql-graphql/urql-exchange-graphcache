@@ -16,21 +16,20 @@ import {
   KeyingConfig,
 } from './types';
 
-import * as KVMap from './helpers/map';
-import { joinKeys, keyOfField } from './helpers';
+import * as InMemoryData from './helpers/data';
 import { invariant, currentDebugStack } from './helpers/help';
+import { keyOfField } from './helpers';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';
 import { SchemaPredicates } from './ast/schemaPredicates';
 
 let currentDependencies: null | Set<string> = null;
-let currentOptimisticKey: null | number = null;
 
 // Initialise a store run by resetting its internal state
 export const initStoreState = (optimisticKey: null | number) => {
+  InMemoryData.setCurrentOptimisticKey(optimisticKey);
   currentDependencies = new Set();
-  currentOptimisticKey = optimisticKey;
 
   if (process.env.NODE_ENV !== 'production') {
     currentDebugStack.length = 0;
@@ -39,8 +38,8 @@ export const initStoreState = (optimisticKey: null | number) => {
 
 // Finalise a store run by clearing its internal state
 export const clearStoreState = () => {
+  InMemoryData.setCurrentOptimisticKey(null);
   currentDependencies = null;
-  currentOptimisticKey = null;
 
   if (process.env.NODE_ENV !== 'production') {
     currentDebugStack.length = 0;
@@ -67,9 +66,7 @@ export const addDependency = (dependency: string) => {
 type RootField = 'query' | 'mutation' | 'subscription';
 
 export class Store implements Cache {
-  records: KVMap.KVMap<EntityField>;
-  connections: KVMap.KVMap<Connection[]>;
-  links: KVMap.KVMap<Link>;
+  data: InMemoryData.InMemoryData;
 
   resolvers: ResolverConfig;
   updates: UpdatesConfig;
@@ -87,9 +84,7 @@ export class Store implements Cache {
     optimisticMutations?: OptimisticMutationConfig,
     keys?: KeyingConfig
   ) {
-    this.records = KVMap.make();
-    this.connections = KVMap.make();
-    this.links = KVMap.make();
+    this.data = InMemoryData.make();
 
     this.resolvers = resolvers || {};
     this.optimisticMutations = optimisticMutations || {};
@@ -163,18 +158,18 @@ export class Store implements Cache {
     return key ? `${typename}:${key}` : null;
   }
 
+  keyOfField = keyOfField;
+
   clearOptimistic(optimisticKey: number) {
-    KVMap.clear(this.records, optimisticKey);
-    KVMap.clear(this.connections, optimisticKey);
-    KVMap.clear(this.links, optimisticKey);
+    InMemoryData.clearOptimistic(this.data, optimisticKey);
   }
 
-  getRecord(fieldKey: string): EntityField {
-    return KVMap.get(this.records, fieldKey);
+  getRecord(entityKey: string, fieldKey: string): EntityField {
+    return InMemoryData.readRecord(this.data, entityKey, fieldKey);
   }
 
-  writeRecord(field: EntityField, fieldKey: string) {
-    return KVMap.set(this.records, fieldKey, field, currentOptimisticKey);
+  writeRecord(field: EntityField, entityKey: string, fieldKey: string) {
+    InMemoryData.writeRecord(this.data, entityKey, fieldKey, field);
   }
 
   getField(
@@ -182,7 +177,11 @@ export class Store implements Cache {
     fieldName: string,
     args?: Variables
   ): EntityField {
-    return this.getRecord(joinKeys(entityKey, keyOfField(fieldName, args)));
+    return InMemoryData.readRecord(
+      this.data,
+      entityKey,
+      keyOfField(fieldName, args)
+    );
   }
 
   writeField(
@@ -191,47 +190,25 @@ export class Store implements Cache {
     fieldName: string,
     args?: Variables
   ) {
-    return this.writeRecord(
-      field,
-      joinKeys(entityKey, keyOfField(fieldName, args))
-    );
+    return this.writeRecord(field, entityKey, keyOfField(fieldName, args));
   }
 
-  getLink(key: string): undefined | Link {
-    return KVMap.get(this.links, key);
+  getLink(entityKey: string, fieldKey: string): undefined | Link {
+    return InMemoryData.readLink(this.data, entityKey, fieldKey);
   }
 
-  writeLink(link: undefined | Link, key: string) {
-    return KVMap.set(this.links, key, link, currentOptimisticKey);
+  writeLink(link: undefined | Link, entityKey: string, fieldKey: string) {
+    return InMemoryData.writeLink(this.data, entityKey, fieldKey, link);
   }
 
-  writeConnection(key: string, linkKey: string, args: Variables | null) {
-    if (this.getLink(linkKey) !== undefined || args === null) {
-      return this.connections;
-    }
-
-    let connections = KVMap.get(this.connections, key);
-    const connection: Connection = [args, linkKey];
-    if (connections === undefined) {
-      connections = [connection];
-    } else {
-      for (let i = 0, l = connections.length; i < l; i++)
-        if (connections[i][1] === linkKey) return this.connections;
-      connections = connections.slice();
-      connections.push(connection);
-    }
-
-    return KVMap.set(this.connections, key, connections, currentOptimisticKey);
-  }
-
-  resolveValueOrLink(fieldKey: string): DataField {
-    const fieldValue = this.getRecord(fieldKey);
+  resolveValueOrLink(entityKey: string, fieldKey: string): DataField {
+    const fieldValue = InMemoryData.readRecord(this.data, entityKey, fieldKey);
     // Undefined implies a link OR incomplete data.
     // A value will imply that we are just fetching a field like date.
     if (fieldValue !== undefined) return fieldValue;
 
     // This can be an array OR a string OR undefined again
-    const link = this.getLink(fieldKey);
+    const link = InMemoryData.readLink(this.data, entityKey, fieldKey);
     return link ? link : null;
   }
 
@@ -244,41 +221,31 @@ export class Store implements Cache {
       return null;
     } else if (typeof entity === 'string') {
       addDependency(entity);
-      return this.resolveValueOrLink(joinKeys(entity, keyOfField(field, args)));
+      return this.resolveValueOrLink(entity, keyOfField(field, args));
     } else {
       const entityKey = this.keyOfEntity(entity);
       if (entityKey === null) return null;
       addDependency(entityKey);
-      return this.resolveValueOrLink(
-        joinKeys(entityKey, keyOfField(field, args))
-      );
+      return this.resolveValueOrLink(entityKey, keyOfField(field, args));
     }
-  }
-
-  resolveConnections(
-    entity: Data | string | null,
-    field: string
-  ): Connection[] {
-    let connections: undefined | Connection[];
-    if (typeof entity === 'string') {
-      connections = KVMap.get(this.connections, joinKeys(entity, field));
-    } else if (entity !== null) {
-      const entityKey = this.keyOfEntity(entity);
-      if (entityKey !== null) {
-        addDependency(entityKey);
-        connections = KVMap.get(this.connections, joinKeys(entityKey, field));
-      }
-    }
-
-    return connections !== undefined ? connections : [];
   }
 
   invalidateQuery(query: string | DocumentNode, variables?: Variables) {
     invalidate(this, createRequest(query, variables));
   }
 
-  hasField(key: string): boolean {
-    return this.getRecord(key) !== undefined || this.getLink(key) !== undefined;
+  hasField(entityKey: string, fieldKey: string): boolean {
+    return (
+      InMemoryData.readRecord(this.data, entityKey, fieldKey) !== undefined ||
+      InMemoryData.readLink(this.data, entityKey, fieldKey) !== undefined
+    );
+  }
+
+  resolveConnections(
+    _entity: Data | string | null,
+    _fieldName: string
+  ): Connection[] {
+    return []; // TODO
   }
 
   updateQuery(

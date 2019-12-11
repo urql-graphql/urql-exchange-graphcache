@@ -253,10 +253,11 @@ const readSelection = (
     const fieldName = getName(node);
     const fieldArgs = getFieldArguments(node, ctx.variables);
     const fieldAlias = getFieldAlias(node);
-    const fieldKey = joinKeys(entityKey, keyOfField(fieldName, fieldArgs));
-    const fieldValue = store.getRecord(fieldKey);
+    const fieldKey = keyOfField(fieldName, fieldArgs);
+    const fieldValue = store.getRecord(entityKey, fieldKey);
+    const key = joinKeys(entityKey, fieldKey);
 
-    if (isQuery) addDependency(fieldKey);
+    if (isQuery) addDependency(key);
 
     if (process.env.NODE_ENV !== 'production' && schemaPredicates && typename) {
       schemaPredicates.isFieldAvailableOnType(typename, fieldName);
@@ -272,7 +273,7 @@ const readSelection = (
       // that the resolver will receive
       ctx.parentTypeName = typename;
       ctx.parentKey = entityKey;
-      ctx.parentFieldKey = fieldKey;
+      ctx.parentFieldKey = key;
       ctx.fieldName = fieldName;
 
       // We have a resolver for this field.
@@ -295,7 +296,7 @@ const readSelection = (
           ctx,
           typename,
           fieldName,
-          fieldKey,
+          key,
           getSelectionSet(node),
           (data[fieldAlias] as Data) || makeDict(),
           resolverValue
@@ -313,7 +314,7 @@ const readSelection = (
       dataFieldValue = fieldValue;
     } else {
       // We have a selection set which means that we'll be checking for links
-      const link = store.getLink(fieldKey);
+      const link = store.getLink(entityKey, fieldKey);
       if (link !== undefined) {
         dataFieldValue = resolveLink(
           ctx,
@@ -397,11 +398,12 @@ const readResolverResult = (
     // Derive the needed data from our node.
     const fieldName = getName(node);
     const fieldAlias = getFieldAlias(node);
-    const fieldKey = joinKeys(
-      entityKey,
-      keyOfField(fieldName, getFieldArguments(node, ctx.variables))
+    const fieldKey = keyOfField(
+      fieldName,
+      getFieldArguments(node, ctx.variables)
     );
-    const fieldValue = store.getRecord(fieldKey);
+    const key = joinKeys(entityKey, fieldKey);
+    const fieldValue = store.getRecord(entityKey, fieldKey);
     const resultValue = result[fieldName];
 
     if (process.env.NODE_ENV !== 'production' && schemaPredicates && typename) {
@@ -423,14 +425,15 @@ const readResolverResult = (
         ctx,
         typename,
         fieldName,
-        fieldKey,
+        key,
         getSelectionSet(node),
         data[fieldAlias] as Data,
         resultValue
       );
     } else {
       // Otherwise we attempt to get the missing field from the cache
-      const link = store.getLink(fieldKey);
+      const link = store.getLink(entityKey, fieldKey);
+
       if (link !== undefined) {
         dataFieldValue = resolveLink(
           ctx,
