@@ -14,23 +14,30 @@ import {
   UpdatesConfig,
   OptimisticMutationConfig,
   KeyingConfig,
+  StorageAdapter,
+  SerializedEntry,
+  SerializedEntries,
 } from './types';
 
 import * as KVMap from './helpers/map';
-import { joinKeys, keyOfField } from './helpers';
+import { defer, joinKeys, prefixKey, keyOfField } from './helpers';
 import { invariant, currentDebugStack } from './helpers/help';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';
 import { SchemaPredicates } from './ast/schemaPredicates';
 
+let currentStore: null | Store = null;
 let currentDependencies: null | Set<string> = null;
 let currentOptimisticKey: null | number = null;
+let currentBatch: null | SerializedEntries = null;
 
 // Initialise a store run by resetting its internal state
-export const initStoreState = (optimisticKey: null | number) => {
+export const initStoreState = (store: Store, optimisticKey: null | number) => {
+  currentStore = store;
   currentDependencies = new Set();
   currentOptimisticKey = optimisticKey;
+  currentBatch = null;
 
   if (process.env.NODE_ENV !== 'production') {
     currentDebugStack.length = 0;
@@ -39,8 +46,16 @@ export const initStoreState = (optimisticKey: null | number) => {
 
 // Finalise a store run by clearing its internal state
 export const clearStoreState = () => {
+  if (currentBatch !== null) {
+    const storage = (currentStore as Store).storage as StorageAdapter;
+    const batch = currentBatch;
+    defer(() => storage.write(batch));
+  }
+
+  currentStore = null;
   currentDependencies = null;
   currentOptimisticKey = null;
+  currentBatch = null;
 
   if (process.env.NODE_ENV !== 'production') {
     currentDebugStack.length = 0;
@@ -70,6 +85,7 @@ export class Store implements Cache {
   records: KVMap.KVMap<EntityField>;
   connections: KVMap.KVMap<Connection[]>;
   links: KVMap.KVMap<Link>;
+  storage?: StorageAdapter;
 
   resolvers: ResolverConfig;
   updates: UpdatesConfig;
@@ -169,11 +185,19 @@ export class Store implements Cache {
     KVMap.clear(this.links, optimisticKey);
   }
 
+  writeToBatch(owner: 'c' | 'l' | 'r', key: string, value: SerializedEntry) {
+    if (this.storage && !currentOptimisticKey) {
+      if (currentBatch === null) currentBatch = Object.create(null);
+      (currentBatch as SerializedEntries)[prefixKey(owner, key)] = value;
+    }
+  }
+
   getRecord(fieldKey: string): EntityField {
     return KVMap.get(this.records, fieldKey);
   }
 
   writeRecord(field: EntityField, fieldKey: string) {
+    this.writeToBatch('r', fieldKey, field);
     return KVMap.set(this.records, fieldKey, field, currentOptimisticKey);
   }
 
@@ -202,6 +226,7 @@ export class Store implements Cache {
   }
 
   writeLink(link: undefined | Link, key: string) {
+    this.writeToBatch('l', key, link);
     return KVMap.set(this.links, key, link, currentOptimisticKey);
   }
 
@@ -221,6 +246,7 @@ export class Store implements Cache {
       connections.push(connection);
     }
 
+    this.writeToBatch('c', key, connections);
     return KVMap.set(this.connections, key, connections, currentOptimisticKey);
   }
 
@@ -310,5 +336,23 @@ export class Store implements Cache {
     variables?: Variables
   ): void {
     writeFragment(this, dataFragment, data, variables);
+  }
+
+  hydrateData(data: object, storage: StorageAdapter) {
+    for (const key in data) {
+      switch (key.charCodeAt(0)) {
+        case 99:
+          KVMap.set(this.connections, key.slice(2), data[key], null);
+          break;
+        case 108:
+          KVMap.set(this.links, key.slice(2), data[key], null);
+          break;
+        case 114:
+          KVMap.set(this.records, key.slice(2), data[key], null);
+          break;
+      }
+    }
+
+    this.storage = storage;
   }
 }

@@ -57,7 +57,7 @@ export const write = (
   request: OperationRequest,
   data: Data
 ): WriteResult => {
-  initStoreState(0);
+  initStoreState(store, 0);
   const result = startWrite(store, request, data);
   clearStoreState();
   return result;
@@ -104,7 +104,7 @@ export const writeOptimistic = (
   request: OperationRequest,
   optimisticKey: number
 ): WriteResult => {
-  initStoreState(optimisticKey);
+  initStoreState(store, optimisticKey);
 
   const operation = getMainOperation(request.query);
   const result: WriteResult = { dependencies: getCurrentDependencies() };

@@ -1,6 +1,7 @@
 import gql from 'graphql-tag';
 import { createClient, ExchangeIO, Operation, OperationResult } from 'urql';
 import { pipe, map, makeSubject, tap, publish, delay } from 'wonka';
+import { StorageAdapter } from './types';
 import { cacheExchange } from './cacheExchange';
 
 const queryOne = gql`
@@ -721,4 +722,63 @@ it('reexecutes query and returns data on partial result', () => {
     'operation.context.meta.cacheOutcome',
     'partial'
   );
+});
+
+it('buffers when data is being rehydrated then releases all buffered operations', async () => {
+  const client = createClient({ url: '' });
+  const op = client.createRequestOperation('query', {
+    key: 1,
+    query: queryOne,
+  });
+
+  const response = jest.fn(
+    (forwardOp: Operation): OperationResult => {
+      expect(forwardOp.key).toBe(op.key);
+      return { operation: forwardOp, data: null };
+    }
+  );
+
+  const [ops$, next] = makeSubject<Operation>();
+  const result = jest.fn();
+  const forward: ExchangeIO = ops$ => pipe(ops$, map(response));
+
+  const storageData = Object.create(null);
+  storageData['r|Query.__typename'] = 'Query';
+  storageData['r|Query.author'] = undefined;
+  storageData['r|Author:123.__typename'] = 'Author';
+  storageData['r|Author:123.id'] = '123';
+  storageData['r|Author:123.name'] = 'Author';
+  storageData['l|Query.author'] = 'Author:123';
+
+  let resolveStorage = () => {
+    /* noop */
+  };
+  const storage$ = new Promise(resolve => {
+    resolveStorage = () => resolve(storageData);
+  });
+
+  const storage: StorageAdapter = {
+    read: jest.fn(() => storage$) as any,
+    write: () => Promise.reject(),
+  };
+
+  pipe(
+    cacheExchange({ storage })({ forward, client })(ops$),
+    tap(result),
+    publish
+  );
+  expect(storage.read).toHaveBeenCalled();
+
+  next(op);
+  expect(response).not.toHaveBeenCalled();
+  expect(result).not.toHaveBeenCalled();
+
+  resolveStorage();
+  await storage$;
+
+  expect(response).not.toHaveBeenCalled();
+  expect(result).toHaveBeenCalledWith({
+    operation: expect.anything(),
+    data: queryOneData,
+  });
 });

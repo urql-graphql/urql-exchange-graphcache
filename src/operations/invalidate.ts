@@ -35,7 +35,7 @@ interface Context {
 }
 
 export const invalidate = (store: Store, request: OperationRequest) => {
-  initStoreState(0);
+  initStoreState(store, 0);
   const operation = getMainOperation(request.query);
 
   const ctx: Context = {
