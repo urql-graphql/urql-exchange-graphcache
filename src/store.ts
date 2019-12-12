@@ -40,7 +40,10 @@ export const initStoreState = (store: Store, optimisticKey: null | number) => {
 
 // Finalise a store run by clearing its internal state
 export const clearStoreState = () => {
-  defer((currentStore as Store).gc);
+  if (!(currentStore as Store).gcScheduled) {
+    defer((currentStore as Store).gc);
+  }
+
   InMemoryData.setCurrentOptimisticKey(null);
   currentStore = null;
   currentDependencies = null;
@@ -138,7 +141,12 @@ export class Store implements Cache {
     }
   }
 
-  gc = () => InMemoryData.gc(this.data);
+  gcScheduled = false;
+  gc = () => {
+    InMemoryData.gc(this.data);
+    this.gcScheduled = false;
+  };
+
   keyOfField = keyOfField;
 
   getRootKey(name: RootField) {
