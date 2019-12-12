@@ -222,6 +222,8 @@ export const gc = (data: InMemoryData) => {
           updateRCForLink(data.gcBatch, data.refCount, linkNode[key], -1);
         }
       }
+    } else {
+      data.gcBatch.delete(entityKey);
     }
   });
 };
