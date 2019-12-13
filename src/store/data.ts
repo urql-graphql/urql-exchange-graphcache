@@ -278,12 +278,10 @@ export const gc = (data: InMemoryData) => {
 
 const updateDependencies = (entityKey: string, fieldKey?: string) => {
   if (fieldKey !== '__typename') {
-    if (entityKey === currentData!.queryRootKey) {
-      if (fieldKey !== undefined) {
-        currentDependencies!.add(joinKeys(entityKey, fieldKey));
-      }
-    } else {
+    if (entityKey !== currentData!.queryRootKey) {
       currentDependencies!.add(entityKey);
+    } else if (fieldKey !== undefined) {
+      currentDependencies!.add(joinKeys(entityKey, fieldKey));
     }
   }
 };
