@@ -311,7 +311,9 @@ export class Store implements Cache {
 
   hydrateData(data: object, storage: StorageAdapter) {
     for (const key in data) {
-      const [entityKey, fieldKey] = key.slice(2).split('.');
+      const baseKey = key.slice(2);
+      const entityKey = baseKey.slice(0, baseKey.indexOf('.'));
+      const fieldKey = baseKey.slice(baseKey.indexOf('.') + 1);
       switch (key.charCodeAt(0)) {
         case 108:
           InMemoryData.writeLink(this.data, entityKey, fieldKey, data[key]);
