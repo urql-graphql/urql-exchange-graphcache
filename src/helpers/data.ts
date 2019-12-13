@@ -19,7 +19,7 @@ export interface InMemoryData {
   links: NodeMap<Link>;
 }
 
-let currentOptimisticKey: null | number = null;
+export let currentOptimisticKey: null | number = null;
 
 const makeDict = <T>(): Dict<T> => Object.create(null);
 

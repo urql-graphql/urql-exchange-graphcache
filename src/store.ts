@@ -14,11 +14,14 @@ import {
   UpdatesConfig,
   OptimisticMutationConfig,
   KeyingConfig,
+  StorageAdapter,
+  SerializedEntry,
+  SerializedEntries,
 } from './types';
 
 import * as InMemoryData from './helpers/data';
 import { invariant, currentDebugStack } from './helpers/help';
-import { defer, keyOfField } from './helpers';
+import { defer, keyOfField, joinKeys, prefixKey } from './helpers';
 import { read, readFragment } from './operations/query';
 import { writeFragment, startWrite } from './operations/write';
 import { invalidate } from './operations/invalidate';
@@ -26,12 +29,14 @@ import { SchemaPredicates } from './ast/schemaPredicates';
 
 let currentStore: null | Store = null;
 let currentDependencies: null | Set<string> = null;
+let currentBatch: null | SerializedEntries = null;
 
 // Initialise a store run by resetting its internal state
 export const initStoreState = (store: Store, optimisticKey: null | number) => {
   InMemoryData.setCurrentOptimisticKey(optimisticKey);
   currentStore = store;
   currentDependencies = new Set();
+  currentBatch = null;
 
   if (process.env.NODE_ENV !== 'production') {
     currentDebugStack.length = 0;
@@ -42,6 +47,13 @@ export const initStoreState = (store: Store, optimisticKey: null | number) => {
 export const clearStoreState = () => {
   if (!(currentStore as Store).gcScheduled) {
     defer((currentStore as Store).gc);
+  }
+
+  if (currentBatch !== null) {
+    const storage = (currentStore as Store).storage as StorageAdapter;
+    const batch = currentBatch;
+    defer(() => storage.write(batch));
+    currentBatch = null;
   }
 
   InMemoryData.setCurrentOptimisticKey(null);
@@ -80,6 +92,7 @@ export class Store implements Cache {
   optimisticMutations: OptimisticMutationConfig;
   keys: KeyingConfig;
   schemaPredicates?: SchemaPredicates;
+  storage?: StorageAdapter;
 
   rootFields: { query: string; mutation: string; subscription: string };
   rootNames: { [name: string]: RootField };
@@ -173,6 +186,13 @@ export class Store implements Cache {
     return key ? `${typename}:${key}` : null;
   }
 
+  writeToBatch(owner: 'l' | 'r', key: string, value: SerializedEntry) {
+    if (this.storage && InMemoryData.currentOptimisticKey) {
+      if (currentBatch === null) currentBatch = Object.create(null);
+      (currentBatch as SerializedEntries)[prefixKey(owner, key)] = value;
+    }
+  }
+
   clearOptimistic(optimisticKey: number) {
     InMemoryData.clearOptimistic(this.data, optimisticKey);
   }
@@ -182,6 +202,7 @@ export class Store implements Cache {
   }
 
   writeRecord(field: EntityField, entityKey: string, fieldKey: string) {
+    this.writeToBatch('r', joinKeys(entityKey, fieldKey), field);
     InMemoryData.writeRecord(this.data, entityKey, fieldKey, field);
   }
 
@@ -211,6 +232,7 @@ export class Store implements Cache {
   }
 
   writeLink(link: undefined | Link, entityKey: string, fieldKey: string) {
+    this.writeToBatch('l', joinKeys(entityKey, fieldKey), link);
     return InMemoryData.writeLink(this.data, entityKey, fieldKey, link);
   }
 
@@ -285,5 +307,20 @@ export class Store implements Cache {
     variables?: Variables
   ): void {
     writeFragment(this, dataFragment, data, variables);
+  }
+
+  hydrateData(data: object, storage: StorageAdapter) {
+    for (const key in data) {
+      switch (key.charCodeAt(0)) {
+        case 108:
+          InMemoryData.writeLink(this.data, key.slice(2), '', data[key]);
+          break;
+        case 114:
+          InMemoryData.writeRecord(this.data, key.slice(2), '', data[key]);
+          break;
+      }
+    }
+
+    this.storage = storage;
   }
 }
