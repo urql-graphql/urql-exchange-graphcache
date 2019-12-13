@@ -423,8 +423,6 @@ describe('Store with storage', () => {
 
     store.hydrateData(Object.create(null), storage);
 
-    initStoreState(store, 0);
-
     write(
       store,
       {
@@ -434,7 +432,6 @@ describe('Store with storage', () => {
       expectedData
     );
 
-    clearStoreState();
     expect(storage.write).not.toHaveBeenCalled();
 
     jest.runAllTimers();

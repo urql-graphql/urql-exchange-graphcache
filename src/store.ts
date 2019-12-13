@@ -187,7 +187,7 @@ export class Store implements Cache {
   }
 
   writeToBatch(owner: 'l' | 'r', key: string, value: SerializedEntry) {
-    if (this.storage && InMemoryData.currentOptimisticKey) {
+    if (this.storage && !InMemoryData.currentOptimisticKey) {
       if (currentBatch === null) currentBatch = Object.create(null);
       (currentBatch as SerializedEntries)[prefixKey(owner, key)] = value;
     }
@@ -311,16 +311,16 @@ export class Store implements Cache {
 
   hydrateData(data: object, storage: StorageAdapter) {
     for (const key in data) {
+      const [entityKey, fieldKey] = key.slice(2).split('.');
       switch (key.charCodeAt(0)) {
         case 108:
-          InMemoryData.writeLink(this.data, key.slice(2), '', data[key]);
+          InMemoryData.writeLink(this.data, entityKey, fieldKey, data[key]);
           break;
         case 114:
-          InMemoryData.writeRecord(this.data, key.slice(2), '', data[key]);
+          InMemoryData.writeRecord(this.data, entityKey, fieldKey, data[key]);
           break;
       }
     }
-
     this.storage = storage;
   }
 }
