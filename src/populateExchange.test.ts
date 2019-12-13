@@ -34,14 +34,30 @@ const schemaDef = `
   union UnionType = User | Todo
 
   type Query {
-    todos: [Todo]
+    todos(first: Int): [Todo]
     users: [User]
   }
 
+  type AddTodoResponse {
+    todo: Todo!
+    visitor: Query!
+  }
+
+  type RemoveTodoResponse {
+    todo: Node!
+    visitor: Query!
+  }
+
+  type UpdateTodoResponse {
+    todo: UnionType!
+    visitor: Query!
+  }
+
   type Mutation {
-    addTodo: [Todo]
-    removeTodo: [Node]
-    updateTodo: [UnionType]
+    addTodo: AddTodoResponse
+    removeTodo: RemoveTodoResponse
+    updateTodo: UpdateTodoResponse
+
   }
 `;
 
@@ -74,7 +90,9 @@ describe('on mutation', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        addTodo @populate
+        addTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -119,7 +137,9 @@ describe('on query -> mutation', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        addTodo @populate
+        addTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -133,6 +153,67 @@ describe('on query -> mutation', () => {
       );
 
       expect(print(response[1].query)).toMatchSnapshot();
+    });
+  });
+});
+
+describe('on query -> (mutation w/ visitor) ', () => {
+  const queryOp = {
+    key: 1234,
+    operationName: 'query',
+    query: gql`
+      query {
+        todos {
+          id
+          text
+          creator {
+            id
+            name
+          }
+        }
+        users {
+          todos {
+            text
+          }
+        }
+      }
+    `,
+  } as Operation;
+
+  const mutationOp = {
+    key: 5678,
+    operationName: 'mutation',
+    query: gql`
+      mutation MyMutation {
+        addTodo {
+          todo @populate
+          visitor @populate
+        }
+      }
+    `,
+  } as Operation;
+
+  describe('mutation query', () => {
+    it('matches snapshot', async () => {
+      const response = pipe<Operation, any, Operation[]>(
+        fromArray([queryOp, mutationOp]),
+        populateExchange({ schema })(exchangeArgs),
+        toArray
+      );
+
+      expect(print(response[1].query)).toMatchSnapshot();
+    });
+
+    it('includes query selection set', () => {
+      const response = pipe<Operation, any, Operation[]>(
+        fromArray([queryOp, mutationOp]),
+        populateExchange({ schema })(exchangeArgs),
+        toArray
+      );
+
+      expect(print(response[1].query)).toContain(
+        print(queryOp.query.definitions[0])
+      );
     });
   });
 });
@@ -160,7 +241,9 @@ describe('on (query w/ fragment) -> mutation', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        addTodo @populate
+        addTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -218,7 +301,9 @@ describe('on (query w/ unused fragment) -> mutation', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        addTodo @populate
+        addTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -249,6 +334,60 @@ describe('on (query w/ unused fragment) -> mutation', () => {
   });
 });
 
+describe('on (query w/ variables) -> (mutation w/ visitor)', () => {
+  const queryOp = {
+    key: 1234,
+    operationName: 'query',
+    query: gql`
+      query {
+        todos(first: $first) {
+          id
+          text
+        }
+        users {
+          name
+          age
+        }
+      }
+    `,
+  } as Operation;
+
+  const mutationOp = {
+    key: 5678,
+    operationName: 'mutation',
+    query: gql`
+      mutation MyMutation {
+        addTodo {
+          todo @populate
+          visitor @populate
+        }
+      }
+    `,
+  } as Operation;
+
+  describe('mutation query', () => {
+    it('matches snapshot', async () => {
+      const response = pipe<Operation, any, Operation[]>(
+        fromArray([queryOp, mutationOp]),
+        populateExchange({ schema })(exchangeArgs),
+        toArray
+      );
+
+      expect(print(response[1].query)).toMatchSnapshot();
+    });
+
+    it('excludes todos query', () => {
+      const response = pipe<Operation, any, Operation[]>(
+        fromArray([queryOp, mutationOp]),
+        populateExchange({ schema })(exchangeArgs),
+        toArray
+      );
+
+      expect(print(response[1].query)).toMatch(/(?!todo\()*/);
+    });
+  });
+});
+
 describe('on query -> (mutation w/ interface return type)', () => {
   const queryOp = {
     key: 1234,
@@ -272,7 +411,9 @@ describe('on query -> (mutation w/ interface return type)', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        removeTodo @populate
+        removeTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -313,7 +454,9 @@ describe('on query -> (mutation w/ union return type)', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        updateTodo @populate
+        updateTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -355,7 +498,9 @@ describe('on query -> teardown -> mutation', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        addTodo @populate
+        addTodo {
+          todo @populate
+        }
       }
     `,
   } as Operation;
@@ -378,7 +523,7 @@ describe('on query -> teardown -> mutation', () => {
         toArray
       );
       getNodesByType(response[2].query, 'Field').forEach(field => {
-        expect(field.name.value).toMatch(/addTodo|__typename/);
+        expect(field.name.value).toMatch(/addTodo|todo|__typename/);
       });
     });
   });

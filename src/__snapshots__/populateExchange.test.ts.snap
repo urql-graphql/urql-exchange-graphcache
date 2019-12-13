@@ -3,7 +3,9 @@
 exports[`on (query w/ fragment) -> mutation mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   addTodo {
-    ...Todo_PopulateFragment_0
+    todo {
+      ...Todo_PopulateFragment_0
+    }
   }
 }
 
@@ -21,7 +23,9 @@ fragment TodoFragment on Todo {
 exports[`on (query w/ unused fragment) -> mutation mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   addTodo {
-    ...Todo_PopulateFragment_0
+    todo {
+      ...Todo_PopulateFragment_0
+    }
   }
 }
 
@@ -32,10 +36,38 @@ fragment Todo_PopulateFragment_0 on Todo {
 "
 `;
 
+exports[`on (query w/ variables) -> (mutation w/ visitor) mutation query matches snapshot 1`] = `
+"mutation MyMutation {
+  addTodo {
+    todo {
+      ...Todo_PopulateFragment_0
+    }
+    visitor {
+      ...Query_PopulateFragment_0
+    }
+  }
+}
+
+fragment Todo_PopulateFragment_0 on Todo {
+  id
+  text
+}
+
+fragment Query_PopulateFragment_0 on Query {
+  users {
+    name
+    age
+  }
+}
+"
+`;
+
 exports[`on mutation mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   addTodo {
-    __typename
+    todo {
+      __typename
+    }
   }
 }
 "
@@ -44,8 +76,10 @@ exports[`on mutation mutation query matches snapshot 1`] = `
 exports[`on query -> (mutation w/ interface return type) mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   removeTodo {
-    ...Todo_PopulateFragment_0
-    ...User_PopulateFragment_0
+    todo {
+      ...Todo_PopulateFragment_0
+      ...User_PopulateFragment_0
+    }
   }
 }
 
@@ -64,8 +98,10 @@ fragment User_PopulateFragment_0 on User {
 exports[`on query -> (mutation w/ union return type) mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   updateTodo {
-    ...User_PopulateFragment_0
-    ...Todo_PopulateFragment_0
+    todo {
+      ...User_PopulateFragment_0
+      ...Todo_PopulateFragment_0
+    }
   }
 }
 
@@ -81,11 +117,57 @@ fragment Todo_PopulateFragment_0 on Todo {
 "
 `;
 
+exports[`on query -> (mutation w/ visitor)  mutation query matches snapshot 1`] = `
+"mutation MyMutation {
+  addTodo {
+    todo {
+      ...Todo_PopulateFragment_0
+      ...Todo_PopulateFragment_1
+    }
+    visitor {
+      ...Query_PopulateFragment_0
+    }
+  }
+}
+
+fragment Todo_PopulateFragment_0 on Todo {
+  id
+  text
+  creator {
+    id
+    name
+  }
+}
+
+fragment Todo_PopulateFragment_1 on Todo {
+  text
+}
+
+fragment Query_PopulateFragment_0 on Query {
+  todos {
+    id
+    text
+    creator {
+      id
+      name
+    }
+  }
+  users {
+    todos {
+      text
+    }
+  }
+}
+"
+`;
+
 exports[`on query -> mutation mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   addTodo {
-    ...Todo_PopulateFragment_0
-    ...Todo_PopulateFragment_1
+    todo {
+      ...Todo_PopulateFragment_0
+      ...Todo_PopulateFragment_1
+    }
   }
 }
 
@@ -107,7 +189,9 @@ fragment Todo_PopulateFragment_1 on Todo {
 exports[`on query -> teardown -> mutation mutation query matches snapshot 1`] = `
 "mutation MyMutation {
   addTodo {
-    __typename
+    todo {
+      __typename
+    }
   }
 }
 "

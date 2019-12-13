@@ -15,6 +15,8 @@ import {
   isAbstractType,
   Kind,
   visit,
+  OperationDefinitionNode,
+  FieldNode,
 } from 'graphql';
 
 import { pipe, tap, map } from 'wonka';
@@ -139,23 +141,31 @@ export const extractSelectionsFromQuery = (
   const newFragments: FragmentDefinitionNode[] = [];
   const typeInfo = new TypeInfo(schema);
 
+  const handleVisit = (node: OperationDefinitionNode | FieldNode) => {
+    if (node.selectionSet) {
+      const type = getTypeName(typeInfo);
+      newFragments.push({
+        kind: Kind.FRAGMENT_DEFINITION,
+        typeCondition: {
+          kind: Kind.NAMED_TYPE,
+          name: nameNode(type),
+        },
+        name: nameNode(`${type}_PopulateFragment_`),
+        selectionSet: {
+          ...node.selectionSet,
+          selections: node.selectionSet.selections.filter(
+            s => s['arguments'] === undefined || s['arguments'].length === 0
+          ),
+        },
+      });
+    }
+  };
+
   visit(
     query,
     visitWithTypeInfo(typeInfo, {
-      Field: node => {
-        if (node.selectionSet) {
-          const type = getTypeName(typeInfo);
-          newFragments.push({
-            kind: Kind.FRAGMENT_DEFINITION,
-            typeCondition: {
-              kind: Kind.NAMED_TYPE,
-              name: nameNode(type),
-            },
-            name: nameNode(`${type}_PopulateFragment_`),
-            selectionSet: node.selectionSet,
-          });
-        }
-      },
+      OperationDefinition: handleVisit,
+      Field: handleVisit,
       FragmentDefinition: node => {
         extractedFragments.push(node);
       },
