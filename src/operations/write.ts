@@ -9,6 +9,7 @@ import {
   getFragmentTypeName,
   getName,
   getFieldArguments,
+  SchemaPredicates,
 } from '../ast';
 
 import {
@@ -27,13 +28,13 @@ import {
   getCurrentDependencies,
   initStoreState,
   clearStoreState,
+  makeDict,
+  joinKeys,
+  keyOfField,
 } from '../store';
 
 import { invariant, warn, pushDebugNode } from '../helpers/help';
-import { makeDict } from '../helpers/dict';
 import { SelectionIterator, isScalar } from './shared';
-import { joinKeys, keyOfField } from '../helpers';
-import { SchemaPredicates } from '../ast/schemaPredicates';
 
 export interface WriteResult {
   dependencies: Set<string>;

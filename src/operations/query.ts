@@ -1,3 +1,5 @@
+import { FieldNode, DocumentNode, FragmentDefinitionNode } from 'graphql';
+
 import {
   getFragments,
   getMainOperation,
@@ -26,14 +28,14 @@ import {
   getCurrentDependencies,
   initStoreState,
   clearStoreState,
+  makeDict,
+  joinKeys,
+  keyOfField,
 } from '../store';
 
 import { warn, pushDebugNode } from '../helpers/help';
-import { makeDict } from '../helpers/dict';
-import { joinKeys, keyOfField } from '../helpers';
 import { SelectionIterator, isScalar } from './shared';
-import { SchemaPredicates } from '../ast/schemaPredicates';
-import { FieldNode, DocumentNode, FragmentDefinitionNode } from 'graphql';
+import { SchemaPredicates } from '../ast';
 
 export interface QueryResult {
   dependencies: Set<string>;

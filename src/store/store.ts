@@ -14,15 +14,16 @@ import {
   UpdatesConfig,
   OptimisticMutationConfig,
   KeyingConfig,
-} from './types';
+} from '../types';
 
-import * as InMemoryData from './helpers/data';
-import { invariant, currentDebugStack } from './helpers/help';
-import { defer, keyOfField } from './helpers';
-import { read, readFragment } from './operations/query';
-import { writeFragment, startWrite } from './operations/write';
-import { invalidate } from './operations/invalidate';
-import { SchemaPredicates } from './ast/schemaPredicates';
+import { invariant, currentDebugStack } from '../helpers/help';
+import { read, readFragment } from '../operations/query';
+import { writeFragment, startWrite } from '../operations/write';
+import { invalidate } from '../operations/invalidate';
+import { SchemaPredicates } from '../ast';
+import { defer } from './timing';
+import { keyOfField } from './keys';
+import * as InMemoryData from './data';
 
 let currentStore: null | Store = null;
 let currentDependencies: null | Set<string> = null;

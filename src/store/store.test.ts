@@ -7,9 +7,9 @@ import {
   getCurrentDependencies,
 } from './store';
 
-import { Data } from './types';
-import { query } from './operations/query';
-import { write, writeOptimistic } from './operations/write';
+import { Data } from '../types';
+import { query } from '../operations/query';
+import { write, writeOptimistic } from '../operations/write';
 
 const Appointment = gql`
   query appointment($id: String) {

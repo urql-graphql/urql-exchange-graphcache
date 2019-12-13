@@ -10,9 +10,8 @@ import {
 import { IntrospectionQuery } from 'graphql';
 import { filter, map, merge, pipe, share, tap } from 'wonka';
 import { query, write, writeOptimistic } from './operations';
-import { SchemaPredicates } from './ast/schemaPredicates';
-import { makeDict } from './helpers/dict';
-import { Store } from './store';
+import { SchemaPredicates } from './ast';
+import { makeDict, Store } from './store';
 
 import {
   UpdatesConfig,

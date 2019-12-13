@@ -21,7 +21,7 @@ export interface InMemoryData {
 
 let currentOptimisticKey: null | number = null;
 
-const makeDict = <T>(): Dict<T> => Object.create(null);
+export const makeDict = (): any => Object.create(null);
 
 const makeNodeMap = <T>(): NodeMap<T> => ({
   optimistic: makeDict(),

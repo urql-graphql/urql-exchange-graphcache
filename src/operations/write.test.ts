@@ -1,7 +1,7 @@
-import { Store } from '../store';
 import gql from 'graphql-tag';
 import { write } from './write';
-import { SchemaPredicates } from '../ast/schemaPredicates';
+import { Store } from '../store';
+import { SchemaPredicates } from '../ast';
 
 const TODO_QUERY = gql`
   query todos {

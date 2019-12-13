@@ -17,10 +17,9 @@ import {
   SelectionSet,
 } from '../types';
 
-import { Store, addDependency } from '../store';
+import { Store, addDependency, joinKeys, keyOfField } from '../store';
+import { SchemaPredicates } from '../ast';
 import { SelectionIterator } from './shared';
-import { joinKeys, keyOfField } from '../helpers';
-import { SchemaPredicates } from '../ast/schemaPredicates';
 
 interface Context {
   store: Store;
