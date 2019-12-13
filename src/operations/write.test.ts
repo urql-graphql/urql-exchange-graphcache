@@ -1,5 +1,6 @@
 import gql from 'graphql-tag';
 import { write } from './write';
+import * as InMemoryData from '../store/data';
 import { Store } from '../store';
 import { SchemaPredicates } from '../ast';
 
@@ -151,7 +152,9 @@ describe('Query', () => {
     // Because of us writing an undefined field
     expect(console.warn).toHaveBeenCalledTimes(1);
     expect((console.warn as any).mock.calls[0][0]).toMatch(/undefined/);
+
+    InMemoryData.initDataState(store.data, 0);
     // The field must still be `'test'`
-    expect(store.getRecord('Query', 'field')).toBe('test');
+    expect(InMemoryData.readRecord('Query', 'field')).toBe('test');
   });
 });

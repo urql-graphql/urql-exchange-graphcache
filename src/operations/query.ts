@@ -24,15 +24,15 @@ import {
 
 import {
   Store,
-  addDependency,
   getCurrentDependencies,
-  initStoreState,
-  clearStoreState,
+  initDataState,
+  clearDataState,
   makeDict,
   joinKeys,
   keyOfField,
 } from '../store';
 
+import * as InMemoryData from '../store/data';
 import { warn, pushDebugNode } from '../helpers/help';
 import { SelectionIterator, isScalar } from './shared';
 import { SchemaPredicates } from '../ast';
@@ -60,9 +60,9 @@ export const query = (
   request: OperationRequest,
   data?: Data
 ): QueryResult => {
-  initStoreState(store, 0);
+  initDataState(store.data, 0);
   const result = read(store, request, data);
-  clearStoreState();
+  clearDataState();
   return result;
 };
 
@@ -234,12 +234,11 @@ const readSelection = (
 ): Data | undefined => {
   const { store, schemaPredicates } = ctx;
   const isQuery = entityKey === store.getRootKey('query');
-  if (!isQuery) addDependency(entityKey);
 
   // Get the __typename field for a given entity to check that it exists
-  const typename = isQuery
-    ? entityKey
-    : store.getField(entityKey, '__typename');
+  const typename = !isQuery
+    ? InMemoryData.readRecord(entityKey, '__typename')
+    : entityKey;
   if (typeof typename !== 'string') {
     return undefined;
   }
@@ -256,10 +255,8 @@ const readSelection = (
     const fieldArgs = getFieldArguments(node, ctx.variables);
     const fieldAlias = getFieldAlias(node);
     const fieldKey = keyOfField(fieldName, fieldArgs);
-    const fieldValue = store.getRecord(entityKey, fieldKey);
+    const fieldValue = InMemoryData.readRecord(entityKey, fieldKey);
     const key = joinKeys(entityKey, fieldKey);
-
-    if (isQuery) addDependency(key);
 
     if (process.env.NODE_ENV !== 'production' && schemaPredicates && typename) {
       schemaPredicates.isFieldAvailableOnType(typename, fieldName);
@@ -316,7 +313,7 @@ const readSelection = (
       dataFieldValue = fieldValue;
     } else {
       // We have a selection set which means that we'll be checking for links
-      const link = store.getLink(entityKey, fieldKey);
+      const link = InMemoryData.readLink(entityKey, fieldKey);
       if (link !== undefined) {
         dataFieldValue = resolveLink(
           ctx,
@@ -367,10 +364,9 @@ const readResolverResult = (
 ): Data | undefined => {
   const { store, schemaPredicates } = ctx;
   const entityKey = store.keyOfEntity(result) || key;
-  addDependency(entityKey);
-
   const resolvedTypename = result.__typename;
-  const typename = store.getField(entityKey, '__typename') || resolvedTypename;
+  const typename =
+    InMemoryData.readRecord(entityKey, '__typename') || resolvedTypename;
 
   if (
     typeof typename !== 'string' ||
@@ -405,7 +401,7 @@ const readResolverResult = (
       getFieldArguments(node, ctx.variables)
     );
     const key = joinKeys(entityKey, fieldKey);
-    const fieldValue = store.getRecord(entityKey, fieldKey);
+    const fieldValue = InMemoryData.readRecord(entityKey, fieldKey);
     const resultValue = result[fieldName];
 
     if (process.env.NODE_ENV !== 'production' && schemaPredicates && typename) {
@@ -434,7 +430,7 @@ const readResolverResult = (
       );
     } else {
       // Otherwise we attempt to get the missing field from the cache
-      const link = store.getLink(entityKey, fieldKey);
+      const link = InMemoryData.readLink(entityKey, fieldKey);
 
       if (link !== undefined) {
         dataFieldValue = resolveLink(

@@ -11,7 +11,7 @@ import { IntrospectionQuery } from 'graphql';
 import { filter, map, merge, pipe, share, tap } from 'wonka';
 import { query, write, writeOptimistic } from './operations';
 import { SchemaPredicates } from './ast';
-import { makeDict, Store } from './store';
+import { makeDict, Store, clearOptimistic } from './store';
 
 import {
   UpdatesConfig,
@@ -207,7 +207,7 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     const { key } = operation;
     if (optimisticKeys.has(key)) {
       optimisticKeys.delete(key);
-      store.clearOptimistic(key);
+      clearOptimistic(store.data, key);
     }
 
     let writeDependencies: Set<string> | void;

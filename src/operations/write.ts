@@ -24,15 +24,15 @@ import {
 
 import {
   Store,
-  addDependency,
   getCurrentDependencies,
-  initStoreState,
-  clearStoreState,
+  initDataState,
+  clearDataState,
   makeDict,
   joinKeys,
   keyOfField,
 } from '../store';
 
+import * as InMemoryData from '../store/data';
 import { invariant, warn, pushDebugNode } from '../helpers/help';
 import { SelectionIterator, isScalar } from './shared';
 
@@ -59,9 +59,9 @@ export const write = (
   request: OperationRequest,
   data: Data
 ): WriteResult => {
-  initStoreState(store, 0);
+  initDataState(store.data, 0);
   const result = startWrite(store, request, data);
-  clearStoreState();
+  clearDataState();
   return result;
 };
 
@@ -106,7 +106,7 @@ export const writeOptimistic = (
   request: OperationRequest,
   optimisticKey: number
 ): WriteResult => {
-  initStoreState(store, optimisticKey);
+  initDataState(store.data, optimisticKey);
 
   const operation = getMainOperation(request.query);
   const result: WriteResult = { dependencies: getCurrentDependencies() };
@@ -171,7 +171,7 @@ export const writeOptimistic = (
     }
   }
 
-  clearStoreState();
+  clearDataState();
   return result;
 };
 
@@ -230,12 +230,14 @@ const writeSelection = (
   select: SelectionSet,
   data: Data
 ) => {
-  const { store } = ctx;
   const isQuery = entityKey === ctx.store.getRootKey('query');
   const typename = data.__typename;
-  if (!isQuery) addDependency(entityKey);
 
-  store.writeField(isQuery ? entityKey : typename, entityKey, '__typename');
+  InMemoryData.writeRecord(
+    entityKey,
+    '__typename',
+    isQuery ? entityKey : typename
+  );
 
   const iter = new SelectionIterator(typename, entityKey, select, ctx);
 
@@ -246,8 +248,6 @@ const writeSelection = (
     const fieldKey = keyOfField(fieldName, fieldArgs);
     const fieldValue = data[getFieldAlias(node)];
     const key = joinKeys(entityKey, fieldKey);
-
-    if (isQuery) addDependency(key);
 
     if (process.env.NODE_ENV !== 'production') {
       if (fieldValue === undefined) {
@@ -278,12 +278,12 @@ const writeSelection = (
 
     if (node.selectionSet === undefined) {
       // This is a leaf node, so we're setting the field's value directly
-      store.writeRecord(fieldValue, entityKey, fieldKey);
+      InMemoryData.writeRecord(entityKey, fieldKey, fieldValue);
     } else if (!isScalar(fieldValue)) {
       // Process the field and write links for the child entities that have been written
       const link = writeField(ctx, key, getSelectionSet(node), fieldValue);
-      store.writeLink(link, entityKey, fieldKey);
-      store.writeRecord(undefined, entityKey, fieldKey);
+      InMemoryData.writeLink(entityKey, fieldKey, link);
+      InMemoryData.writeRecord(entityKey, fieldKey, undefined);
     } else {
       warn(
         'Invalid value: The field at `' +
@@ -295,7 +295,7 @@ const writeSelection = (
       );
 
       // This is a rare case for invalid entities
-      store.writeRecord(fieldValue, entityKey, fieldKey);
+      InMemoryData.writeRecord(entityKey, fieldKey, fieldValue);
     }
   }
 };
