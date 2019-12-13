@@ -35,6 +35,7 @@ const makeNodeMap = <T>(): NodeMap<T> => ({
   keys: [],
 });
 
+/** Before reading or writing the global state needs to be initialised */
 export const initDataState = (
   data: InMemoryData,
   optimisticKey: number | null
@@ -47,6 +48,7 @@ export const initDataState = (
   }
 };
 
+/** Reset the data state after read/write is complete */
 export const clearDataState = () => {
   const data = currentData!;
   if (!data.gcScheduled && data.gcBatch.size > 0) {
@@ -62,6 +64,7 @@ export const clearDataState = () => {
   }
 };
 
+/** As we're writing, we keep around all the records and links we've read or have written to */
 export const getCurrentDependencies = (): Set<string> => {
   invariant(
     currentDependencies !== null,
