@@ -54,6 +54,10 @@ fragment Todo_PopulateFragment_0 on Todo {
 }
 
 fragment Query_PopulateFragment_0 on Query {
+  todos(first: 1234) {
+    id
+    text
+  }
   users {
     name
     age

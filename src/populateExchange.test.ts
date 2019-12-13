@@ -338,8 +338,11 @@ describe('on (query w/ variables) -> (mutation w/ visitor)', () => {
   const queryOp = {
     key: 1234,
     operationName: 'query',
+    variables: {
+      first: 1234,
+    },
     query: gql`
-      query {
+      query($first: Int!) {
         todos(first: $first) {
           id
           text
@@ -376,14 +379,15 @@ describe('on (query w/ variables) -> (mutation w/ visitor)', () => {
       expect(print(response[1].query)).toMatchSnapshot();
     });
 
-    it('excludes todos query', () => {
+    it('includes query', () => {
       const response = pipe<Operation, any, Operation[]>(
         fromArray([queryOp, mutationOp]),
         populateExchange({ schema })(exchangeArgs),
         toArray
       );
 
-      expect(print(response[1].query)).toMatch(/(?!todo\()*/);
+      const value = (queryOp!.variables! as any).first;
+      expect(print(response[1].query)).toContain(`todos(first: ${value}`);
     });
   });
 });

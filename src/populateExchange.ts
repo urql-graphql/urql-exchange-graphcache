@@ -17,14 +17,23 @@ import {
   visit,
   OperationDefinitionNode,
   FieldNode,
+  GraphQLInputType,
+  astFromValue,
 } from 'graphql';
 
 import { pipe, tap, map } from 'wonka';
 import { Exchange, Operation } from 'urql/core';
 
-import { getName, getSelectionSet, unwrapType } from './ast';
+import {
+  getName,
+  getSelectionSet,
+  unwrapType,
+  normalizeVariables,
+  getMainOperation,
+} from './ast';
 import { invariant, warn } from './helpers/help';
 import { makeDict } from './helpers/dict';
+import { Variables } from './types';
 
 interface PopulateExchangeOpts {
   schema: IntrospectionQuery;
@@ -69,7 +78,12 @@ export const populateExchange = ({
   };
 
   /** Handle query and extract fragments. */
-  const handleIncomingQuery = ({ key, operationName, query }: Operation) => {
+  const handleIncomingQuery = ({
+    key,
+    operationName,
+    query,
+    variables,
+  }: Operation) => {
     if (operationName !== 'query') {
       return;
     }
@@ -83,7 +97,8 @@ export const populateExchange = ({
 
     const [extractedFragments, newFragments] = extractSelectionsFromQuery(
       schema,
-      query
+      query,
+      normalizeVariables(getMainOperation(query), variables)
     );
 
     for (let i = 0, l = extractedFragments.length; i < l; i++) {
@@ -135,7 +150,8 @@ interface TypeFragment {
 /** Gets typed selection sets and fragments from query */
 export const extractSelectionsFromQuery = (
   schema: GraphQLSchema,
-  query: DocumentNode
+  query: DocumentNode,
+  variables: Variables
 ) => {
   const extractedFragments: FragmentDefinitionNode[] = [];
   const newFragments: FragmentDefinitionNode[] = [];
@@ -151,12 +167,7 @@ export const extractSelectionsFromQuery = (
           name: nameNode(type),
         },
         name: nameNode(`${type}_PopulateFragment_`),
-        selectionSet: {
-          ...node.selectionSet,
-          selections: node.selectionSet.selections.filter(
-            s => s['arguments'] === undefined || s['arguments'].length === 0
-          ),
-        },
+        selectionSet: node.selectionSet,
       });
     }
   };
@@ -164,10 +175,20 @@ export const extractSelectionsFromQuery = (
   visit(
     query,
     visitWithTypeInfo(typeInfo, {
-      OperationDefinition: handleVisit,
-      Field: handleVisit,
+      OperationDefinition: {
+        leave: handleVisit,
+      },
+      Field: {
+        leave: handleVisit,
+      },
+      Variable: {
+        enter: v => {
+          const type = typeInfo.getInputType() as GraphQLInputType;
+          return astFromValue(variables[getName(v)], type);
+        },
+      },
       FragmentDefinition: node => {
-        extractedFragments.push(node);
+        leave: extractedFragments.push(node);
       },
     })
   );
