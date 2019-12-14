@@ -35,7 +35,8 @@ export const makeDict = (): any => Object.create(null);
 let currentData: null | InMemoryData = null;
 let currentDependencies: null | Set<string> = null;
 let currentOptimisticKey: null | number = null;
-let persistenceBatch: SerializedEntries = makeDict();
+let currentPersistenceBatch: SerializedEntries = makeDict();
+let persistenceScheduled = false;
 
 const makeNodeMap = <T>(): NodeMap<T> => ({
   optimistic: makeDict(),
@@ -67,10 +68,12 @@ export const clearDataState = () => {
     });
   }
 
-  if (data.storage) {
+  if (data.storage && !persistenceScheduled) {
+    persistenceScheduled = true;
     defer(() => {
-      data.storage!.write(persistenceBatch);
-      persistenceBatch = makeDict();
+      data.storage!.write(currentPersistenceBatch);
+      currentPersistenceBatch = makeDict();
+      persistenceScheduled = false;
     });
   }
 
@@ -286,7 +289,7 @@ export const gc = (data: InMemoryData) => {
         data.records.base.delete(entityKey);
         if (data.storage) {
           for (const fieldKey in recordsNode) {
-            persistenceBatch[
+            currentPersistenceBatch[
               prefixKey('r', joinKeys(entityKey, fieldKey))
             ] = undefined;
           }
@@ -301,7 +304,7 @@ export const gc = (data: InMemoryData) => {
         for (const fieldKey in linkNode) {
           // Delete all links from the persistence layer if one is present
           if (data.storage) {
-            persistenceBatch[
+            currentPersistenceBatch[
               prefixKey('l', joinKeys(entityKey, fieldKey))
             ] = undefined;
           }
@@ -353,7 +356,7 @@ export const writeRecord = (
   setNode(currentData!.records, entityKey, fieldKey, value);
   if (currentData!.storage && !currentOptimisticKey) {
     const key = prefixKey('r', joinKeys(entityKey, fieldKey));
-    persistenceBatch[key] = value;
+    currentPersistenceBatch[key] = value;
   }
 };
 
@@ -384,7 +387,7 @@ export const writeLink = (
   } else {
     if (data.storage) {
       const key = prefixKey('l', joinKeys(entityKey, fieldKey));
-      persistenceBatch[key] = link;
+      currentPersistenceBatch[key] = link;
     }
     refCount = data.refCount;
     links = data.links.base;
