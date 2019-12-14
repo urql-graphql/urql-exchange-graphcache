@@ -172,6 +172,18 @@ export interface KeyingConfig {
   [typename: string]: KeyGenerator;
 }
 
+export type SerializedEntry = EntityField | Connection[] | Link;
+
+export interface SerializedEntries {
+  [key: string]: SerializedEntry;
+}
+
+export interface StorageAdapter {
+  read(): Promise<SerializedEntries>;
+  remove(key: string): Promise<void>;
+  write(data: SerializedEntries): Promise<void>;
+}
+
 export type ErrorCode =
   | 1
   | 2

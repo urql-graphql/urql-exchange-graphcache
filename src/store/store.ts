@@ -12,6 +12,7 @@ import {
   UpdatesConfig,
   OptimisticMutationConfig,
   KeyingConfig,
+  StorageAdapter,
 } from '../types';
 
 import { read, readFragment } from '../operations/query';
@@ -185,5 +186,23 @@ export class Store implements Cache {
     variables?: Variables
   ): void {
     writeFragment(this, dataFragment, data, variables);
+  }
+
+  hydrateData(data: object, adapter: StorageAdapter) {
+    InMemoryData.storage.current = adapter;
+    InMemoryData.initDataState(this.data, 0);
+    for (const key in data) {
+      const entityKey = key.slice(2, key.indexOf('.'));
+      const fieldKey = key.slice(key.indexOf('.') + 1);
+      switch (key.charCodeAt(0)) {
+        case 108:
+          InMemoryData.writeLink(entityKey, fieldKey, data[key], true);
+          break;
+        case 114:
+          InMemoryData.writeRecord(entityKey, fieldKey, data[key], true);
+          break;
+      }
+    }
+    InMemoryData.clearDataState();
   }
 }
