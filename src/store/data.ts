@@ -289,9 +289,8 @@ export const gc = (data: InMemoryData) => {
         data.records.base.delete(entityKey);
         if (data.storage) {
           for (const fieldKey in recordsNode) {
-            currentPersistenceBatch[
-              prefixKey('r', joinKeys(entityKey, fieldKey))
-            ] = undefined;
+            const key = prefixKey('r', joinKeys(entityKey, fieldKey));
+            currentPersistenceBatch[key] = undefined;
           }
         }
       }
@@ -304,9 +303,8 @@ export const gc = (data: InMemoryData) => {
         for (const fieldKey in linkNode) {
           // Delete all links from the persistence layer if one is present
           if (data.storage) {
-            currentPersistenceBatch[
-              prefixKey('l', joinKeys(entityKey, fieldKey))
-            ] = undefined;
+            const key = prefixKey('l', joinKeys(entityKey, fieldKey));
+            currentPersistenceBatch[key] = undefined;
           }
 
           updateRCForLink(data.gcBatch, data.refCount, linkNode[fieldKey], -1);
