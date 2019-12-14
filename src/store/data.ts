@@ -30,11 +30,11 @@ export interface InMemoryData {
   storage: StorageAdapter | null;
 }
 
+export const makeDict = (): any => Object.create(null);
+
 let currentData: null | InMemoryData = null;
 let currentDependencies: null | Set<string> = null;
 let currentOptimisticKey: null | number = null;
-
-export const makeDict = (): any => Object.create(null);
 let persistenceBatch: SerializedEntries = makeDict();
 
 const makeNodeMap = <T>(): NodeMap<T> => ({
@@ -273,14 +273,24 @@ export const gc = (data: InMemoryData) => {
 
       // All conditions are met: The entity can be deleted
 
-      // Delete the reference count, all records, and delete the entity from the GC batch
+      // Delete the reference count, and delete the entity from the GC batch
+      delete data.refCount[entityKey];
+      data.gcBatch.delete(entityKey);
+
+      // Delete the record and for each of its fields, delete them on the persistence
+      // layer if one is present
       // No optimistic data needs to be deleted, as the entity is not being referenced by
       // anything and optimistic layers will eventually be deleted anyway
-      delete data.refCount[entityKey];
-      data.records.base.delete(entityKey);
-      data.gcBatch.delete(entityKey);
-      if (data.storage) {
-        persistenceBatch[prefixKey('r', entityKey)] = undefined;
+      const recordsNode = data.records.base.get(entityKey);
+      if (recordsNode !== undefined) {
+        data.records.base.delete(entityKey);
+        if (data.storage) {
+          for (const fieldKey in recordsNode) {
+            persistenceBatch[
+              prefixKey('r', joinKeys(entityKey, fieldKey))
+            ] = undefined;
+          }
+        }
       }
 
       // Delete all the entity's links, but also update the reference count
@@ -288,11 +298,15 @@ export const gc = (data: InMemoryData) => {
       const linkNode = data.links.base.get(entityKey);
       if (linkNode !== undefined) {
         data.links.base.delete(entityKey);
-        if (data.storage) {
-          persistenceBatch[prefixKey('l', entityKey)] = undefined;
-        }
-        for (const key in linkNode) {
-          updateRCForLink(data.gcBatch, data.refCount, linkNode[key], -1);
+        for (const fieldKey in linkNode) {
+          // Delete all links from the persistence layer if one is present
+          if (data.storage) {
+            persistenceBatch[
+              prefixKey('l', joinKeys(entityKey, fieldKey))
+            ] = undefined;
+          }
+
+          updateRCForLink(data.gcBatch, data.refCount, linkNode[fieldKey], -1);
         }
       }
     } else {
