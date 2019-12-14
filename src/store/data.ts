@@ -427,3 +427,26 @@ export const inspectFields = (entityKey: string): FieldInfo[] => {
   extractNodeMapFields(fieldInfos, seenFieldKeys, entityKey, records);
   return fieldInfos;
 };
+
+export const hydrateData = (
+  data: InMemoryData,
+  storage: StorageAdapter,
+  entries: SerializedEntries
+) => {
+  initDataState(data, 0);
+  for (const key in entries) {
+    const dotIndex = key.indexOf('.');
+    const entityKey = key.slice(2, dotIndex);
+    const fieldKey = key.slice(dotIndex + 1);
+    switch (key.charCodeAt(0)) {
+      case 108:
+        writeLink(entityKey, fieldKey, entries[key] as Link);
+        break;
+      case 114:
+        writeRecord(entityKey, fieldKey, entries[key]);
+        break;
+    }
+  }
+  clearDataState();
+  data.storage = storage;
+};
