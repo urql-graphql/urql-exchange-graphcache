@@ -27,7 +27,7 @@ export interface InMemoryData {
   refLock: OptimisticMap<Dict<number>>;
   records: NodeMap<EntityField>;
   links: NodeMap<Link>;
-  storage?: StorageAdapter;
+  storage: StorageAdapter | null;
 }
 
 let currentData: null | InMemoryData = null;
@@ -103,6 +103,7 @@ export const make = (queryRootKey: string): InMemoryData => ({
   refLock: makeDict(),
   links: makeNodeMap(),
   records: makeNodeMap(),
+  storage: null,
 });
 
 /** Adds a node value to a NodeMap (taking optimistic values into account */
