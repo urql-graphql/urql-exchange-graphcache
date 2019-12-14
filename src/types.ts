@@ -180,7 +180,6 @@ export interface SerializedEntries {
 
 export interface StorageAdapter {
   read(): Promise<SerializedEntries>;
-  remove(key: string): Promise<void>;
   write(data: SerializedEntries): Promise<void>;
 }
 

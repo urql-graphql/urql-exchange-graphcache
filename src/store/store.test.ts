@@ -424,7 +424,6 @@ describe('Store with storage', () => {
     const storage: StorageAdapter = {
       read: jest.fn(),
       write: jest.fn(),
-      remove: jest.fn(),
     };
     let store = new Store();
 

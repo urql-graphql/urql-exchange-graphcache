@@ -279,7 +279,7 @@ export const gc = (data: InMemoryData) => {
       data.records.base.delete(entityKey);
       data.gcBatch.delete(entityKey);
       if (storage.current) {
-        storage.current.remove(prefixKey('r', entityKey));
+        persistanceBatch[prefixKey('r', entityKey)] = undefined;
       }
 
       // Delete all the entity's links, but also update the reference count
@@ -288,7 +288,7 @@ export const gc = (data: InMemoryData) => {
       if (linkNode !== undefined) {
         data.links.base.delete(entityKey);
         if (storage.current) {
-          storage.current.remove(prefixKey('l', entityKey));
+          persistanceBatch[prefixKey('l', entityKey)] = undefined;
         }
         for (const key in linkNode) {
           updateRCForLink(data.gcBatch, data.refCount, linkNode[key], -1);
