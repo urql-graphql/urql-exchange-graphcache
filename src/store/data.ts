@@ -27,6 +27,7 @@ export interface InMemoryData {
   refLock: OptimisticMap<Dict<number>>;
   records: NodeMap<EntityField>;
   links: NodeMap<Link>;
+  storage?: StorageAdapter;
 }
 
 let currentData: null | InMemoryData = null;
@@ -34,8 +35,7 @@ let currentDependencies: null | Set<string> = null;
 let currentOptimisticKey: null | number = null;
 
 export const makeDict = (): any => Object.create(null);
-export const storage: { current: StorageAdapter | null } = { current: null };
-let persistanceBatch: SerializedEntries = makeDict();
+let persistenceBatch: SerializedEntries = makeDict();
 
 const makeNodeMap = <T>(): NodeMap<T> => ({
   optimistic: makeDict(),
@@ -67,10 +67,10 @@ export const clearDataState = () => {
     });
   }
 
-  if (storage.current) {
+  if (data.storage) {
     defer(() => {
-      (storage.current as StorageAdapter).write(persistanceBatch);
-      persistanceBatch = makeDict();
+      data.storage!.write(persistenceBatch);
+      persistenceBatch = makeDict();
     });
   }
 
@@ -278,8 +278,8 @@ export const gc = (data: InMemoryData) => {
       delete data.refCount[entityKey];
       data.records.base.delete(entityKey);
       data.gcBatch.delete(entityKey);
-      if (storage.current) {
-        persistanceBatch[prefixKey('r', entityKey)] = undefined;
+      if (data.storage) {
+        persistenceBatch[prefixKey('r', entityKey)] = undefined;
       }
 
       // Delete all the entity's links, but also update the reference count
@@ -287,8 +287,8 @@ export const gc = (data: InMemoryData) => {
       const linkNode = data.links.base.get(entityKey);
       if (linkNode !== undefined) {
         data.links.base.delete(entityKey);
-        if (storage.current) {
-          persistanceBatch[prefixKey('l', entityKey)] = undefined;
+        if (data.storage) {
+          persistenceBatch[prefixKey('l', entityKey)] = undefined;
         }
         for (const key in linkNode) {
           updateRCForLink(data.gcBatch, data.refCount, linkNode[key], -1);
@@ -332,14 +332,13 @@ export const readLink = (
 export const writeRecord = (
   entityKey: string,
   fieldKey: string,
-  value: EntityField,
-  skipPersistance?: boolean
+  value: EntityField
 ) => {
   updateDependencies(entityKey, fieldKey);
   setNode(currentData!.records, entityKey, fieldKey, value);
-  if (storage.current && !skipPersistance && !currentOptimisticKey) {
+  if (currentData!.storage && !currentOptimisticKey) {
     const key = prefixKey('r', joinKeys(entityKey, fieldKey));
-    persistanceBatch[key] = value;
+    persistenceBatch[key] = value;
   }
 };
 
@@ -351,8 +350,7 @@ export const hasField = (entityKey: string, fieldKey: string): boolean =>
 export const writeLink = (
   entityKey: string,
   fieldKey: string,
-  link: Link | undefined,
-  skipPersistance?: boolean
+  link: Link | undefined
 ) => {
   const data = currentData!;
   // Retrieve the reference counting dict or the optimistic reference locking dict
@@ -369,9 +367,9 @@ export const writeLink = (
       (data.refLock[currentOptimisticKey] = makeDict());
     links = data.links.optimistic[currentOptimisticKey];
   } else {
-    if (storage.current && !skipPersistance) {
+    if (data.storage) {
       const key = prefixKey('l', joinKeys(entityKey, fieldKey));
-      persistanceBatch[key] = link;
+      persistenceBatch[key] = link;
     }
     refCount = data.refCount;
     links = data.links.base;
