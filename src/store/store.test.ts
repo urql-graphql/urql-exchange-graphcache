@@ -457,7 +457,7 @@ describe('Store with storage', () => {
     expect(data).toEqual(expectedData);
   });
 
-  it.only('writes removals based on GC to storage', () => {
+  it('writes removals based on GC to storage', () => {
     const storage: StorageAdapter = {
       read: jest.fn(),
       write: jest.fn(),
