@@ -20,9 +20,11 @@ interface NodeMap<T> {
 }
 
 export interface InMemoryData {
-  queryRootKey: string;
+  persistenceScheduled: boolean;
+  persistenceBatch: SerializedEntries;
   gcScheduled: boolean;
   gcBatch: Set<string>;
+  queryRootKey: string;
   refCount: Dict<number>;
   refLock: OptimisticMap<Dict<number>>;
   records: NodeMap<EntityField>;
@@ -35,8 +37,6 @@ export const makeDict = (): any => Object.create(null);
 let currentData: null | InMemoryData = null;
 let currentDependencies: null | Set<string> = null;
 let currentOptimisticKey: null | number = null;
-let currentPersistenceBatch: SerializedEntries = makeDict();
-let persistenceScheduled = false;
 
 const makeNodeMap = <T>(): NodeMap<T> => ({
   optimistic: makeDict(),
@@ -68,12 +68,12 @@ export const clearDataState = () => {
     });
   }
 
-  if (data.storage && !persistenceScheduled) {
-    persistenceScheduled = true;
+  if (data.storage && !data.persistenceScheduled) {
+    data.persistenceScheduled = true;
     defer(() => {
-      data.storage!.write(currentPersistenceBatch);
-      currentPersistenceBatch = makeDict();
-      persistenceScheduled = false;
+      data.storage!.write(data.persistenceBatch);
+      data.persistenceScheduled = false;
+      data.persistenceBatch = makeDict();
     });
   }
 
@@ -99,8 +99,10 @@ export const getCurrentDependencies = (): Set<string> => {
 };
 
 export const make = (queryRootKey: string): InMemoryData => ({
-  queryRootKey,
+  persistenceScheduled: false,
+  persistenceBatch: makeDict(),
   gcScheduled: false,
+  queryRootKey,
   gcBatch: new Set(),
   refCount: makeDict(),
   refLock: makeDict(),
@@ -290,7 +292,7 @@ export const gc = (data: InMemoryData) => {
         if (data.storage) {
           for (const fieldKey in recordsNode) {
             const key = prefixKey('r', joinKeys(entityKey, fieldKey));
-            currentPersistenceBatch[key] = undefined;
+            data.persistenceBatch[key] = undefined;
           }
         }
       }
@@ -304,7 +306,7 @@ export const gc = (data: InMemoryData) => {
           // Delete all links from the persistence layer if one is present
           if (data.storage) {
             const key = prefixKey('l', joinKeys(entityKey, fieldKey));
-            currentPersistenceBatch[key] = undefined;
+            data.persistenceBatch[key] = undefined;
           }
 
           updateRCForLink(data.gcBatch, data.refCount, linkNode[fieldKey], -1);
@@ -354,7 +356,7 @@ export const writeRecord = (
   setNode(currentData!.records, entityKey, fieldKey, value);
   if (currentData!.storage && !currentOptimisticKey) {
     const key = prefixKey('r', joinKeys(entityKey, fieldKey));
-    currentPersistenceBatch[key] = value;
+    currentData!.persistenceBatch[key] = value;
   }
 };
 
@@ -385,7 +387,7 @@ export const writeLink = (
   } else {
     if (data.storage) {
       const key = prefixKey('l', joinKeys(entityKey, fieldKey));
-      currentPersistenceBatch[key] = link;
+      data.persistenceBatch[key] = link;
     }
     refCount = data.refCount;
     links = data.links.base;
