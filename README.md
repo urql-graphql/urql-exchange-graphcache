@@ -1,6 +1,6 @@
 <h2 align="center">@urql/exchange-graphcache</h2>
 <p align="center">
-<strong>An exchange for normalized caching support in <code>urql</code></strong>
+<strong>Extensions for normalized caching and other modern GraphQL patterns in <code>urql</code></strong>
 <br /><br />
 <a href="https://npmjs.com/package/@urql/exchange-graphcache">
   <img alt="NPM Version" src="https://img.shields.io/npm/v/@urql/exchange-graphcache.svg" />
@@ -22,27 +22,45 @@
 </a>
 </p>
 
-`@urql/exchange-graphcache` is a normalized cache exchange for the [`urql`](https://github.com/FormidableLabs/urql) GraphQL client.
-This is a drop-in replacement for the default `cacheExchange` that, instead of document
-caching, caches normalized data by keys and connections between data.
+## ✨ Features
 
-You can also pass your introspected GraphQL schema to the `cacheExchange`, which enables
-it to deliver partial results and match fragments deterministically!
+- 📦 A fast & small extension package
+- 🌱 Normalized caching support
+- 🗂 The `@populate` directive pattern
+- 📱 Offline support _(Coming soon!)_
 
-`urql` is already quite a comprehensive GraphQL client. However in several cases it may be
-desirable to have data update across the entirety of an app when a response updates some
-known pieces of data. This cache also provides configurable APIs to:
+`@urql/exchange-graphcache` is an extension for the [`urql`](https://github.com/FormidableLabs/urql) GraphQL client
+that adds normalized caching and other modern GraphQL patterns to it.
 
-- resolve Query data from the offline cache
-- update Query data after mutations/subscriptions responses
-- provide optimistic Mutation responses
+`urql` is already quite a comprehensive GraphQL client. But once you've built a basic app using it
+you may need a couple of extensions to use solid and modern GraphQL patterns and to optimise your
+app. **Optimistic updates** and **normalized resolvers** are parts to making your app more consistent
+and reducing the number of requests it takes to update your app. **Auto-populating** mutations help
+you to keep your mutations easy to understand while updating your normalized data.
+
+## 📃 [Documentation](./docs/README.md)
+
+This documentation provides more details on how to configure and use `@urql/exchange-graphcache`.
+If you'd rather learn more about it first, read on instead.
+
+During development, this package may output **warnings and errors**. Further explanation for each of
+those can be found in [the "Help" section of our documentation](./docs/help.md).
+
+- [Keys](./docs/keys.md)
+- [Resolvers](./docs/resolvers.md)
+- [Updates](./docs/updates.md)
+- [Optimistic Updates](./docs/optimistic.md)
+- [Schema](./docs/schema.md)
+- [Help](./docs/help.md)
 
 > ⚠️ Note: Documentation for some parts of `@urql/exchange-graphcache` are still being worked on!
 > For help for features requests, please join our [Spectrum](https://spectrum.chat/urql).
 
-## Quick Start Guide
+## 🏎️ Intro & Showcase
 
-First install `@urql/exchange-graphcache` alongside `urql`:
+### Installation
+
+Assuming you've installed `urql` and `graphql` already, install `@urql/exchange-graphcache` alongside them:
 
 ```sh
 yarn add @urql/exchange-graphcache
@@ -55,14 +73,12 @@ by replacing the default cache exchange with it:
 
 ```js
 import { createClient, dedupExchange, fetchExchange } from 'urql';
-
 import { cacheExchange } from '@urql/exchange-graphcache';
 
 const client = createClient({
   url: 'http://localhost:1234/graphql',
   exchanges: [
     dedupExchange,
-    // Replace the default cacheExchange with the new one
     cacheExchange({
       /* config */
     }),
@@ -71,93 +87,59 @@ const client = createClient({
 });
 ```
 
-## Features and Roadmap
+If you'd like to use the `@populate` directive you'll then need to add the `populateExchange` to your
+`urql` Client as well. Make sure that you add it in front of the `cacheExchange`:
 
-- [x] Normalized resolving and updates
-- [x] Schema awareness and deterministic fragment matching
-- [x] Partial query results when the cache is schema aware
-- [x] Customization using custom resolvers, updates, and keying functions
-- [x] Optimistic updates
-- [ ] Basic offline and persistence support
-- [ ] Advanced fragment and entity invalidation
+```js
+import { createClient, dedupExchange, fetchExchange } from 'urql';
+import { populateExchange, cacheExchange } from '@urql/exchange-graphcache';
 
-This cache defaults to **delivering safe results** by marking results as incomplete
-when any field is missing, triggering a `network-only` operation (a request), when
-it encounters uncached fields.
+const client = createClient({
+  url: 'http://localhost:1234/graphql',
+  exchanges: [
+    dedupExchange,
+    populateExchange,
+    cacheExchange({
+      /* config */
+    }),
+    fetchExchange,
+  ],
+});
+```
 
-Furthermore there's one case in caching where only having the `__typename` field
-leads to potentially unsafe behaviour: **interfaces**. When the cache encounters a
-fragment that tries to get data for an interface, it can't tell whether the
-cached type matches the interface. In this case we resort to a heuristic
-by default. When all fields of the fragment are on the target type, then the
-fragment matches successfully and we log a warning.
+### Normalized Caching
 
-Schema awareness has been introduced to the cache to improve this behaviour.
-When you pass your API's GraphQL schema to the cache, it becomes able to
-deliver **partial results**. When the cache has enough information so that
-only **optional fields** in a given query are missing, then it delivers
-a partial result from the cached data. Subsequently it still issues a network
-request (like with `cache-and-network`) to ensure that all information will
-still be delivered eventually.
+> What is normalized caching?
+> Explain keys!
+> Explain how to customize keys!
 
-With a schema the cache can also match fragments that refer to interfaces
-**deterministically**, since it can look at the schema to match fragments
-against types.
+### Local Resolvers
 
-Schema awareness is also an important stepping stone for offline support.
-Without partial results it becomes difficult to deliver an offline UI
-safely, when just some bits of information are missing.
+> What can I resolve from the cache?
+> Explain how to resolve data locally!
+> Explain pagination!
+> Introduce `Cache` interface!
+> Introduce `simplePagination` and `relayPagination`!
 
-Read more about the [architecture](./docs/architecture.md)
+### Local Cache Updates
 
-## Usage
+> What are updates?
+> When can I do an update?
+> Explain how to use updates to change the cache after mutations and subscriptions!
 
-You can currently configure:
+### Optimistic Updates
 
-- `resolvers`: A nested `['__typename'][fieldName]` map to resolve results from cache
-- `updates`: A Mutation/Subscription field map to apply side-effect updates to the cache
-- `optimistic`: A mutation field map to supply optimistic mutation responses
-- `keys`: A `__typename` map of functions to generate keys with
-- `schema`: An introspected GraphQL schema in JSON format. When it's passed the cache will
-  deliver partial results and enable deterministic fragment matching.
+> What are optimistic updates?
+> When do I use them? (small interactions rather than large ones)
+> Explain how to set them up!
+> Explain when they're reverted (after mutations complete, error or not)
 
-> Note that you don't need any of these options to get started
+### Schema Awareness
 
-### Keys
-
-Keys are used when you need a slight alteration to the value of your identifier or
-when the identifier is a non-traditional property.
-
-[Read more](./docs/keys.md)
-
-### Resolvers
-
-Resolvers are needed when you want to do additional resolving, for example do some
-custom date formatting.
-
-[Read more](./docs/resolvers.md)
-
-### Updates
-
-The graph cache will automatically handle updates but some things are quite hard to
-incorporate. Let's say you delete/add an item, it's hard for us to know you wanted to
-delete or where to add an item in a list.
-
-[Read more](./docs/updates.md)
-
-### Optimistic
-
-Here you can configure optimistic responses, this means that we don't wait for the server
-to respond but offer the user to instantly replace the data with the variables from the
-mutation.
-
-[Read more](./docs/optimistic.md)
-
-### Schema
-
-Our way to see what your backend schema looks like, this offers additional functionality.
-
-[Read more](./docs/schema.md)
+> How do I add a schema?
+> How does Graphcache change when I add a schema?
+> Explain the schema awareness!
+> Explain "@populate" and the populateExchange!
 
 ## Maintenance Status
 
