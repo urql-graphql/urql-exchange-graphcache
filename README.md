@@ -87,26 +87,6 @@ const client = createClient({
 });
 ```
 
-If you'd like to use the `@populate` directive you'll then need to add the `populateExchange` to your
-`urql` Client as well. Make sure that you add it in front of the `cacheExchange`:
-
-```js
-import { createClient, dedupExchange, fetchExchange } from 'urql';
-import { populateExchange, cacheExchange } from '@urql/exchange-graphcache';
-
-const client = createClient({
-  url: 'http://localhost:1234/graphql',
-  exchanges: [
-    dedupExchange,
-    populateExchange,
-    cacheExchange({
-      /* config */
-    }),
-    fetchExchange,
-  ],
-});
-```
-
 ### Normalized Caching
 
 > What is normalized caching?
