@@ -89,7 +89,44 @@ const client = createClient({
 
 ### Normalized Caching
 
-> What is normalized caching?
+When the `cacheExchange` receives data from your GraphQL API, it normalises it and stores it
+in a data structure that is similar to multiple database rows in a relational database’s table.
+It does so by walking your GraphQL query, comparing it to the response from the API, and
+storing values for each field by an entity’s key and by the field itself.
+We call this structure "records."
+
+The key for an entity is by default a combination of an object’s `__typename` field and its `id` or `_id`
+field. (This can also be customised.)
+
+The fields that are stored also include that fields arguments, if it has any.
+
+<img width="500" src="docs/record-data.png" alt="Diagram: Records (i.e. scalar values) are stored in a table by an entity's key and the field." />
+
+In this example we’re storing `{ __typename: 'Entity', id: 1 }` as `"Entity:1"`
+and `{ __typename: 'Entity', id: 2 }` as `"Entity:2"`.
+
+We also need to store how these individual entities are related to one another.
+This is stored as relatiomns in our data structure, which are like database relations.
+We call this structure "links."
+
+Links are stored identically to records of an entity, in a similar but separate structure.
+The entries in this data structure are instead other entities’ keys, which can also be
+`null` or arrays of keys.
+
+<img width="500" src="docs/link-data.png" alt="Diagram: Links (i.e. relations) are stored in a table by an entity's key and the field as well." />
+
+In this diagram we see that our entities have been retrieved from an `entity` field on `Query`.
+The root `Query` is treated as a normal, global entity. If we look at entries in this example
+we know that `Query.entity(id: 1)` now contains `"Entity:1"`. We can also see that the
+entities in our example refer to each other via a `sibling` field.
+We're able to effectively look up relations.
+
+Using this method, any given GraphQL data and query can be stored entirely in memory.
+When a query is run, the normalised cache runs through its data structure and compares
+each field against the in-memory database. When a field is found in the cache, it retrieves
+data from there instead. And when data is written when a GraphQL response comes in,
+it writes data to the in-memory database instead of reading from it.
+
 > Explain keys!
 > Explain how to customize keys!
 
