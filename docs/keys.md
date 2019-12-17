@@ -32,4 +32,16 @@ const myGraphCache = cacheExchange({
 });
 ```
 
+In some cases you also may not want to normalise entities, either because they're not
+globally unique or because they are not keyable. In that case you can pass Graphcache
+a function that returns `null`.
+
+```js
+cacheExchange({
+  keys: {
+    LatLng: data => null,
+  },
+});
+```
+
 [Back](../README.md)

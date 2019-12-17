@@ -127,8 +127,41 @@ each field against the in-memory database. When a field is found in the cache, i
 data from there instead. And when data is written when a GraphQL response comes in,
 it writes data to the in-memory database instead of reading from it.
 
-> Explain keys!
-> Explain how to customize keys!
+<img width="427" src="docs/graph-relations.png" alt="Diagram: Query relates to Entity:1 and Entity:2 via the entity field. They relate to each other via the sibling field. We've built a relational graph between entities." />
+
+In some cases, your entities may not be keyable via an `id` or `_id` field, for instance
+because they don't have these fields. You can customise keys by using the `cacheExchange`'s
+`keys` option. In there you can add functions that generate keys for data per an entity's
+`__typename`. If we for instance want `Entity` to use a `key` field for its key,
+we can pass `cacheExchange` the following configuration:
+
+```js
+cacheExchange({
+  keys: {
+    Entity: data => data.key,
+  },
+});
+```
+
+In some cases you also may not want to normalise entities, either because they're not
+globally unique or because they are not keyable. In those cases Graphcache will
+also [output a helpful warning](./docs/help.md#15-invalid-key-) if it's not able
+to find the default `id` or `_id` fields.
+
+In such cases you can pass Graphcache a function that returns `null`.
+
+```js
+cacheExchange({
+  keys: {
+    LatLng: data => null,
+  },
+});
+```
+
+Which will cause the child entity with a `null` key to be "embedded" on its parent.
+That means that it will only be accessible from its parent entity and won't be normalised.
+
+[Read more about keys in the "Keys" guide](./docs/keys.md)
 
 ### Local Resolvers
 
