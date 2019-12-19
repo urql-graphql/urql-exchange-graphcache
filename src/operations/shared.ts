@@ -140,6 +140,5 @@ export class SelectionIterator {
   }
 }
 
-export const ensureData = (x: DataField): Data | NullArray<Data> | null => {
-  return x as Data | NullArray<Data>;
-};
+export const ensureData = (x: DataField): Data | NullArray<Data> | null =>
+  x === undefined ? null : (x as Data | NullArray<Data>);
