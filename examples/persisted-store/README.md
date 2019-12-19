@@ -1,10 +1,6 @@
 ## About
 
-This is a basic example of subscriptions being used with `urql`. It demonstrates some of the core principles around wiring up subscriptions, including:
-
-- Setting up the `subscriptionExchange` with a `subscriptionClient`.
-- Using the `useSubscription` hook.
-- Using the `graphCache` to update the hook.
+This is a basic example of store-persistence being used with `urql`.
 
 ## Usage
 
@@ -20,7 +16,7 @@ yarn
 #### 2. Navigate to this directory and install dependencies.
 
 ```bash
-cd examples/subscriptions
+cd examples/persisted-store
 yarn
 ```
 

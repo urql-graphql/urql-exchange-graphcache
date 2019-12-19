@@ -1,5 +1,5 @@
 {
-  "name": "@urql/example-using-subscriptions",
+  "name": "@urql/example-using-persisted-store",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
@@ -30,17 +30,13 @@
     "apollo-server-express": "^2.3.3",
     "cors": "^2.8.5",
     "express": "^4.16.4",
-    "faker": "^4.1.0",
-    "fakergem": "^1.0.2",
     "graphql": "^14.1.1",
     "graphql-playground-middleware-express": "^1.7.11",
-    "graphql-subscriptions": "^1.0.0",
     "graphql-tag": "^2.10.1",
     "idb": "^4.0.5",
     "isomorphic-fetch": "^2.2.1",
     "react": "16.9.0",
     "react-dom": "16.9.0",
-    "subscriptions-transport-ws": "^0.9.15",
     "urql": "1.7.0"
   }
 }
