@@ -7,29 +7,25 @@ import Messages from './Messages';
 
 let db;
 
+const storage = {
+  read: async () => {
+    db = await openDB('myApplication', 1, {
+      upgrade: db => db.createObjectStore('keyval'),
+    });
+    const result = (await db.getAll('keyval')) as SerializedEntries;
+    return result;
+  },
+  write: async batch => {
+    for (const key in batch) {
+      const value = batch[key];
+      db.put('keyval', value, key);
+    }
+  },
+};
+
 const client = createClient({
   url: 'http://localhost:4000/graphql',
-  exchanges: [
-    dedupExchange,
-    cacheExchange({
-      storage: {
-        read: async () => {
-          db = await openDB('myApplication', 1, {
-            upgrade: db => db.createObjectStore('keyval'),
-          });
-          const result = (await db.getAll('keyval')) as SerializedEntries;
-          return result;
-        },
-        write: async batch => {
-          for (const key in batch) {
-            const value = batch[key];
-            db.put('keyval', value, key);
-          }
-        },
-      },
-    }),
-    fetchExchange,
-  ],
+  exchanges: [dedupExchange, cacheExchange({ storage }), fetchExchange],
 });
 
 export const App: FC = () => (
