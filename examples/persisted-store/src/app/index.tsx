@@ -18,7 +18,11 @@ const storage = {
   write: async batch => {
     for (const key in batch) {
       const value = batch[key];
-      db.put('keyval', value, key);
+      if (value === undefined) {
+        db.delete('keyval', key);
+      } else {
+        db.put('keyval', value, key);
+      }
     }
   },
 };
