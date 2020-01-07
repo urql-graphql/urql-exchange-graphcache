@@ -173,12 +173,20 @@ describe('on (query w/ fragment) -> mutation', () => {
       query {
         todos {
           ...TodoFragment
+          creator {
+            ...CreatorFragment
+          }
         }
       }
 
       fragment TodoFragment on Todo {
         id
         text
+      }
+
+      fragment CreatorFragment on User {
+        id
+        name
       }
     `,
   } as Operation;
@@ -188,7 +196,14 @@ describe('on (query w/ fragment) -> mutation', () => {
     operationName: 'mutation',
     query: gql`
       mutation MyMutation {
-        addTodo @populate
+        addTodo @populate {
+          ...TodoFragment
+        }
+      }
+
+      fragment TodoFragment on Todo {
+        id
+        text
       }
     `,
   } as Operation;
@@ -205,16 +220,25 @@ describe('on (query w/ fragment) -> mutation', () => {
         "mutation MyMutation {
           addTodo {
             ...Todo_PopulateFragment_0
+            ...TodoFragment
           }
-        }
-
-        fragment Todo_PopulateFragment_0 on Todo {
-          ...TodoFragment
         }
 
         fragment TodoFragment on Todo {
           id
           text
+        }
+
+        fragment Todo_PopulateFragment_0 on Todo {
+          ...TodoFragment
+          creator {
+            ...CreatorFragment
+          }
+        }
+
+        fragment CreatorFragment on User {
+          id
+          name
         }
         "
       `);
