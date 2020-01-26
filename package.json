@@ -21,14 +21,14 @@
   "sideEffects": false,
   "scripts": {
     "clean": "rimraf ./dist ./node_modules/.cache",
-    "build": "rollup -c rollup.config.js",
+    "build": "rollup -c rollup.config.js && yarn prepare:extras",
     "watch": "rollup -w -c rollup.config.js",
     "check": "tsc --noEmit",
     "test": "jest",
     "coverage": "jest --coverage",
     "lint": "eslint . --ext .ts,.tsx",
     "prepare:extras": "./scripts/prepare-extras.js",
-    "prepublishOnly": "run-s clean test build prepare:extras",
+    "prepublishOnly": "run-s clean test build",
     "codecov": "codecov"
   },
   "author": "Formidable",
