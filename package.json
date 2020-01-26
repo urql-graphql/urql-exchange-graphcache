@@ -22,7 +22,7 @@
   "scripts": {
     "clean": "rimraf ./dist ./node_modules/.cache",
     "build": "rollup -c rollup.config.js",
-    "postbuild": "yarn prepare:extras",
+    "postbuild": "run-s prepare:extras",
     "watch": "rollup -w -c rollup.config.js",
     "check": "tsc --noEmit",
     "test": "jest",
