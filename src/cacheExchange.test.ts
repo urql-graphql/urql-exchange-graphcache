@@ -382,7 +382,7 @@ it('correctly clears on error', () => {
   expect(reexec).toHaveBeenCalledTimes(1);
 
   jest.runAllTimers();
-  expect(updates.Mutation.addAuthor).toHaveBeenCalledTimes(1);
+  expect(updates.Mutation.addAuthor).toHaveBeenCalledTimes(2);
   expect(response).toHaveBeenCalledTimes(2);
   expect(result).toHaveBeenCalledTimes(4);
 });

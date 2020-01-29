@@ -234,14 +234,16 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
     // Clear old optimistic values from the store
     const { key } = operation;
     const optimisticDependencies = optimisticKeysToDependencies.get(key);
+    const pendingOperations = new Set<number>();
     if (optimisticDependencies) {
+      collectPendingOperations(pendingOperations, optimisticDependencies);
       optimisticKeysToDependencies.delete(key);
       clearOptimistic(store.data, key);
     }
 
     let writeDependencies: Set<string> | void;
     let queryDependencies: Set<string> | void;
-    if (data !== null && data !== undefined && !error) {
+    if (data !== null && data !== undefined) {
       writeDependencies = write(store, operation, data).dependencies;
 
       if (isQuery) {
@@ -251,12 +253,9 @@ export const cacheExchange = (opts?: CacheExchangeOpts): Exchange => ({
       } else {
         data = query(store, operation, data).data;
       }
-    } else if (optimisticDependencies) {
-      writeDependencies = optimisticDependencies;
     }
 
     // Collect all write dependencies and query dependencies for queries
-    const pendingOperations = new Set<number>();
     collectPendingOperations(pendingOperations, writeDependencies);
     if (isQuery) {
       collectPendingOperations(pendingOperations, queryDependencies);
