@@ -27,6 +27,7 @@ export interface InMemoryData {
   queryRootKey: string;
   refCount: Dict<number>;
   refLock: OptimisticMap<Dict<number>>;
+  optimisticDependencies: { [key: number]: Set<string> | void };
   records: NodeMap<EntityField>;
   links: NodeMap<Link>;
   storage: StorageAdapter | null;
@@ -109,6 +110,7 @@ export const make = (queryRootKey: string): InMemoryData => ({
   links: makeNodeMap(),
   records: makeNodeMap(),
   storage: null,
+  optimisticDependencies: {},
 });
 
 /** Adds a node value to a NodeMap (taking optimistic values into account */
@@ -414,6 +416,7 @@ export const clearOptimistic = (data: InMemoryData, optimisticKey: number) => {
   delete data.refLock[optimisticKey];
   clearOptimisticNodes(data.records, optimisticKey);
   clearOptimisticNodes(data.links, optimisticKey);
+  return data.optimisticDependencies[optimisticKey];
 };
 
 /** Return an array of FieldInfo (info on all the fields and their arguments) for a given entity */
