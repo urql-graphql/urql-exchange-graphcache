@@ -9,7 +9,7 @@ import {
   getFragmentTypeName,
   getName,
   getFieldArguments,
-  SchemaPredicates,
+  isFieldAvailableOnType,
 } from '../ast';
 
 import {
@@ -50,7 +50,6 @@ interface Context {
   variables: Variables;
   fragments: Fragments;
   optimistic?: boolean;
-  schemaPredicates?: SchemaPredicates;
 }
 
 /** Writes a request given its response to the store */
@@ -85,7 +84,6 @@ export const startWrite = (
     fragments: getFragments(request.query),
     result,
     store,
-    schemaPredicates: store.schemaPredicates,
   };
 
   if (process.env.NODE_ENV !== 'production') {
@@ -133,7 +131,6 @@ export const writeOptimistic = (
     fragments: getFragments(request.query),
     result,
     store,
-    schemaPredicates: store.schemaPredicates,
     optimistic: true,
   };
 
@@ -215,7 +212,6 @@ export const writeFragment = (
     fragments,
     result: { dependencies: getCurrentDependencies() },
     store,
-    schemaPredicates: store.schemaPredicates,
   };
 
   writeSelection(ctx, entityKey, getSelectionSet(fragment), writeData);
@@ -265,8 +261,8 @@ const writeSelection = (
         );
 
         continue; // Skip this field
-      } else if (ctx.schemaPredicates && typename) {
-        ctx.schemaPredicates.isFieldAvailableOnType(typename, fieldName);
+      } else if (ctx.store.schema && typename) {
+        isFieldAvailableOnType(ctx.store.schema, typename, fieldName);
       }
     }
 
