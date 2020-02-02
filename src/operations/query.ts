@@ -52,10 +52,10 @@ interface Context {
   parentKey: string;
   parentFieldKey: string;
   fieldName: string;
-  partial: boolean;
   store: Store;
   variables: Variables;
   fragments: Fragments;
+  partial: boolean;
 }
 
 export const query = (
@@ -83,10 +83,10 @@ export const read = (
     parentKey: rootKey,
     parentFieldKey: '',
     fieldName: '',
+    store,
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
     partial: false,
-    store,
   };
 
   if (process.env.NODE_ENV !== 'production') {

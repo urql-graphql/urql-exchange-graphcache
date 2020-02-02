@@ -79,9 +79,9 @@ export const startWrite = (
     parentKey: operationName,
     parentFieldKey: '',
     fieldName: '',
+    store,
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
-    store,
   };
 
   if (process.env.NODE_ENV !== 'production') {
