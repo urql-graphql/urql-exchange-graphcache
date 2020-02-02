@@ -45,7 +45,6 @@ interface Context {
   parentKey: string;
   parentFieldKey: string;
   fieldName: string;
-  result: WriteResult;
   store: Store;
   variables: Variables;
   fragments: Fragments;
@@ -82,7 +81,6 @@ export const startWrite = (
     fieldName: '',
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
-    result,
     store,
   };
 
@@ -129,7 +127,6 @@ export const writeOptimistic = (
     fieldName: '',
     variables: normalizeVariables(operation, request.variables),
     fragments: getFragments(request.query),
-    result,
     store,
     optimistic: true,
   };
@@ -210,7 +207,6 @@ export const writeFragment = (
     fieldName: '',
     variables: variables || {},
     fragments,
-    result: { dependencies: getCurrentDependencies() },
     store,
   };
 
