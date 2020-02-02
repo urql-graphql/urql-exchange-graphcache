@@ -691,7 +691,7 @@ it("returns the cached items even if they don't fullfil the query", () => {
   `;
 
   const store = new Store(
-    new SchemaPredicates(require('../test-utils/relayPagination_schema.json')),
+    require('../test-utils/relayPagination_schema.json'),
     {
       Query: {
         items: relayPagination(),
@@ -753,7 +753,7 @@ it('returns the cached items even when they come from a different query', () => 
   `;
 
   const store = new Store(
-    new SchemaPredicates(require('../test-utils/relayPagination_schema.json')),
+    require('../test-utils/relayPagination_schema.json'),
     {
       Query: {
         items: relayPagination(),
@@ -811,7 +811,7 @@ it('caches and retrieves correctly queries with inwards pagination', () => {
   `;
 
   const store = new Store(
-    new SchemaPredicates(require('../test-utils/relayPagination_schema.json')),
+    require('../test-utils/relayPagination_schema.json'),
     {
       Query: {
         items: relayPagination(),
